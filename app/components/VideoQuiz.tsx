@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { useGamification } from "../context/GamificationContext"
+import { useAuth } from "../context/AuthContext"
 import { toast } from "@/components/ui/use-toast"
+import { saveQuizAttempt, getQuizAttemptsForVideo, checkIfVideoWasWatched, type QuizAttempt } from "../firestore-utils"
 
 export interface QuizQuestion {
   id: string
@@ -44,8 +46,39 @@ export default function VideoQuiz({ quiz, onComplete, onSkip, isOpen }: VideoQui
   const [showExplanation, setShowExplanation] = useState(false)
   const [quizCompleted, setQuizCompleted] = useState(false)
   const [showRewards, setShowRewards] = useState(false)
+  const [isRewatchedVideo, setIsRewatchedVideo] = useState(false)
+  const [attemptNumber, setAttemptNumber] = useState(1)
+  const [loading, setLoading] = useState(false)
 
   const { completeQuiz } = useGamification()
+  const { userData } = useAuth()
+
+  // Check if this is a rewatched video and get attempt number
+  useEffect(() => {
+    const checkQuizHistory = async () => {
+      if (!userData || !isOpen) return
+      
+      try {
+        setLoading(true)
+        
+        // Check if video was previously watched
+        const wasWatched = await checkIfVideoWasWatched(userData.uid, quiz.videoId)
+        
+        // Get previous quiz attempts
+        const previousAttempts = await getQuizAttemptsForVideo(userData.uid, quiz.videoId)
+        
+        setIsRewatchedVideo(wasWatched)
+        setAttemptNumber(previousAttempts.length + 1)
+        
+      } catch (error) {
+        console.error("Error checking quiz history:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkQuizHistory()
+  }, [userData, quiz.videoId, isOpen])
 
   const currentQuestion = quiz.questions[currentQuestionIndex]
 
@@ -90,15 +123,68 @@ export default function VideoQuiz({ quiz, onComplete, onSkip, isOpen }: VideoQui
       const finalScore = score + (selectedAnswer === currentQuestion.correctAnswer ? 1 : 0)
       const percentage = (finalScore / quiz.questions.length) * 100
       
-      // Award XP and complete quiz
-      completeQuiz(quiz.id, finalScore, quiz.questions.length)
+      // Calculate XP reward based on rewatch status
+      let xpEarned = 0
+      if (isRewatchedVideo) {
+        // Reduced XP for rewatched videos (50% of original)
+        xpEarned = Math.floor(quiz.xpReward * 0.5)
+      } else {
+        // Full XP for first-time attempts
+        xpEarned = quiz.xpReward
+      }
       
-      // Show completion toast
+      // Save quiz attempt to Firestore
+      const saveAttempt = async () => {
+        if (!userData) return
+        
+        try {
+          // Collect all answers
+          const answers = quiz.questions.map((q, index) => ({
+            questionId: q.id,
+            selectedAnswer: index === currentQuestionIndex ? selectedAnswer! : 0, // Simplified for demo
+            correctAnswer: q.correctAnswer,
+            isCorrect: index === currentQuestionIndex ? selectedAnswer === q.correctAnswer : false // Simplified for demo
+          }))
+          
+          await saveQuizAttempt({
+            videoId: quiz.videoId,
+            userId: userData.uid,
+            userName: userData.name || "Anonymous",
+            userEmail: userData.email || "",
+            quizId: quiz.id,
+            score: finalScore,
+            totalQuestions: quiz.questions.length,
+            percentage,
+            isFirstAttempt: !isRewatchedVideo,
+            isPerfectScore: percentage === 100,
+            answers,
+            xpEarned,
+            rewatchedVideo: isRewatchedVideo,
+            attemptNumber
+          })
+        } catch (error) {
+          console.error("Error saving quiz attempt:", error)
+        }
+      }
+      
+      saveAttempt()
+      
+      // Award XP and complete quiz
+      completeQuiz(quiz.id, finalScore, quiz.questions.length, isRewatchedVideo)
+      
+      // Show completion toast with appropriate message
       if (percentage >= quiz.requiredScore) {
-        toast({
-          title: "Quiz Passed! 🎉",
-          description: `You earned ${quiz.xpReward} XP!`,
-        })
+        if (isRewatchedVideo) {
+          toast({
+            title: "Quiz Passed! 🎉",
+            description: `You earned ${xpEarned} XP (rewatched video)!`,
+          })
+        } else {
+          toast({
+            title: "Quiz Passed! 🎉",
+            description: `You earned ${xpEarned} XP!`,
+          })
+        }
       } else {
         toast({
           title: "Quiz Completed",
@@ -149,7 +235,7 @@ export default function VideoQuiz({ quiz, onComplete, onSkip, isOpen }: VideoQui
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+        className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[70]"
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
@@ -164,10 +250,22 @@ export default function VideoQuiz({ quiz, onComplete, onSkip, isOpen }: VideoQui
                 <CardTitle className="flex items-center gap-2">
                   <Zap className="h-5 w-5" />
                   {quiz.title}
+                  {isRewatchedVideo && (
+                    <Badge variant="outline" className="bg-orange-500/20 text-orange-200 border-orange-300 text-xs">
+                      Rewatched
+                    </Badge>
+                  )}
                 </CardTitle>
-                <Badge variant="secondary" className="bg-white/20 text-white">
-                  Question {currentQuestionIndex + 1} of {quiz.questions.length}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  {isRewatchedVideo && (
+                    <Badge variant="outline" className="bg-yellow-500/20 text-yellow-200 border-yellow-300 text-xs">
+                      Attempt #{attemptNumber}
+                    </Badge>
+                  )}
+                  <Badge variant="secondary" className="bg-white/20 text-white">
+                    Question {currentQuestionIndex + 1} of {quiz.questions.length}
+                  </Badge>
+                </div>
               </div>
               <Progress 
                 value={getProgressPercentage()} 

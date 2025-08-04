@@ -311,3 +311,530 @@ export const getLeaderboardData = async () => {
   }
 }
 
+// Challenge Management Functions
+export interface Challenge {
+  id: string
+  title: string
+  description: string
+  type: 'weekly' | 'monthly' | 'team' | 'individual'
+  category: 'modules' | 'videos' | 'quizzes' | 'streak' | 'xp'
+  target: number
+  reward: {
+    xp: number
+    badge?: string
+    title?: string
+  }
+  startDate: any // Firestore timestamp
+  endDate: any // Firestore timestamp
+  participants: string[]
+  leaderboard: Array<{
+    userId: string
+    name: string
+    progress: number
+    rank: number
+  }>
+  isActive: boolean
+  isCompleted: boolean
+  createdAt: any
+  updatedAt: any
+}
+
+export interface ChallengeParticipation {
+  id: string
+  challengeId: string
+  userId: string
+  userName: string
+  userEmail: string
+  progress: number
+  rank: number
+  joinedAt: any
+  lastUpdated: any
+  isCompleted: boolean
+  rewardClaimed: boolean
+}
+
+export interface QuizAttempt {
+  id: string
+  videoId: string
+  userId: string
+  userName: string
+  userEmail: string
+  quizId: string
+  score: number
+  totalQuestions: number
+  percentage: number
+  isFirstAttempt: boolean
+  isPerfectScore: boolean
+  answers: Array<{
+    questionId: string
+    selectedAnswer: number
+    correctAnswer: number
+    isCorrect: boolean
+  }>
+  xpEarned: number
+  completedAt: any
+  rewatchedVideo: boolean
+  attemptNumber: number
+}
+
+// Create a new challenge (admin function)
+export const createChallenge = async (challengeData: Omit<Challenge, 'id' | 'createdAt' | 'updatedAt'>) => {
+  try {
+    const docRef = await addDoc(collection(db, "challenges"), {
+      ...challengeData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    })
+    return docRef.id
+  } catch (error) {
+    console.error("Error creating challenge:", error)
+    throw error
+  }
+}
+
+// Get all challenges
+export const getChallenges = async (): Promise<Challenge[]> => {
+  try {
+    const challengesCollection = collection(db, "challenges")
+    const challengesSnapshot = await getDocs(challengesCollection)
+    return challengesSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Challenge[]
+  } catch (error) {
+    console.error("Error getting challenges:", error)
+    throw error
+  }
+}
+
+// Get active challenges
+export const getActiveChallenges = async (): Promise<Challenge[]> => {
+  try {
+    const challenges = await getChallenges()
+    const now = new Date()
+    return challenges.filter(challenge => {
+      const startDate = challenge.startDate?.toDate?.() || new Date(challenge.startDate)
+      const endDate = challenge.endDate?.toDate?.() || new Date(challenge.endDate)
+      return startDate <= now && endDate >= now && !challenge.isCompleted
+    })
+  } catch (error) {
+    console.error("Error getting active challenges:", error)
+    throw error
+  }
+}
+
+// Join a challenge
+export const joinChallenge = async (challengeId: string, userId: string, userName: string, userEmail: string) => {
+  try {
+    // Check if user is already participating
+    const participationRef = collection(db, "challengeParticipations")
+    const q = query(participationRef, where("challengeId", "==", challengeId), where("userId", "==", userId))
+    const existingParticipation = await getDocs(q)
+    
+    if (!existingParticipation.empty) {
+      throw new Error("Already participating in this challenge")
+    }
+
+    // Add user to challenge participants
+    const challengeRef = doc(db, "challenges", challengeId)
+    const challengeDoc = await getDoc(challengeRef)
+    
+    if (!challengeDoc.exists()) {
+      throw new Error("Challenge not found")
+    }
+
+    const challenge = challengeDoc.data() as Challenge
+    const updatedParticipants = [...challenge.participants, userId]
+    
+    await updateDoc(challengeRef, {
+      participants: updatedParticipants,
+      updatedAt: serverTimestamp()
+    })
+
+    // Create participation record
+    const participationData: Omit<ChallengeParticipation, 'id'> = {
+      challengeId,
+      userId,
+      userName,
+      userEmail,
+      progress: 0,
+      rank: 0,
+      joinedAt: serverTimestamp(),
+      lastUpdated: serverTimestamp(),
+      isCompleted: false,
+      rewardClaimed: false
+    }
+
+    await addDoc(collection(db, "challengeParticipations"), participationData)
+
+    return true
+  } catch (error) {
+    console.error("Error joining challenge:", error)
+    throw error
+  }
+}
+
+// Update challenge progress
+export const updateChallengeProgress = async (challengeId: string, userId: string, progress: number) => {
+  try {
+    // Update participation record
+    const participationRef = collection(db, "challengeParticipations")
+    const q = query(participationRef, where("challengeId", "==", challengeId), where("userId", "==", userId))
+    const participationSnapshot = await getDocs(q)
+    
+    if (participationSnapshot.empty) {
+      throw new Error("Not participating in this challenge")
+    }
+
+    const participationDoc = participationSnapshot.docs[0]
+    await updateDoc(participationDoc.ref, {
+      progress,
+      lastUpdated: serverTimestamp()
+    })
+
+    // Update challenge leaderboard
+    await updateChallengeLeaderboard(challengeId)
+
+    return true
+  } catch (error) {
+    console.error("Error updating challenge progress:", error)
+    throw error
+  }
+}
+
+// Update challenge leaderboard
+export const updateChallengeLeaderboard = async (challengeId: string) => {
+  try {
+    // Get all participations for this challenge
+    const participationRef = collection(db, "challengeParticipations")
+    const q = query(participationRef, where("challengeId", "==", challengeId))
+    const participationSnapshot = await getDocs(q)
+    
+    const participations = participationSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as ChallengeParticipation[]
+
+    // Sort by progress (descending)
+    const sortedParticipations = participations.sort((a, b) => b.progress - a.progress)
+
+    // Create leaderboard
+    const leaderboard = sortedParticipations.map((participation, index) => ({
+      userId: participation.userId,
+      name: participation.userName,
+      progress: participation.progress,
+      rank: index + 1
+    }))
+
+    // Update challenge with new leaderboard
+    const challengeRef = doc(db, "challenges", challengeId)
+    await updateDoc(challengeRef, {
+      leaderboard,
+      updatedAt: serverTimestamp()
+    })
+
+    return leaderboard
+  } catch (error) {
+    console.error("Error updating challenge leaderboard:", error)
+    throw error
+  }
+}
+
+// Get user's challenge participations
+export const getUserChallengeParticipations = async (userId: string): Promise<ChallengeParticipation[]> => {
+  try {
+    const participationRef = collection(db, "challengeParticipations")
+    const q = query(participationRef, where("userId", "==", userId))
+    const participationSnapshot = await getDocs(q)
+    
+    return participationSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as ChallengeParticipation[]
+  } catch (error) {
+    console.error("Error getting user challenge participations:", error)
+    throw error
+  }
+}
+
+// Claim challenge reward
+export const claimChallengeReward = async (challengeId: string, userId: string) => {
+  try {
+    // Check if user has completed the challenge
+    const participationRef = collection(db, "challengeParticipations")
+    const q = query(participationRef, where("challengeId", "==", challengeId), where("userId", "==", userId))
+    const participationSnapshot = await getDocs(q)
+    
+    if (participationSnapshot.empty) {
+      throw new Error("Not participating in this challenge")
+    }
+
+    const participationDoc = participationSnapshot.docs[0]
+    const participation = participationDoc.data() as ChallengeParticipation
+
+    if (participation.rewardClaimed) {
+      throw new Error("Reward already claimed")
+    }
+
+    // Get challenge details
+    const challengeRef = doc(db, "challenges", challengeId)
+    const challengeDoc = await getDoc(challengeRef)
+    
+    if (!challengeDoc.exists()) {
+      throw new Error("Challenge not found")
+    }
+
+    const challenge = challengeDoc.data() as Challenge
+
+    // Check if challenge is completed
+    if (participation.progress < challenge.target) {
+      throw new Error("Challenge not completed yet")
+    }
+
+    // Mark reward as claimed
+    await updateDoc(participationDoc.ref, {
+      rewardClaimed: true,
+      lastUpdated: serverTimestamp()
+    })
+
+    // Add XP to user progress
+    const userProgressRef = doc(db, "userProgress", userId)
+    const userProgressDoc = await getDoc(userProgressRef)
+    
+    if (userProgressDoc.exists()) {
+      const currentXP = userProgressDoc.data().totalXP || 0
+      await updateDoc(userProgressRef, {
+        totalXP: currentXP + challenge.reward.xp,
+        updatedAt: serverTimestamp()
+      })
+    }
+
+    // Log reward claim
+    await addDoc(collection(db, "challengeRewardLogs"), {
+      challengeId,
+      userId,
+      challengeTitle: challenge.title,
+      xpReward: challenge.reward.xp,
+      badgeReward: challenge.reward.badge,
+      claimedAt: serverTimestamp()
+    })
+
+    return {
+      xpReward: challenge.reward.xp,
+      badgeReward: challenge.reward.badge
+    }
+  } catch (error) {
+    console.error("Error claiming challenge reward:", error)
+    throw error
+  }
+}
+
+// Quiz Management Functions
+export const saveQuizAttempt = async (quizData: Omit<QuizAttempt, 'id'>) => {
+  try {
+    const docRef = await addDoc(collection(db, "quizAttempts"), {
+      ...quizData,
+      completedAt: serverTimestamp()
+    })
+    return docRef.id
+  } catch (error) {
+    console.error("Error saving quiz attempt:", error)
+    throw error
+  }
+}
+
+export const getQuizAttemptsForVideo = async (userId: string, videoId: string): Promise<QuizAttempt[]> => {
+  try {
+    const quizAttemptsRef = collection(db, "quizAttempts")
+    const q = query(
+      quizAttemptsRef, 
+      where("userId", "==", userId), 
+      where("videoId", "==", videoId),
+      orderBy("completedAt", "desc")
+    )
+    const snapshot = await getDocs(q)
+    
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as QuizAttempt[]
+  } catch (error) {
+    console.error("Error getting quiz attempts:", error)
+    throw error
+  }
+}
+
+export const checkIfVideoWasWatched = async (userId: string, videoId: string): Promise<boolean> => {
+  try {
+    const watchEventsRef = collection(db, "videoWatchEvents")
+    const q = query(
+      watchEventsRef,
+      where("userId", "==", userId),
+      where("videoId", "==", videoId),
+      where("completed", "==", true)
+    )
+    const snapshot = await getDocs(q)
+    return !snapshot.empty
+  } catch (error) {
+    console.error("Error checking if video was watched:", error)
+    return false
+  }
+}
+
+export const getQuizStatsForUser = async (userId: string) => {
+  try {
+    const quizAttemptsRef = collection(db, "quizAttempts")
+    const q = query(quizAttemptsRef, where("userId", "==", userId))
+    const snapshot = await getDocs(q)
+    
+    const attempts = snapshot.docs.map(doc => doc.data()) as QuizAttempt[]
+    
+    const stats = {
+      totalAttempts: attempts.length,
+      firstAttempts: attempts.filter(a => a.isFirstAttempt).length,
+      rewatchedAttempts: attempts.filter(a => a.rewatchedVideo).length,
+      perfectScores: attempts.filter(a => a.isPerfectScore).length,
+      averageScore: attempts.length > 0 ? attempts.reduce((sum, a) => sum + a.percentage, 0) / attempts.length : 0,
+      totalXPEarned: attempts.reduce((sum, a) => sum + a.xpEarned, 0),
+      uniqueVideosQuized: new Set(attempts.map(a => a.videoId)).size
+    }
+    
+    return stats
+  } catch (error) {
+    console.error("Error getting quiz stats:", error)
+    throw error
+  }
+}
+
+// Delete a challenge
+export const deleteChallenge = async (challengeId: string) => {
+  try {
+    const challengeRef = doc(db, "challenges", challengeId)
+    await deleteDoc(challengeRef)
+    
+    // Also clean up related participation records
+    const participationRef = collection(db, "challengeParticipations")
+    const q = query(participationRef, where("challengeId", "==", challengeId))
+    const participationSnapshot = await getDocs(q)
+    
+    const batch = participationSnapshot.docs.map(doc => deleteDoc(doc.ref))
+    await Promise.all(batch)
+    
+    return true
+  } catch (error) {
+    console.error("Error deleting challenge:", error)
+    throw error
+  }
+}
+
+// Update challenge status (active/inactive)
+export const updateChallengeStatus = async (challengeId: string, isActive: boolean) => {
+  try {
+    const challengeRef = doc(db, "challenges", challengeId)
+    await updateDoc(challengeRef, {
+      isActive,
+      updatedAt: serverTimestamp()
+    })
+    return true
+  } catch (error) {
+    console.error("Error updating challenge status:", error)
+    throw error
+  }
+}
+
+// Initialize default challenges (run once to set up initial challenges)
+export const initializeDefaultChallenges = async () => {
+  try {
+    const existingChallenges = await getChallenges()
+    
+    if (existingChallenges.length > 0) {
+      console.log("Challenges already exist, skipping initialization")
+      return
+    }
+
+    const defaultChallenges = [
+      {
+        title: "Module Master Challenge",
+        description: "Complete 3 modules in 7 days to unlock a special badge",
+        type: "weekly" as const,
+        category: "modules" as const,
+        target: 3,
+        reward: {
+          xp: 500,
+          badge: "Module Master",
+          title: "Module Master"
+        },
+        startDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+        participants: [],
+        leaderboard: [],
+        isActive: true,
+        isCompleted: false
+      },
+      {
+        title: "Video Watcher Challenge",
+        description: "Watch 10 videos this week to earn bonus XP",
+        type: "weekly" as const,
+        category: "videos" as const,
+        target: 10,
+        reward: {
+          xp: 300,
+          badge: "Video Enthusiast",
+          title: "Video Enthusiast"
+        },
+        startDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+        endDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000), // 6 days from now
+        participants: [],
+        leaderboard: [],
+        isActive: true,
+        isCompleted: false
+      },
+      {
+        title: "Quiz Master Challenge",
+        description: "Get perfect scores on 5 quizzes",
+        type: "individual" as const,
+        category: "quizzes" as const,
+        target: 5,
+        reward: {
+          xp: 750,
+          badge: "Quiz Master",
+          title: "Quiz Master"
+        },
+        startDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        endDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // 4 days from now
+        participants: [],
+        leaderboard: [],
+        isActive: true,
+        isCompleted: false
+      },
+      {
+        title: "Learning Streak Challenge",
+        description: "Maintain a 7-day learning streak",
+        type: "weekly" as const,
+        category: "streak" as const,
+        target: 7,
+        reward: {
+          xp: 400,
+          badge: "Streak Champion",
+          title: "Streak Champion"
+        },
+        startDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+        participants: [],
+        leaderboard: [],
+        isActive: true,
+        isCompleted: false
+      }
+    ]
+
+    for (const challenge of defaultChallenges) {
+      await createChallenge(challenge)
+    }
+
+    console.log("Default challenges initialized successfully")
+  } catch (error) {
+    console.error("Error initializing default challenges:", error)
+    throw error
+  }
+}
+
