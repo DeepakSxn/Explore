@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft, User, List, Home, Info, Phone } from "lucide-react"
+import { PanelLeft, User, List, Home, Info, Phone, Trophy } from "lucide-react"
 import Link from "next/link"
 
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -240,9 +240,14 @@ const Sidebar = React.forwardRef<
                     <a><List className="w-5 h-5" /><span>My Playlist</span></a>
                   </Button>
                 </Link>
+                <Link href="/leaderboard" passHref legacyBehavior>
+                  <Button asChild variant="ghost" size="lg" className="justify-start w-full">
+                    <a><Trophy className="w-5 h-5" /><span>Leaderboard</span></a>
+                  </Button>
+                </Link>
                 <Link href="/about" passHref legacyBehavior>
                   <Button asChild variant="ghost" size="lg" className="justify-start w-full">
-                    <a><Info className="w-5 h-5" /><span>About DemoXplore</span></a>
+                    <a><Info className="w-5 h-5" /><span>About EOXSplore</span></a>
                   </Button>
                 </Link>
                 <Link href="https://eoxs.com/contact" target="_blank" passHref legacyBehavior>
@@ -314,9 +319,14 @@ const Sidebar = React.forwardRef<
                   <a><List className="w-5 h-5" /><span>My Playlist</span></a>
                 </Button>
               </Link>
+              <Link href="/leaderboard" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full">
+                  <a><Trophy className="w-5 h-5" /><span>Leaderboard</span></a>
+                </Button>
+              </Link>
               <Link href="/about" passHref legacyBehavior>
                 <Button asChild variant="ghost" size="lg" className="justify-start w-full">
-                  <a><Info className="w-5 h-5" /><span>About DemoXplore</span></a>
+                  <a><Info className="w-5 h-5" /><span>About EOXSplore</span></a>
                 </Button>
               </Link>
               <Link href="https://eoxs.com/contact" target="_blank" passHref legacyBehavior>

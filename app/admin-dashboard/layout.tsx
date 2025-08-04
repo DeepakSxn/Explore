@@ -79,7 +79,7 @@ export default function AdminDashboardLayout({
               {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </Button>
             <Link href="/admin-dashboard">
-              {/* Logo removed */}
+              <img src="/light.webp" alt="EOXS Logo" className="h-8 w-auto" />
             </Link>
           </div>
           <div className="flex items-center gap-4">

@@ -30,7 +30,7 @@ import { Progress } from "@/components/ui/progress"
 import { useGamification, XP_CONFIG } from "../context/GamificationContext"
 import { useAuth } from "../context/AuthContext"
 import { toast } from "@/components/ui/use-toast"
-import Leaderboard from "./Leaderboard"
+
 import ChallengeMode from "./ChallengeMode"
 
 interface Video {
@@ -61,7 +61,7 @@ export default function GamifiedDashboard() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [dailyReminder, setDailyReminder] = useState("")
   const [moduleSuggestions, setModuleSuggestions] = useState<any[]>([])
-  const [showLeaderboard, setShowLeaderboard] = useState(false)
+
   const [showChallengeMode, setShowChallengeMode] = useState(false)
 
   // Function to switch to classic dashboard view
@@ -177,37 +177,6 @@ export default function GamifiedDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header with Gamification Elements */}
-      <header className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* Logo removed */}
-              <div className="hidden md:flex items-center gap-2">
-                <Badge variant="outline" className="bg-blue-50">
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  Level {userProgress.currentLevel}
-                </Badge>
-                <Badge variant="outline" className="bg-orange-50">
-                  <Flame className="h-3 w-3 mr-1" />
-                  {userProgress.currentStreak} day streak
-                </Badge>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-2">
-                <Zap className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm font-medium">{userProgress.totalXP} XP</span>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => router.push("/profile")}>
-                <Users className="h-4 w-4 mr-2" />
-                Profile
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Daily Reminder Banner */}
         <AnimatePresence>
@@ -441,14 +410,7 @@ export default function GamifiedDashboard() {
                     <span>View Achievements</span>
                   </Button>
                   
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex flex-col gap-2"
-                    onClick={() => setShowLeaderboard(true)}
-                  >
-                    <Trophy className="h-6 w-6" />
-                    <span>Leaderboard</span>
-                  </Button>
+
                   
                   <Button 
                     variant="outline" 
@@ -531,11 +493,7 @@ export default function GamifiedDashboard() {
         )}
       </AnimatePresence>
 
-      {/* Leaderboard */}
-      <Leaderboard 
-        isVisible={showLeaderboard} 
-        onClose={() => setShowLeaderboard(false)}
-      />
+
 
       {/* Challenge Mode */}
       <ChallengeMode 

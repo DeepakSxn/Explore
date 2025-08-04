@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Search, LogOut, Clock, Play, CheckCircle, AlertTriangle, Trophy, Zap } from "lucide-react"
+import { Search, LogOut, Clock, Play, CheckCircle, AlertTriangle, Trophy, Zap, Sparkles, Flame } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/components/ui/use-toast"
@@ -20,7 +20,7 @@ import { useGamification } from "../context/GamificationContext"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import GamifiedDashboard from "../components/GamifiedDashboard"
 import InteractiveGuide from "../components/InteractiveGuide"
-import Leaderboard from "../components/Leaderboard"
+
 import ChallengeMode from "../components/ChallengeMode"
 
 interface Video {
@@ -143,7 +143,7 @@ export default function Dashboard() {
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null)
   const [showGamifiedDashboard, setShowGamifiedDashboard] = useState(true)
   const [showGuide, setShowGuide] = useState(true)
-  const [showLeaderboard, setShowLeaderboard] = useState(false)
+
   const [showChallengeMode, setShowChallengeMode] = useState(false)
 
   const router = useRouter()
@@ -674,25 +674,39 @@ export default function Dashboard() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 h-14 bg-background border-b z-50 flex items-center px-4">
         <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto">
-          <div className="flex items-center gap-2">
-            {/* Logo removed */}
+          <div className="flex items-center gap-4">
+            <img 
+              src="/light.webp" 
+              alt="EOXS Logo" 
+              className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity" 
+              onClick={() => router.push("/")}
+            />
           </div>
           <div className="flex items-center gap-4">
+            {showGamifiedDashboard && userProgress && (
+              <>
+                <div className="hidden md:flex items-center gap-2">
+                  <Badge variant="outline" className="bg-blue-50">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Level {userProgress.currentLevel}
+                  </Badge>
+                  <Badge variant="outline" className="bg-orange-50">
+                    <Flame className="h-3 w-3 mr-1" />
+                    {userProgress.currentStreak} day streak
+                  </Badge>
+                </div>
+                <div className="hidden sm:flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-yellow-500" />
+                  <span className="text-sm font-medium">{userProgress.totalXP} XP</span>
+                </div>
+              </>
+            )}
             <Button 
               variant="outline" 
               size="sm" 
               onClick={() => setShowGamifiedDashboard(!showGamifiedDashboard)}
             >
               {showGamifiedDashboard ? 'Classic View' : 'Gamified View'}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowLeaderboard(true)}
-              className="flex items-center gap-2"
-            >
-              <Trophy className="h-4 w-4" />
-              Leaderboard
             </Button>
             <Button 
               variant="outline" 
@@ -901,11 +915,7 @@ export default function Dashboard() {
         }}
       />
 
-      {/* Leaderboard */}
-      <Leaderboard 
-        isVisible={showLeaderboard} 
-        onClose={() => setShowLeaderboard(false)}
-      />
+
 
       {/* Challenge Mode */}
       <ChallengeMode 

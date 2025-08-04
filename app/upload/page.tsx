@@ -210,7 +210,7 @@ export default function UploadPage() {
       <header className="border-b sticky top-0 z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-900/60">
         <div className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center">
-                          {/* Logo removed */}
+            <img src="/light.webp" alt="EOXS Logo" className="h-8 w-auto" />
           </Link>
           <div className="flex items-center gap-4">
             <TooltipProvider>

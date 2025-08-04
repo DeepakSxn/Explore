@@ -72,10 +72,9 @@ export default function AdminLogin() {
       {/* Header */}
       <header className="bg-transparent">
         <div className="container flex h-20 items-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="flex items-center">
+                    <div className="flex items-center">
             <Link href="/" className="flex items-center">
-             
-              {/* Logo removed */}
+              <img src="/light.webp" alt="EOXS Logo" className="h-8 w-auto" />
             </Link>
           </div>
           <nav className="ml-auto flex gap-8 items-center">
