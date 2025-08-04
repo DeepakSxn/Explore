@@ -17,6 +17,7 @@ export interface UserProgress {
   completedModules: string[]
   unlockedModules: string[]
   quizScores: Record<string, number>
+  quizzesCompleted: number
   totalVideosWatched: number
   totalWatchTime: number // in minutes
   achievements: Achievement[]
@@ -239,6 +240,7 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
           completedModules: [],
           unlockedModules: ['Sales'], // Start with Sales module unlocked
           quizScores: {},
+          quizzesCompleted: 0,
           totalVideosWatched: 0,
           totalWatchTime: 0,
           achievements: [],
@@ -387,17 +389,26 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
     await checkAndAwardBadges()
   }
 
-  const completeQuiz = async (quizId: string, score: number, totalQuestions: number) => {
+  const completeQuiz = async (quizId: string, score: number, totalQuestions: number, isRewatched: boolean = false) => {
     if (!user || !userProgress) return
 
     try {
       const percentage = (score / totalQuestions) * 100
-      const xpReward = percentage === 100 ? XP_CONFIG.QUIZ_PERFECT : XP_CONFIG.QUIZ_PASS
+      
+      // Calculate XP reward based on rewatch status
+      let xpReward = 0
+      if (isRewatched) {
+        // Reduced XP for rewatched videos
+        xpReward = percentage === 100 ? Math.floor(XP_CONFIG.QUIZ_PERFECT * 0.5) : Math.floor(XP_CONFIG.QUIZ_PASS * 0.5)
+      } else {
+        // Full XP for first-time attempts
+        xpReward = percentage === 100 ? XP_CONFIG.QUIZ_PERFECT : XP_CONFIG.QUIZ_PASS
+      }
 
       // Add XP
-      await addXP(xpReward, `Quiz completion: ${quizId}`)
+      await addXP(xpReward, `Quiz completion: ${quizId}${isRewatched ? ' (rewatched)' : ''}`)
 
-      // Update quiz scores
+      // Update quiz scores and count
       const updatedQuizScores = {
         ...userProgress.quizScores,
         [quizId]: percentage
@@ -406,12 +417,14 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
       const updatedProgress = {
         ...userProgress,
         quizScores: updatedQuizScores,
+        quizzesCompleted: userProgress.quizzesCompleted + 1,
         updatedAt: serverTimestamp()
       }
 
       const progressDoc = doc(db, "userProgress", user.uid)
       await updateDoc(progressDoc, {
         quizScores: updatedQuizScores,
+        quizzesCompleted: updatedProgress.quizzesCompleted,
         updatedAt: serverTimestamp()
       })
 

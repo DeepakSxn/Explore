@@ -27,6 +27,7 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useGamification } from "../context/GamificationContext"
 import { useAuth } from "../context/AuthContext"
+import UserQuizStats from "../components/UserQuizStats"
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -119,11 +120,12 @@ export default function ProfilePage() {
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="achievements">Achievements</TabsTrigger>
             <TabsTrigger value="badges">Badges</TabsTrigger>
             <TabsTrigger value="stats">Statistics</TabsTrigger>
+            <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -451,6 +453,11 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Quizzes Tab */}
+          <TabsContent value="quizzes" className="space-y-6">
+            <UserQuizStats />
           </TabsContent>
         </Tabs>
       </main>

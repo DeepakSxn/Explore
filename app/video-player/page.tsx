@@ -188,6 +188,13 @@ export default function VideoPlayerPage() {
     }
   }, [currentVideo])
 
+  // Close resume dialog when quiz becomes active
+  useEffect(() => {
+    if (showQuiz) {
+      setShowResumeDialog(false);
+    }
+  }, [showQuiz]);
+
   // 5-second rewind handler
   const handleRewind5Seconds = () => {
     if (videoRef.current) {
@@ -430,11 +437,11 @@ export default function VideoPlayerPage() {
           const savedPosition = await loadVideoProgress(currentVideo.id);
           console.log('Loaded saved position:', savedPosition);
           
-          if (savedPosition > 0) {
+          if (savedPosition > 0 && !showQuiz && !currentQuiz) {
             setLastPosition(savedPosition);
             setShowResumeDialog(true);
           } else {
-            // If no saved position, just show the video
+            // If no saved position or quiz is active, just show the video
             videoRef.current?.load();
           }
           
@@ -447,7 +454,7 @@ export default function VideoPlayerPage() {
 
       loadProgress();
     }
-  }, [currentVideo]);
+  }, [currentVideo, showQuiz, currentQuiz]);
 
   // Add this new function to fetch videos directly from Firestore
   const fetchCategoryVideos = async (category: string) => {
@@ -868,12 +875,12 @@ export default function VideoPlayerPage() {
         // Complete video in gamification system
         completeVideo(currentVideo.id, watchDuration);
         
-        // Show quiz after video completion (random chance)
-        if (Math.random() < 0.3) { // 30% chance to show quiz
-          const quiz = generateQuizForVideo(currentVideo);
-          setCurrentQuiz(quiz);
-          setShowQuiz(true);
-        }
+        // Show quiz after video completion (always)
+        const quiz = generateQuizForVideo(currentVideo);
+        setCurrentQuiz(quiz);
+        setShowQuiz(true);
+        // Close resume dialog if it's open when quiz starts
+        setShowResumeDialog(false);
       }
   
       // Reset watch start time
@@ -1485,40 +1492,92 @@ export default function VideoPlayerPage() {
   }
 
   const generateQuizForVideo = (video: Video) => {
-    // Generate quiz questions based on video category
-    const questions = [
-      {
-        id: '1',
-        question: `What is the main topic covered in "${video.title}"?`,
+    // Generate quiz questions based on video category and title
+    const category = video.category?.toLowerCase() || 'general'
+    const title = video.title.toLowerCase()
+    
+    let questions = []
+    
+    // Question 1: Main topic (always included)
+    questions.push({
+      id: '1',
+      question: `What is the main topic covered in "${video.title}"?`,
+      options: [
+        'Sales order processing',
+        'Inventory management', 
+        'Financial reporting',
+        'User management'
+      ],
+      correctAnswer: category.includes('sales') ? 0 : 
+                    category.includes('inventory') ? 1 : 
+                    category.includes('finance') ? 2 : 3,
+      explanation: `This video focuses on ${category} and related workflows.`
+    })
+    
+    // Question 2: Module identification
+    questions.push({
+      id: '2',
+      question: 'Which module does this video belong to?',
+      options: [
+        'Processing',
+        'Inventory',
+        'Sales',
+        'Finance'
+      ],
+      correctAnswer: category.includes('sales') ? 2 : 
+                    category.includes('inventory') ? 1 : 
+                    category.includes('finance') ? 3 : 0,
+      explanation: `This video is part of the ${category.charAt(0).toUpperCase() + category.slice(1)} module.`
+    })
+    
+    // Question 3: Specific content (based on title keywords)
+    if (title.includes('introduction') || title.includes('overview')) {
+      questions.push({
+        id: '3',
+        question: 'What type of content is this video?',
         options: [
-          'Sales order processing',
-          'Inventory management', 
-          'Financial reporting',
-          'User management'
+          'Advanced tutorial',
+          'Introduction/Overview',
+          'Troubleshooting guide',
+          'Configuration setup'
         ],
-        correctAnswer: 0,
-        explanation: 'This video focuses on sales order processing and related workflows.'
-      },
-      {
-        id: '2',
-        question: 'Which module does this video belong to?',
+        correctAnswer: 1,
+        explanation: 'This is an introductory video that provides an overview of the topic.'
+      })
+    } else if (title.includes('benefit') || title.includes('advantage')) {
+      questions.push({
+        id: '3',
+        question: 'What does this video primarily discuss?',
         options: [
-          'Processing',
-          'Inventory',
-          'Sales',
-          'Finance'
+          'Technical implementation',
+          'Benefits and advantages',
+          'Common problems',
+          'User interface'
         ],
-        correctAnswer: 2,
-        explanation: 'This video is part of the Sales module.'
-      }
-    ]
+        correctAnswer: 1,
+        explanation: 'This video focuses on the benefits and advantages of the system.'
+      })
+    } else {
+      questions.push({
+        id: '3',
+        question: 'What is the primary purpose of this video?',
+        options: [
+          'To demonstrate features',
+          'To explain concepts',
+          'To show benefits',
+          'To provide training'
+        ],
+        correctAnswer: 1,
+        explanation: 'This video explains key concepts and how they work.'
+      })
+    }
     
     return {
       id: `quiz_${video.id}`,
       videoId: video.id,
       title: `Quiz: ${video.title}`,
       questions,
-      xpReward: 50,
+      xpReward: 75, // Increased XP reward
       requiredScore: 60
     }
   }
@@ -2219,8 +2278,8 @@ export default function VideoPlayerPage() {
       </Dialog>
 
       {/* Resume Dialog */}
-      <Dialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={showResumeDialog && !showQuiz} onOpenChange={setShowResumeDialog}>
+        <DialogContent className="sm:max-w-md z-[60]">
           <DialogHeader>
             <DialogTitle>Resume Video?</DialogTitle>
           </DialogHeader>
