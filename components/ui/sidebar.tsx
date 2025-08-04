@@ -225,11 +225,6 @@ const Sidebar = React.forwardRef<
           >
             <div className="flex h-full w-full flex-col">
               <div className="flex flex-col gap-2 p-4">
-                <Link href="https://eoxs.com" target="_blank" passHref legacyBehavior>
-                  <Button asChild variant="ghost" size="lg" className="justify-start w-full">
-                    <a><Home className="w-5 h-5" /><span>Home</span></a>
-                  </Button>
-                </Link>
                 <Link href="/profile" passHref legacyBehavior>
                   <Button asChild variant="ghost" size="lg" className="justify-start w-full">
                     <a><User className="w-5 h-5" /><span>User Profile</span></a>
@@ -248,6 +243,11 @@ const Sidebar = React.forwardRef<
                 <Link href="/about" passHref legacyBehavior>
                   <Button asChild variant="ghost" size="lg" className="justify-start w-full">
                     <a><Info className="w-5 h-5" /><span>About EOXSplore</span></a>
+                  </Button>
+                </Link>
+                <Link href="https://eoxs.com" target="_blank" passHref legacyBehavior>
+                  <Button asChild variant="ghost" size="lg" className="justify-start w-full">
+                    <a><Home className="w-5 h-5" /><span>About EOXS</span></a>
                   </Button>
                 </Link>
                 <Link href="https://eoxs.com/contact" target="_blank" passHref legacyBehavior>
@@ -304,11 +304,6 @@ const Sidebar = React.forwardRef<
             className="flex h-full w-full flex-col bg-green-600 text-white"
           >
             <div className="flex flex-col gap-2 p-4">
-              <Link href="https://eoxs.com" target="_blank" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full">
-                  <a><Home className="w-5 h-5" /><span>Home</span></a>
-                </Button>
-              </Link>
               <Link href="/profile" passHref legacyBehavior>
                 <Button asChild variant="ghost" size="lg" className="justify-start w-full">
                   <a><User className="w-5 h-5" /><span>User Profile</span></a>
@@ -327,6 +322,11 @@ const Sidebar = React.forwardRef<
               <Link href="/about" passHref legacyBehavior>
                 <Button asChild variant="ghost" size="lg" className="justify-start w-full">
                   <a><Info className="w-5 h-5" /><span>About EOXSplore</span></a>
+                </Button>
+              </Link>
+              <Link href="https://eoxs.com" target="_blank" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full">
+                  <a><Home className="w-5 h-5" /><span>About EOXS</span></a>
                 </Button>
               </Link>
               <Link href="https://eoxs.com/contact" target="_blank" passHref legacyBehavior>

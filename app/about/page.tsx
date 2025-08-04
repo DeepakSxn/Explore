@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 
-export default function DemoXplorePage() {
+export default function EOXSplorePage() {
   const router = useRouter();
   return (
     <div className="min-h-screen flex flex-col">
@@ -16,9 +16,6 @@ export default function DemoXplorePage() {
             <img src="/light.webp" alt="EOXS Logo" className="h-8 w-auto" />
           </div>
           <nav className="hidden md:flex space-x-8">
-            <Link href="https://eoxs.com" className="text-black hover:text-green-600 font-medium">
-              Home
-            </Link>
             <Link href="https://eoxs.com/contact" className="text-black hover:text-green-600 font-medium">
               Contact
             </Link>
@@ -76,12 +73,12 @@ export default function DemoXplorePage() {
               </div>
             </div>
             <div className="flex justify-center items-center mb-8 gap-4">
-              <img src="logoxplore.jpg" alt="DemoXplore Logo" height={360} width={200} />
+              <img src="logoxplore.jpg" alt="EOXSplore Logo" height={360} width={200} />
             </div>
           </div>
         </section>
 
-        {/* What is DemoXplore Section */}
+        {/* What is EOXSplore Section */}
         <section className="py-16 bg-green-100">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto">
@@ -89,14 +86,14 @@ export default function DemoXplorePage() {
               <p className="text-lg mb-6">
                 EOXSplore is an innovative platform designed by EOXS to offer steel industry professionals a seamless,
                 self-service experience to explore EOXS's software features. We understand that the traditional live
-                demo process can be time-consuming and sometimes not tailored to specific needs. That's why DemoXplore
+                demo process can be time-consuming and sometimes not tailored to specific needs. That's why EOXSplore
                 empowers users to discover features at their own pace, whenever it suits them.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Why DemoXplore Section */}
+        {/* Why EOXSplore Section */}
         <section className="py-16 bg-white">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto">

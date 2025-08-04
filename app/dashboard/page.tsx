@@ -708,15 +708,6 @@ export default function Dashboard() {
             >
               {showGamifiedDashboard ? 'Classic View' : 'Gamified View'}
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowChallengeMode(true)}
-              className="flex items-center gap-2"
-            >
-              <Zap className="h-4 w-4" />
-              Challenges
-            </Button>
             <Button variant="ghost" size="icon" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
             </Button>

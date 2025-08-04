@@ -391,27 +391,6 @@ export default function GamifiedDashboard() {
                     <Play className="h-6 w-6" />
                     <span>Continue Learning</span>
                   </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex flex-col gap-2"
-                    onClick={() => router.push("/feedback")}
-                  >
-                    <BarChart3 className="h-6 w-6" />
-                    <span>Give Feedback</span>
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex flex-col gap-2"
-                    onClick={() => router.push("/profile")}
-                  >
-                    <Trophy className="h-6 w-6" />
-                    <span>View Achievements</span>
-                  </Button>
-                  
-
-                  
                   <Button 
                     variant="outline" 
                     className="h-20 flex flex-col gap-2"

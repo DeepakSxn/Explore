@@ -27,9 +27,6 @@ export default function Home() {
             </Link>
           </div>
           <nav className="ml-auto flex gap-8 items-center">
-            <Link href="https://eoxs.com/" className="text-base font-medium">
-              Home
-            </Link>
             <Link href="/about" className="text-base font-medium">
               About
             </Link>
