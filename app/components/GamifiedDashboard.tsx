@@ -30,6 +30,8 @@ import { Progress } from "@/components/ui/progress"
 import { useGamification, XP_CONFIG } from "../context/GamificationContext"
 import { useAuth } from "../context/AuthContext"
 import { toast } from "@/components/ui/use-toast"
+import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore"
+import { auth, db } from "@/firebase"
 
 import ChallengeMode from "./ChallengeMode"
 
@@ -125,6 +127,79 @@ export default function GamifiedDashboard() {
       })
     }
   }
+
+  const handleContinueLearning = async () => {
+    // Check if user is authenticated
+    if (!auth.currentUser) {
+      console.log("No authenticated user, redirecting to login");
+      router.push("/login");
+      return;
+    }
+
+    const userId = auth.currentUser.uid;
+    if (!userId) {
+      console.log("No user ID available, redirecting to dashboard");
+      router.push("/dashboard");
+      return;
+    }
+
+    if (!userData) {
+      console.log("No user data available, redirecting to dashboard");
+      router.push("/dashboard");
+      return;
+    }
+
+    try {
+      console.log("Finding last watched video for user:", userId);
+      
+      // Query for all watch events for this user
+      const watchHistoryQuery = query(
+        collection(db, "videoWatchEvents"),
+        where("userId", "==", userId)
+      );
+
+      const watchHistorySnapshot = await getDocs(watchHistoryQuery);
+
+      if (watchHistorySnapshot.empty) {
+        console.log("No watch history found, redirecting to dashboard");
+        // No watch history, redirect to dashboard
+        router.push("/dashboard");
+        return;
+      }
+
+      // Sort by lastWatchedAt manually to find the most recent
+      const events = watchHistorySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      })).sort((a, b) => {
+        // Handle different timestamp formats
+        const aTime = a.lastWatchedAt?.seconds || a.lastWatchedAt || a.watchedAt?.seconds || a.watchedAt || 0;
+        const bTime = b.lastWatchedAt?.seconds || b.lastWatchedAt || b.watchedAt?.seconds || b.watchedAt || 0;
+        return bTime - aTime;
+      });
+
+      const lastWatchedEvent = events[0];
+      const lastVideoId = lastWatchedEvent.videoId;
+      const lastPosition = lastWatchedEvent.lastPosition || 0;
+
+      console.log("Found last watched video:", { lastVideoId, lastPosition });
+
+      // Check if the video is part of a playlist
+      let playlistId = "custom-playlist";
+      if (lastWatchedEvent.playlistId) {
+        playlistId = lastWatchedEvent.playlistId;
+      }
+
+      // Redirect to the video player with the last watched video and position
+      const videoPlayerUrl = `/video-player?videoId=${lastVideoId}&playlistId=${playlistId}&resume=true&position=${lastPosition}`;
+      console.log("Redirecting to:", videoPlayerUrl);
+      router.push(videoPlayerUrl);
+    } catch (error) {
+      console.error("Error finding last watched video:", error);
+      // Fallback to dashboard
+      router.push("/dashboard");
+    }
+  };
 
   const getLevelTitle = (level: number) => {
     const titles = [
@@ -386,7 +461,7 @@ export default function GamifiedDashboard() {
                   <Button 
                     variant="outline" 
                     className="h-20 flex flex-col gap-2"
-                    onClick={() => router.push("/dashboard")}
+                    onClick={handleContinueLearning}
                   >
                     <Play className="h-6 w-6" />
                     <span>Continue Learning</span>

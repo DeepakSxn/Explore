@@ -95,6 +95,8 @@ export default function VideoPlayerPage() {
   const searchParams = useSearchParams()
   const videoId = searchParams.get("videoId")
   const playlistId = searchParams.get("playlistId")
+  const resume = searchParams.get("resume")
+  const position = searchParams.get("position")
 
   const { userData } = useAuth()
   const { completeVideo } = useGamification()
@@ -434,12 +436,49 @@ export default function VideoPlayerPage() {
       // Load and restore video progress
       const loadProgress = async () => {
         try {
-          const savedPosition = await loadVideoProgress(currentVideo.id);
+          let savedPosition = await loadVideoProgress(currentVideo.id);
           console.log('Loaded saved position:', savedPosition);
+          
+          // Check if resume parameters are present in URL
+          if (resume === "true" && position) {
+            const resumePosition = parseFloat(position);
+            if (!isNaN(resumePosition) && resumePosition > 0) {
+              savedPosition = resumePosition;
+              console.log('Using resume position from URL:', savedPosition);
+            }
+          }
           
           if (savedPosition > 0 && !showQuiz && !currentQuiz) {
             setLastPosition(savedPosition);
-            setShowResumeDialog(true);
+            // If resume is true, automatically resume without showing dialog
+            if (resume === "true") {
+              // Auto-resume from the position - wait for video to be ready
+              const attemptResume = () => {
+                if (videoRef.current && videoRef.current.readyState >= 2) {
+                  console.log('Video ready, setting currentTime to:', savedPosition);
+                  videoRef.current.currentTime = savedPosition;
+                  videoRef.current.play()
+                    .then(() => {
+                      setIsPlaying(true);
+                      setWatchStartTime(Date.now() / 1000);
+                      videoChangeRef.current = false;
+                      console.log('Successfully resumed video from position:', savedPosition);
+                    })
+                    .catch((error) => {
+                      console.error("Error playing video:", error);
+                    });
+                } else {
+                  // Video not ready yet, try again in a moment
+                  console.log('Video not ready yet, retrying...');
+                  setTimeout(attemptResume, 100);
+                }
+              };
+              
+              // Start attempting to resume
+              attemptResume();
+            } else {
+              setShowResumeDialog(true);
+            }
           } else {
             // If no saved position or quiz is active, just show the video
             videoRef.current?.load();
