@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft, User, List, Home, Info, Phone, Trophy } from "lucide-react"
+import { PanelLeft, User, List, Home, Info, Phone, Trophy, Menu, X } from "lucide-react"
 import Link from "next/link"
 
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -224,38 +224,38 @@ const Sidebar = React.forwardRef<
             side={side}
           >
             <div className="flex h-full w-full flex-col">
-              <div className="flex flex-col gap-2 p-4">
-                <Link href="/profile" passHref legacyBehavior>
-                  <Button asChild variant="ghost" size="lg" className="justify-start w-full">
-                    <a><User className="w-5 h-5" /><span>User Profile</span></a>
-                  </Button>
-                </Link>
-                <Link href="/playlist" passHref legacyBehavior>
-                  <Button asChild variant="ghost" size="lg" className="justify-start w-full">
-                    <a><List className="w-5 h-5" /><span>My Playlist</span></a>
-                  </Button>
-                </Link>
-                <Link href="/leaderboard" passHref legacyBehavior>
-                  <Button asChild variant="ghost" size="lg" className="justify-start w-full">
-                    <a><Trophy className="w-5 h-5" /><span>Leaderboard</span></a>
-                  </Button>
-                </Link>
-                <Link href="/about" passHref legacyBehavior>
-                  <Button asChild variant="ghost" size="lg" className="justify-start w-full">
-                    <a><Info className="w-5 h-5" /><span>About EOXSplore</span></a>
-                  </Button>
-                </Link>
-                <Link href="https://eoxs.com" target="_blank" passHref legacyBehavior>
-                  <Button asChild variant="ghost" size="lg" className="justify-start w-full">
-                    <a><Home className="w-5 h-5" /><span>About EOXS</span></a>
-                  </Button>
-                </Link>
-                <Link href="https://eoxs.com/contact" target="_blank" passHref legacyBehavior>
-                  <Button asChild variant="ghost" size="lg" className="justify-start w-full">
-                    <a><Phone className="w-5 h-5" /><span>Contact</span></a>
-                  </Button>
-                </Link>
-              </div>
+                          <div className="flex flex-col gap-2 p-4">
+              <Link href="/profile" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
+                  <a><User className="w-5 h-5" /><span>User Profile</span></a>
+                </Button>
+              </Link>
+              <Link href="/playlist" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
+                  <a><List className="w-5 h-5" /><span>My Playlist</span></a>
+                </Button>
+              </Link>
+              <Link href="/leaderboard" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
+                  <a><Trophy className="w-5 h-5" /><span>Leaderboard</span></a>
+                </Button>
+              </Link>
+              <Link href="/about" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
+                  <a><Info className="w-5 h-5" /><span>About EOXSplore</span></a>
+                </Button>
+              </Link>
+              <Link href="https://eoxs.com" target="_blank" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
+                  <a><Home className="w-5 h-5" /><span>About EOXS</span></a>
+                </Button>
+              </Link>
+              <Link href="https://eoxs.com/contact" target="_blank" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
+                  <a><Phone className="w-5 h-5" /><span>Contact</span></a>
+                </Button>
+              </Link>
+            </div>
               <Separator className="bg-green-800" />
              
             </div>
@@ -305,32 +305,32 @@ const Sidebar = React.forwardRef<
           >
             <div className="flex flex-col gap-2 p-4">
               <Link href="/profile" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full">
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
                   <a><User className="w-5 h-5" /><span>User Profile</span></a>
                 </Button>
               </Link>
               <Link href="/playlist" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full">
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
                   <a><List className="w-5 h-5" /><span>My Playlist</span></a>
                 </Button>
               </Link>
               <Link href="/leaderboard" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full">
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
                   <a><Trophy className="w-5 h-5" /><span>Leaderboard</span></a>
                 </Button>
               </Link>
               <Link href="/about" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full">
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
                   <a><Info className="w-5 h-5" /><span>About EOXSplore</span></a>
                 </Button>
               </Link>
               <Link href="https://eoxs.com" target="_blank" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full">
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
                   <a><Home className="w-5 h-5" /><span>About EOXS</span></a>
                 </Button>
               </Link>
               <Link href="https://eoxs.com/contact" target="_blank" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full">
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
                   <a><Phone className="w-5 h-5" /><span>Contact</span></a>
                 </Button>
               </Link>

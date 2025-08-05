@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { collection, getDocs, orderBy, query, where, doc, getDoc } from "firebase/firestore"
 
 import { signOut } from "firebase/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Separator } from "@/components/ui/separator"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Search, LogOut, Clock, Play, CheckCircle, AlertTriangle, Trophy, Zap, Sparkles, Flame } from "lucide-react"
+import { Search, LogOut, Clock, Play, CheckCircle, AlertTriangle, Trophy, Zap, Sparkles, Flame, Menu, X, User, List, Home, Info, Phone } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/components/ui/use-toast"
@@ -143,6 +145,7 @@ export default function Dashboard() {
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null)
   const [showGamifiedDashboard, setShowGamifiedDashboard] = useState(true)
   const [showGuide, setShowGuide] = useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   const [showChallengeMode, setShowChallengeMode] = useState(false)
 
@@ -714,14 +717,65 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
+      {/* Sidebar Toggle Button */}
+      <div className={`fixed top-20 z-50 transition-all duration-300 ease-in-out ${
+        isSidebarOpen ? 'left-64' : 'left-4'
+      }`}>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="bg-white shadow-md hover:bg-gray-50"
+        >
+          {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+        </Button>
+      </div>
+
       {/* Sidebar */}
-      <aside className="fixed top-14 left-0 z-40 h-[calc(100vh-3.5rem)] w-64 border-r bg-card">
-        <SidebarProvider>
-          <Sidebar/>
-        </SidebarProvider>
-      </aside>
+      {isSidebarOpen && (
+        <aside className="fixed top-14 left-0 z-40 h-[calc(100vh-3.5rem)] w-64 border-r bg-card transition-all duration-300 ease-in-out">
+          <div className="flex h-full w-full flex-col bg-green-600 text-white">
+            <div className="flex flex-col gap-2 p-4">
+              <Link href="/profile" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
+                  <a><User className="w-5 h-5" /><span>User Profile</span></a>
+                </Button>
+              </Link>
+              <Link href="/playlist" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
+                  <a><List className="w-5 h-5" /><span>My Playlist</span></a>
+                </Button>
+              </Link>
+              <Link href="/leaderboard" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
+                  <a><Trophy className="w-5 h-5" /><span>Leaderboard</span></a>
+                </Button>
+              </Link>
+              <Link href="/about" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
+                  <a><Info className="w-5 h-5" /><span>About EOXSplore</span></a>
+                </Button>
+              </Link>
+              <Link href="https://eoxs.com" target="_blank" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
+                  <a><Home className="w-5 h-5" /><span>About EOXS</span></a>
+                </Button>
+              </Link>
+              <Link href="https://eoxs.com/contact" target="_blank" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
+                  <a><Phone className="w-5 h-5" /><span>Contact</span></a>
+                </Button>
+              </Link>
+            </div>
+            <Separator className="bg-green-800" />
+          </div>
+        </aside>
+      )}
+      
       {/* Main Content */}
-      <main className="pt-14 min-h-screen md:ml-64">
+      <main className={`pt-14 min-h-screen transition-all duration-300 ease-in-out ${
+        isSidebarOpen ? 'md:ml-64' : 'md:ml-0'
+      }`}>
         {/* Show Gamified Dashboard or Classic Dashboard */}
         {showGamifiedDashboard ? (
           <GamifiedDashboard />
