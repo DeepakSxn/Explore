@@ -63,7 +63,7 @@ const VIDEO_ORDER: Record<string, string[]> = {
     "Toll Processing Purchase Orders",
     "Work Order Status and Tracking for Multiple Processing Lines",
   ],
-  Inventory: [
+  "Inventory Management": [
     "Inventory Module Overview",
     "Inventory for Plate and Sheet Products",
     "Material Traceability (Heat Numbers, Mill Certificates)",
@@ -71,7 +71,7 @@ const VIDEO_ORDER: Record<string, string[]> = {
     "Scrap Management",
     "Additional Cost",
   ],
-  Purchase: [
+  "Purchase": [
     "Creating Purchase Order for Coils",
     "Creating Purchase Orders for Plate and sheets",
     "Creating Purchase Orders for Long Products",
@@ -92,7 +92,7 @@ const VIDEO_ORDER: Record<string, string[]> = {
     "Partner Aging",
   ],
   "Shipping and Receiving": ["Purchase Return", "Generating Packing List"],
-  CRM: ["CRM Module Overview", "Sales Pipeline and Leads Pipeline"],
+  "CRM": ["CRM Module Overview", "Sales Pipeline and Leads Pipeline"],
   "IT & Security": ["User Access Control and Role-Based Permissions"],
   "Advanced Analytics & Reporting": [
     "Real-Time Dashboards for Sales, Inventory, and Processing Operations",
@@ -114,13 +114,13 @@ const VIDEO_ORDER: Record<string, string[]> = {
     "Email",
     "Credit Management",
   ],
-  QA: ["Mill Certs"],
+  "QA": ["Mill Certs"],
 }
 
 const MODULE_ORDER = [
   "Sales",
   "Processing",
-  "Inventory",
+  "Inventory Management",
   "Purchase",
   "Finance and Accounting",
   "Shipping and Receiving",
@@ -128,7 +128,6 @@ const MODULE_ORDER = [
   "IT & Security",
   "Advanced Analytics & Reporting",
   "Master Data Management",
-  "Toll Processing",
   "Contact Management",
   "QA",
 ]
@@ -316,7 +315,7 @@ export default function Dashboard() {
       const companyMapping: Record<string, string> = {
         "Sales": "eoxs",
         "Processing": "steel_inc", 
-        "Inventory": "eoxs",
+        "Inventory Management": "eoxs",
         "Purchase": "metal_works",
         "Finance and Accounting": "acme",
         "Shipping and Receiving": "metal_works",
@@ -415,6 +414,9 @@ export default function Dashboard() {
       // Find the VIDEO_ORDER key that matches the normalized category
       const videoOrderKey = Object.keys(VIDEO_ORDER).find((key) => normalize(key) === normalizedCategory)
       const orderArr = videoOrderKey ? VIDEO_ORDER[videoOrderKey] : undefined
+      
+      // Debug logging
+      console.log(`Processing category: "${category}" -> normalized: "${normalizedCategory}" -> videoOrderKey: "${videoOrderKey}"`)
       const sortedVideos = [...videos].sort((a, b) => {
         const orderA = orderArr?.indexOf(a.title) ?? Number.MAX_SAFE_INTEGER
         const orderB = orderArr?.indexOf(b.title) ?? Number.MAX_SAFE_INTEGER
@@ -425,27 +427,49 @@ export default function Dashboard() {
         if (orderB !== Number.MAX_SAFE_INTEGER) return 1
         return a.title.localeCompare(b.title)
       })
+      // Create module name, avoiding double "Module" if category already contains it
+      const moduleName = category.includes("Module") ? `${category} Overview` : `${category} Module Overview`
       moduleArray.push({
-        name: `${category} Module Overview`,
+        name: moduleName,
         category,
         totalDuration: calculateTotalDuration(sortedVideos),
         videos: sortedVideos,
       })
     })
 
+    // Debug: Log all modules before sorting
+    console.log("Modules before sorting:", moduleArray.map(m => ({ name: m.name, category: m.category })))
+
     // Sort modules according to MODULE_ORDER
     moduleArray.sort((a, b) => {
+      // Normalize category names for comparison
+      const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/gi, "")
+      
+      // Special handling for Sales module - always put it first
+      const isSalesA = normalize(a.category).includes("sales")
+      const isSalesB = normalize(b.category).includes("sales")
+      
+      if (isSalesA && !isSalesB) return -1
+      if (!isSalesA && isSalesB) return 1
+      
       const indexA = MODULE_ORDER.findIndex(
-        (name) => a.category.toLowerCase().replace(/[^a-z]/gi, "") === name.toLowerCase().replace(/[^a-z]/gi, ""),
+        (name) => normalize(a.category) === normalize(name)
       )
       const indexB = MODULE_ORDER.findIndex(
-        (name) => b.category.toLowerCase().replace(/[^a-z]/gi, "") === name.toLowerCase().replace(/[^a-z]/gi, ""),
+        (name) => normalize(b.category) === normalize(name)
       )
+      
+      // Debug logging
+      console.log(`Sorting: ${a.category} (index: ${indexA}) vs ${b.category} (index: ${indexB})`)
+      
       if (indexA === -1 && indexB === -1) return a.category.localeCompare(b.category)
       if (indexA === -1) return 1
       if (indexB === -1) return -1
       return indexA - indexB
     })
+
+    // Debug: Log all modules after sorting
+    console.log("Modules after sorting:", moduleArray.map(m => ({ name: m.name, category: m.category })))
 
     // Set all modules as collapsed by default
     setExpandedModules([])
