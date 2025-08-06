@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Search, LogOut, Clock, Play, CheckCircle, AlertTriangle, Trophy, Zap, Sparkles, Flame, Menu, X, User, List, Home, Info, Phone } from "lucide-react"
+import { Search, LogOut, Clock, Play, CheckCircle, AlertTriangle, Trophy, Zap, Sparkles, Flame, Menu, X, User, List, Home, Info, Phone, ChevronDown, BookOpen } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/components/ui/use-toast"
@@ -377,7 +377,7 @@ export default function Dashboard() {
 
   const organizeVideosIntoModules = useCallback(() => {
     // Group videos by category
-    const videosByCategory = videos.reduce(
+    const videosByCategory = filteredVideos.reduce(
       (acc, video) => {
         // Exclude General and Miscellaneous categories
         if (video.category === "Company Introduction" || video.category === "AI tools"|| video.category === "Miscellaneous") {
@@ -450,14 +450,16 @@ export default function Dashboard() {
     // Set all modules as collapsed by default
     setExpandedModules([])
     setModules(moduleArray)
-  }, [videos])
+  }, [filteredVideos])
 
-  // Call organizeVideosIntoModules when videos change
+  // Call organizeVideosIntoModules when filteredVideos change
   useEffect(() => {
-    if (videos.length > 0) {
+    if (filteredVideos.length > 0) {
       organizeVideosIntoModules()
+    } else {
+      setModules([])
     }
-  }, [videos, organizeVideosIntoModules])
+  }, [filteredVideos, organizeVideosIntoModules])
 
   const handleVideoSelection = (videoId: string) => {
     setSelectedVideos((prev) => {
@@ -601,9 +603,10 @@ export default function Dashboard() {
       // Set indeterminate on the underlying input if present
       const input = globalCheckboxRef.current.querySelector('input[type="checkbox"]') as HTMLInputElement | null
       if (input) {
+        const allVideoIds = modules.flatMap((module) => module.videos.map((v) => v.id))
         input.indeterminate =
           selectedVideos.length > 0 &&
-          !modules.flatMap((module) => module.videos.map((v) => v.id)).every((id) => selectedVideos.includes(id))
+          !allVideoIds.every((id) => selectedVideos.includes(id))
       }
     }
     modules.forEach((module, i) => {
@@ -794,149 +797,285 @@ export default function Dashboard() {
               </div>
             )}
             
-            <div className="max-w-5xl mx-auto pb-4 p-0">
-          <div className="flex flex-col sm:flex-row justify-between gap-4 sticky top-0 z-20 bg-background pb-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search videos..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Button
-              onClick={handleWatchSelected}
-              disabled={selectedVideos.length === 0}
-              className="bg-primary hover:bg-primary/90"
-            >
-              <Play className="mr-2 h-4 w-4" />
-              Watch Selected ({selectedVideos.length})
-            </Button>
-          </div>
-          <div className="flex flex-col gap-4">
-            {loading ? (
-              <div className="space-y-2">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-12 bg-muted/30 animate-pulse rounded-md"></div>
-                ))}
-              </div>
-            ) : modules.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No videos found matching your criteria</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Global Select All Checkbox */}
-                <div className="flex items-center mb-2">
-                  <Checkbox
-                    ref={globalCheckboxRef}
-                    checked={
-                      modules.length > 0 &&
-                      modules
-                        .flatMap((module) => module.videos.map((v) => v.id))
-                        .every((id) => selectedVideos.includes(id))
-                    }
-                    onCheckedChange={() => {
-                      const allVideoIds = modules.flatMap((module) => module.videos.map((v) => v.id))
-                      if (selectedVideos.length === allVideoIds.length) {
-                        setSelectedVideos([])
-                      } else {
-                        setSelectedVideos(allVideoIds)
-                      }
-                    }}
-                    className="mr-2"
-                  />
-                  <span className="text-sm">Select All Videos</span>
+            {/* Duolingo-style Interface */}
+            <div className="max-w-4xl mx-auto pb-4 p-0">
+              {/* Green Header */}
+              <div className="bg-green-500 text-white p-4 md:p-6 rounded-b-2xl shadow-lg mb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-2xl md:text-3xl font-bold mb-1">Unit 1</h1>
+                    <p className="text-green-100 text-sm md:text-lg">Use basic phrases, greet people</p>
+                  </div>
+                  <div className="bg-green-600 rounded-lg p-2 md:p-3">
+                    <List className="h-4 w-4 md:h-6 md:w-6" />
+                  </div>
                 </div>
-                <Accordion type="multiple" value={expandedModules} onValueChange={setExpandedModules} className="w-full border rounded-md overflow-hidden">
-                  {modules.map((module, moduleIndex) => (
-                    <AccordionItem key={moduleIndex} value={module.category} className="border-b last:border-b-0">
-                      <AccordionTrigger className="px-4 py-3 hover:no-underline bg-muted/30 hover:bg-muted/50">
-                        <div className="flex items-center justify-between w-full bg-muted rounded">
-                          <div className="flex items-center">
-                            {/* Module Select All Checkbox */}
-                            <Checkbox
-                              ref={(el) => {
-                                moduleCheckboxRefs.current[moduleIndex] = el
-                              }}
-                              checked={module.videos.every((v) => selectedVideos.includes(v.id))}
-                              onCheckedChange={() => {
-                                const moduleVideoIds = module.videos.map((v) => v.id)
-                                const allSelected = moduleVideoIds.every((id) => selectedVideos.includes(id))
-                                if (allSelected) {
-                                  setSelectedVideos(selectedVideos.filter((id) => !moduleVideoIds.includes(id)))
-                                } else {
-                                  setSelectedVideos([...new Set([...selectedVideos, ...moduleVideoIds])])
-                                }
-                              }}
-                              className="mr-2"
-                            />
-                            <span className="font-medium text-base">{module.name}</span>
-                            <Badge variant="outline" className="ml-2">
-                              {module.totalDuration}
-                            </Badge>
-                          </div>
-                          <Badge variant="secondary" className="ml-2">
-                            {module.videos.length} videos
-                          </Badge>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-0">
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead className="bg-muted/20">
-                              <tr>
-                                <th className="w-6 px-4 py-2 text-left">
-                                  <span className="sr-only">Select</span>
-                                </th>
-                                <th className="px-4 py-2 text-left font-medium">Feature</th>
-                                {/* <th className="px-4 py-2 text-left font-medium">Description</th> */}
-                                <th className="px-4 py-2 text-left font-medium w-32">Time Required</th>
-                                <th className="px-4 py-2 text-left font-medium w-20">Status</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                              {module.videos.map((video) => (
-                                <tr key={video.id} className="hover:bg-muted/30 transition-colors">
-                                  <td className="px-4 py-3">
-                                    <Checkbox
-                                      checked={selectedVideos.includes(video.id)}
-                                      onCheckedChange={() => handleVideoSelection(video.id)}
-                                    />
-                                  </td>
-                                  <td className="px-4 py-3 font-medium">{video.title}</td>
-                                  {/* <td className="px-4 py-3 text-muted-foreground">{video.description}</td> */}
-                                  <td className="px-4 py-3">
-                                    <div className="flex items-center">
-                                      <Clock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                                      {video.duration}
-                                    </div>
-                                  </td>
-                                  <td className="px-4 py-3">
-                                    {video.watched ? (
-                                      <div className="flex items-center text-green-600 dark:text-green-500">
-                                        <CheckCircle className="h-4 w-4 mr-1" />
-                                        <span className="text-xs">Watched</span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground">Unwatched</span>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
               </div>
-            )}
-          </div>
-        </div>
+
+              {/* Search and Watch Selected */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 px-4">
+                <div className="relative flex-1 max-w-md w-full">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search videos..."
+                    className="pl-8 h-10"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <Button
+                  onClick={handleWatchSelected}
+                  disabled={selectedVideos.length === 0}
+                  className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  Watch Selected ({selectedVideos.length})
+                </Button>
+              </div>
+
+              {/* Learning Path with Vertical Progression */}
+              <div className="relative flex flex-col lg:flex-row">
+                {/* Left side - Vertical progression path */}
+                <div className="flex-1 max-w-2xl mx-auto lg:mx-0">
+                  {loading ? (
+                    <div className="space-y-6">
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="flex items-center gap-4">
+                          <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-200 rounded-full animate-pulse"></div>
+                          <div className="flex-1 h-6 md:h-8 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : modules.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="bg-muted/30 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                        <AlertTriangle className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-muted-foreground text-lg">No videos found matching your criteria</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Global Select All */}
+                      <div className="flex items-center mb-4 p-3 md:p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border border-green-200">
+                        <Checkbox
+                          ref={globalCheckboxRef}
+                          checked={
+                            modules.length > 0 &&
+                            modules
+                              .flatMap((module) => module.videos.map((v) => v.id))
+                              .every((id) => selectedVideos.includes(id))
+                          }
+                          onCheckedChange={() => {
+                            const allVideoIds = modules.flatMap((module) => module.videos.map((v) => v.id))
+                            if (selectedVideos.length === allVideoIds.length) {
+                              setSelectedVideos([])
+                            } else {
+                              setSelectedVideos(allVideoIds)
+                            }
+                          }}
+                          className="mr-3"
+                        />
+                        <span className="text-base md:text-lg font-semibold text-gray-800">Select All Videos</span>
+                      </div>
+                      
+                      {/* Vertical Progression Path */}
+                      <div className="relative">
+                        {/* Connection line */}
+                        <div className="absolute left-6 md:left-8 top-0 bottom-0 w-0.5 bg-gray-300"></div>
+                        
+                        {modules.map((module, moduleIndex) => (
+                          <div key={moduleIndex} className="relative mb-6">
+                            {/* Module Node */}
+                            <div className="flex items-center gap-4 md:gap-6">
+                              {/* Circular Node */}
+                              <div className="relative z-10">
+                                <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-lg ${
+                                  module.videos.every(v => v.watched) 
+                                    ? 'bg-yellow-400' 
+                                    : module.videos.some(v => v.watched)
+                                    ? 'bg-green-500'
+                                    : 'bg-gray-300'
+                                }`}>
+                                  {module.videos.every(v => v.watched) ? (
+                                    <CheckCircle className="h-6 w-6 md:h-8 md:w-8 text-white" />
+                                  ) : module.videos.some(v => v.watched) ? (
+                                    <div className="relative">
+                                      <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-white/20 flex items-center justify-center">
+                                        <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-white"></div>
+                                      </div>
+                                      {/* Progress ring */}
+                                      <div className="absolute inset-0 rounded-full border-4 border-yellow-400 border-t-transparent transform -rotate-90"></div>
+                                    </div>
+                                  ) : (
+                                    <BookOpen className="h-6 w-6 md:h-8 md:w-8 text-gray-500" />
+                                  )}
+                                </div>
+                                
+                                {/* START button for current lesson */}
+                                {module.videos.some(v => v.watched) && !module.videos.every(v => v.watched) && (
+                                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
+                                    <div className="bg-white rounded-lg px-3 py-1 shadow-lg border border-gray-200">
+                                      <span className="text-green-600 font-bold text-xs">START</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Module Content */}
+                              <div className="flex-1">
+                                <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                                  <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 md:p-6">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-3 md:gap-4">
+                                        <Checkbox
+                                          ref={(el) => {
+                                            moduleCheckboxRefs.current[moduleIndex] = el
+                                          }}
+                                          checked={module.videos.every((v) => selectedVideos.includes(v.id))}
+                                          onCheckedChange={() => {
+                                            const moduleVideoIds = module.videos.map((v) => v.id)
+                                            const allSelected = moduleVideoIds.every((id) => selectedVideos.includes(id))
+                                            if (allSelected) {
+                                              setSelectedVideos(selectedVideos.filter((id) => !moduleVideoIds.includes(id)))
+                                            } else {
+                                              setSelectedVideos([...new Set([...selectedVideos, ...moduleVideoIds])])
+                                            }
+                                          }}
+                                          className="mr-3"
+                                        />
+                                        <div>
+                                          <h2 className="text-lg md:text-2xl font-bold">{module.name}</h2>
+                                          <p className="text-green-100 text-sm md:text-base">{module.videos.length} lessons • {module.totalDuration}</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2 md:gap-3">
+                                        <Badge variant="secondary" className="bg-white/20 text-white border-white/30 text-xs md:text-sm">
+                                          {module.videos.length} videos
+                                        </Badge>
+                                        <button
+                                          onClick={() => {
+                                            if (expandedModules.includes(module.category)) {
+                                              setExpandedModules(expandedModules.filter(m => m !== module.category))
+                                            } else {
+                                              setExpandedModules([...expandedModules, module.category])
+                                            }
+                                          }}
+                                          className="p-1 md:p-2 hover:bg-white/20 rounded-full transition-colors"
+                                        >
+                                          <ChevronDown 
+                                            className={`h-4 w-4 md:h-5 md:w-5 transition-transform ${
+                                              expandedModules.includes(module.category) ? 'rotate-180' : ''
+                                            }`} 
+                                          />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Module Videos */}
+                                  {expandedModules.includes(module.category) && (
+                                    <div className="p-4 md:p-6 bg-gray-50">
+                                      <div className="space-y-2 md:space-y-3">
+                                        {module.videos.map((video, videoIndex) => (
+                                          <div key={video.id} className="flex items-center justify-between p-3 md:p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                                            <div className="flex items-center gap-3 md:gap-4">
+                                              <div className="relative">
+                                                <Checkbox
+                                                  checked={selectedVideos.includes(video.id)}
+                                                  onCheckedChange={() => handleVideoSelection(video.id)}
+                                                  className="mr-2 md:mr-3"
+                                                />
+                                                {/* Progress Ring */}
+                                                {video.watched && (
+                                                  <div className="absolute -inset-1">
+                                                    <div className="w-5 h-5 md:w-6 md:h-6 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center">
+                                                      <CheckCircle className="h-3 w-3 md:h-4 md:w-4 text-white" />
+                                                    </div>
+                                                  </div>
+                                                )}
+                                              </div>
+                                              <div>
+                                                <h3 className="font-semibold text-gray-800 text-sm md:text-base">{video.title}</h3>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                  <Clock className="h-3 w-3 text-gray-500" />
+                                                  <span className="text-xs md:text-sm text-gray-500">{video.duration}</span>
+                                                  {video.watched && (
+                                                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                                                      Completed
+                                                    </Badge>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              {video.watched ? (
+                                                <div className="flex items-center text-green-600">
+                                                  <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                                                  <span className="text-xs md:text-sm font-medium">Watched</span>
+                                                </div>
+                                              ) : (
+                                                <Button
+                                                  size="sm"
+                                                  className="bg-green-600 hover:bg-green-700 text-white text-xs"
+                                                  onClick={() => router.push(`/video-player?videoId=${video.id}`)}
+                                                >
+                                                  <Play className="h-3 w-3 mr-1" />
+                                                  Start
+                                                </Button>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Right side - Mascot */}
+                <div className="hidden lg:flex flex-col items-center justify-center ml-8 mt-8 lg:mt-0">
+                  <div className="relative">
+                    {/* Duo-like mascot */}
+                    <div className="w-24 h-24 md:w-32 md:h-32 bg-green-500 rounded-full flex items-center justify-center shadow-lg relative">
+                      {/* Body */}
+                      <div className="w-16 h-16 md:w-24 md:h-24 bg-green-400 rounded-full"></div>
+                      
+                      {/* Eyes */}
+                      <div className="absolute top-6 left-4 md:top-8 md:left-6 w-3 h-3 md:w-4 md:h-4 bg-white rounded-full"></div>
+                      <div className="absolute top-6 right-4 md:top-8 md:right-6 w-3 h-3 md:w-4 md:h-4 bg-white rounded-full"></div>
+                      <div className="absolute top-7 left-5 md:top-9 md:left-7 w-1.5 h-1.5 md:w-2 md:h-2 bg-black rounded-full"></div>
+                      <div className="absolute top-7 right-5 md:top-9 md:right-7 w-1.5 h-1.5 md:w-2 md:h-2 bg-black rounded-full"></div>
+                      
+                      {/* Beak */}
+                      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-2 h-1.5 md:w-3 md:h-2 bg-orange-400 rounded-full"></div>
+                      
+                      {/* Wing */}
+                      <div className="absolute top-3 right-1 md:top-4 md:right-2 w-4 h-6 md:w-6 md:h-8 bg-green-400 rounded-full transform rotate-12"></div>
+                    </div>
+                    
+                    {/* Feet */}
+                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 flex gap-1 md:gap-2">
+                      <div className="w-2 h-1.5 md:w-3 md:h-2 bg-orange-400 rounded-full"></div>
+                      <div className="w-2 h-1.5 md:w-3 md:h-2 bg-orange-400 rounded-full"></div>
+                    </div>
+                  </div>
+                  
+                  {/* Encouraging text */}
+                  <div className="mt-3 md:mt-4 text-center">
+                    <p className="text-gray-600 font-medium text-sm md:text-base">Keep going!</p>
+                    <p className="text-gray-500 text-xs md:text-sm">You're doing great</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </>
         )}
       </main>
