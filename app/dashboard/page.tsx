@@ -544,6 +544,7 @@ export default function Dashboard() {
         MODULE_ORDER.forEach((moduleName) => {
           const videoTitles = VIDEO_ORDER[moduleName]
           if (videoTitles) {
+            // First, add videos that match the exact titles in VIDEO_ORDER
             videoTitles.forEach((title) => {
               const video = videos.find((v) => v.title === title && v.category === moduleName)
               if (video && combinedVideoIds.has(video.id) && !ordered.some((o) => o.id === video.id)) {
@@ -551,7 +552,7 @@ export default function Dashboard() {
               }
             })
           }
-          // Add any videos in this category not in VIDEO_ORDER
+          // Add any videos in this category not in VIDEO_ORDER (this is the key fix!)
           videos
             .filter(
               (v) =>
@@ -560,7 +561,10 @@ export default function Dashboard() {
                 (!videoTitles || !videoTitles.includes(v.title)),
             )
             .forEach((v) => {
-              if (!ordered.some((o) => o.id === v.id)) ordered.push(v)
+              if (!ordered.some((o) => o.id === v.id)) {
+                console.log(`Adding video not in VIDEO_ORDER: ${v.title} (${v.category})`)
+                ordered.push(v)
+              }
             })
         })
         // 3. Miscellaneous at the end

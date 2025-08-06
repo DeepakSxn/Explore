@@ -39,7 +39,7 @@ import { ThemeToggle } from "../theme-toggle"
 import { useAuth } from "../context/AuthContext"
 import { useGamification } from "../context/GamificationContext"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import VideoQuiz from "../components/VideoQuiz"
+// import VideoQuiz from "../components/VideoQuiz"
 
 interface Video {
   id: string
@@ -90,6 +90,78 @@ interface VideoWatchEvent {
   // Add other properties as needed
 }
 
+// Define VIDEO_ORDER constant for expected video titles
+const VIDEO_ORDER: Record<string, string[]> = {
+  Sales: [
+    "Sales Module Overview",
+    "Sales Order for Coils",
+    "Sales Order for Plates",
+    "Sales Order for Tubing & Pipes",
+    "Sales order for Structural Steel",
+    "Sales Orders for Bars",
+    "Handling Backorder and Partial Delivery",
+    "How does Buyout work in the system",
+  ],
+  Processing: [
+    "Processing Module Overview",
+    "Applying Processing Cost to Materials",
+    "Toll Processing Purchase Orders",
+    "Work Order Status and Tracking for Multiple Processing Lines",
+  ],
+  "Inventory Management": [
+    "Inventory Module Overview",
+    "Inventory for Plate and Sheet Products",
+    "Material Traceability (Heat Numbers, Mill Certificates)",
+    "Inventory Valuation (FIFO, Average & Actual Costing)",
+    "Scrap Management",
+    "Additional Cost",
+  ],
+  "Purchase": [
+    "Creating Purchase Order for Coils",
+    "Creating Purchase Orders for Plate and sheets",
+    "Creating Purchase Orders for Long Products",
+    "Freight Cost on PO's",
+  ],
+  "Finance and Accounting": [
+    "Finance Module Overview",
+    "Creating Customer Invoice",
+    "Creating Vendor Bills",
+    "Managing Accounts Payable and Receivable",
+    "Multi-Stage Invoicing for Complex Orders",
+    "Financial Reporting_ P&L and Balance sheets",
+    "Tax Compliance and Reporting",
+    "Payment Terms",
+    "Handling Customer Credits",
+    "Managing Multiple Entities or Divisions",
+    "Multi currency Transactions",
+    "Partner Aging",
+  ],
+  "Shipping and Receiving": ["Purchase Return", "Generating Packing List"],
+  "CRM": ["CRM Module Overview", "Sales Pipeline and Leads Pipeline"],
+  "IT & Security": ["User Access Control and Role-Based Permissions"],
+  "Advanced Analytics & Reporting": [
+    "Real-Time Dashboards for Sales, Inventory, and Processing Operations",
+    "Custom Reports for Processing",
+    "Tracking Lead Times for Processing & Delivery",
+  ],
+  "Master Data Management": [
+    "Product Master Creation and Management",
+    "Warehouse Master and Location Managment",
+    "Unit of Measure Setup (Pounds, Kg, Foot, Inches, CWT, etc.)",
+  ],
+  "Contact Management": [
+    "Contacts Module Overview",
+    "Managing Customer Contacts",
+    "Managing Supplier & Vendor Contacts",
+    "Configuring Custom Fields and Grouping Contacts",
+    "Maps Feature",
+    "Days Feature",
+    "Email",
+    "Credit Management",
+  ],
+  "QA": ["Mill Certs"],
+}
+
 export default function VideoPlayerPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -121,7 +193,6 @@ export default function VideoPlayerPage() {
   const [videoProgressMilestones, setVideoProgressMilestones] = useState<Record<string, number[]>>({})
   const [modules, setModules] = useState<Module[]>([])
   const [activeModuleIndex, setActiveModuleIndex] = useState<number | null>(null)
-  const [userProfessions, setUserProfessions] = useState<string[]>([])
   const [lastWatchedVideoId, setLastWatchedVideoId] = useState<string | null>(null)
 
   const [videoRating, setVideoRating] = useState<number | null>(null)
@@ -147,8 +218,8 @@ export default function VideoPlayerPage() {
   // Add these state variables at the top with other state declarations
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [lastPosition, setLastPosition] = useState(0);
-  const [showQuiz, setShowQuiz] = useState(false);
-  const [currentQuiz, setCurrentQuiz] = useState<any>(null);
+  // const [showQuiz, setShowQuiz] = useState(false);
+  // const [currentQuiz, setCurrentQuiz] = useState<any>(null);
 
   // Initialize volume and mute state from localStorage
   useEffect(() => {
@@ -191,11 +262,11 @@ export default function VideoPlayerPage() {
   }, [currentVideo])
 
   // Close resume dialog when quiz becomes active
-  useEffect(() => {
-    if (showQuiz) {
-      setShowResumeDialog(false);
-    }
-  }, [showQuiz]);
+  // useEffect(() => {
+  //   if (showQuiz) {
+  //     setShowResumeDialog(false);
+  //   }
+  // }, [showQuiz]);
 
   // 5-second rewind handler
   const handleRewind5Seconds = () => {
@@ -448,7 +519,7 @@ export default function VideoPlayerPage() {
             }
           }
           
-          if (savedPosition > 0 && !showQuiz && !currentQuiz) {
+          if (savedPosition > 0 /* && !showQuiz && !currentQuiz */) {
             setLastPosition(savedPosition);
             // If resume is true, automatically resume without showing dialog
             if (resume === "true") {
@@ -493,19 +564,25 @@ export default function VideoPlayerPage() {
 
       loadProgress();
     }
-  }, [currentVideo, showQuiz, currentQuiz]);
+  }, [currentVideo /* , showQuiz, currentQuiz */]);
 
   // Add this new function to fetch videos directly from Firestore
   const fetchCategoryVideos = async (category: string) => {
     if (!user) return []
 
     try {
-      // Fetch videos from Firestore with the specified category
+      console.log(`Fetching videos for category: "${category}"`)
+      
+      // Get all videos first to search through them
       const videosCollection = collection(db, "videos")
-      const q = query(videosCollection, where("category", "==", category))
-
-      const videoSnapshot = await getDocs(q)
-      const videoList = videoSnapshot.docs.map((doc) => ({
+      const allVideosQuery = query(videosCollection)
+      const allVideosSnapshot = await getDocs(allVideosQuery)
+      
+      // First, try to find videos by exact category name
+      const exactCategoryVideos = allVideosSnapshot.docs.filter((doc) => {
+        const videoCategory = doc.data().category
+        return videoCategory === category
+      }).map((doc) => ({
         id: doc.id,
         ...doc.data(),
         thumbnail: doc.data().publicId
@@ -515,8 +592,109 @@ export default function VideoPlayerPage() {
         category: doc.data().category || "Uncategorized",
       })) as Video[]
 
-      console.log(`Fetched ${videoList.length} videos for category: ${category}`)
-      return videoList
+      console.log(`Found ${exactCategoryVideos.length} videos with exact category: ${category}`)
+      
+      if (exactCategoryVideos.length > 0) {
+        return exactCategoryVideos
+      }
+      
+      // If no exact category matches, try to find videos with similar category names
+      const similarCategories = new Set<string>()
+      allVideosSnapshot.docs.forEach((doc) => {
+        const videoCategory = doc.data().category
+        if (videoCategory && videoCategory.toLowerCase().includes(category.toLowerCase())) {
+          similarCategories.add(videoCategory)
+        }
+      })
+      
+      console.log(`Found similar categories for "${category}":`, Array.from(similarCategories))
+      
+      if (similarCategories.size > 0) {
+        const firstSimilarCategory = Array.from(similarCategories)[0]
+        console.log(`Trying to fetch videos for similar category: "${firstSimilarCategory}"`)
+        
+        const similarVideos = allVideosSnapshot.docs.filter((doc) => {
+          const videoCategory = doc.data().category
+          return videoCategory === firstSimilarCategory
+        }).map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          thumbnail: doc.data().publicId
+            ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${doc.data().publicId}.jpg`
+            : "/placeholder.svg?height=180&width=320",
+          description: doc.data().description || "No description available",
+          category: doc.data().category || "Uncategorized",
+        })) as Video[]
+        
+        console.log(`Fetched ${similarVideos.length} videos for similar category: ${firstSimilarCategory}`)
+        return similarVideos
+      }
+      
+      // If still no videos found, try to find videos by title that match the expected titles
+      console.log(`No similar categories found, trying to find videos by title for category: "${category}"`)
+      
+      const expectedTitles = VIDEO_ORDER[category] || []
+      console.log(`Expected titles for ${category}:`, expectedTitles)
+      
+      const videosByTitle: Video[] = []
+      allVideosSnapshot.docs.forEach((doc) => {
+        const videoData = doc.data()
+        const videoTitle = videoData.title
+        
+        if (videoTitle && expectedTitles.some(expectedTitle => {
+          const titleLower = videoTitle.toLowerCase()
+          const expectedLower = expectedTitle.toLowerCase()
+          return titleLower.includes(expectedLower) || expectedLower.includes(titleLower)
+        })) {
+          videosByTitle.push({
+            id: doc.id,
+            ...videoData,
+            thumbnail: videoData.publicId
+              ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${videoData.publicId}.jpg`
+              : "/placeholder.svg?height=180&width=320",
+            description: videoData.description || "No description available",
+            category: videoData.category || "Uncategorized",
+          })
+        }
+      })
+      
+      console.log(`Found ${videosByTitle.length} videos by title for category: ${category}`)
+      
+      // If we found videos by title, return them
+      if (videosByTitle.length > 0) {
+        return videosByTitle
+      }
+      
+      // If still no videos found, try a broader search for any videos that might be related
+      console.log(`No videos found by title, trying broader search for category: "${category}"`)
+      
+      const broaderSearchVideos: Video[] = []
+      allVideosSnapshot.docs.forEach((doc) => {
+        const videoData = doc.data()
+        const videoTitle = videoData.title || ""
+        const videoCategory = videoData.category || ""
+        const videoDescription = videoData.description || ""
+        
+        // Search in title, category, and description
+        const searchText = `${videoTitle} ${videoCategory} ${videoDescription}`.toLowerCase()
+        const categoryLower = category.toLowerCase()
+        
+        if (searchText.includes(categoryLower) || categoryLower.includes(searchText)) {
+          broaderSearchVideos.push({
+            id: doc.id,
+            ...videoData,
+            thumbnail: videoData.publicId
+              ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${videoData.publicId}.jpg`
+              : "/placeholder.svg?height=180&width=320",
+            description: videoData.description || "No description available",
+            category: videoData.category || "Uncategorized",
+          })
+        }
+      })
+      
+      console.log(`Found ${broaderSearchVideos.length} videos by broader search for category: ${category}`)
+      return broaderSearchVideos
+      
     } catch (error) {
       console.error(`Error fetching ${category} videos:`, error)
       return []
@@ -581,6 +759,16 @@ export default function VideoPlayerPage() {
     console.log("AI tools videos:", videosByCategory["AI tools"] || [])
     console.log("Total videos in playlist:", videos.length)
 
+    // Extract selected modules from the playlist data
+    const selectedModules = new Set<string>()
+    videos.forEach(video => {
+      if (video.category && video.category !== "Company Introduction" && video.category !== "Miscellaneous" && video.category !== "AI tools") {
+        selectedModules.add(video.category)
+      }
+    })
+
+    console.log("Selected modules from playlist:", Array.from(selectedModules))
+
     // 1. Always add Company Introduction module first
     moduleArray.push({
       name: "Company Introduction",
@@ -588,10 +776,75 @@ export default function VideoPlayerPage() {
       videos: videosByCategory["Company Introduction"] || [],
     })
 
-    // 2. Add user profession modules
-    console.log("User professions:", userProfessions)
-    userProfessions.forEach((profession) => {
-      if (videosByCategory[profession]) {
+    // 2. Always add Sales module (fetch from database if not in playlist)
+    let salesVideos = videosByCategory["Sales"] || []
+    if (salesVideos.length === 0) {
+      console.log("No Sales videos in playlist, fetching from database...")
+      salesVideos = await fetchCategoryVideos("Sales")
+      console.log(`Fetched ${salesVideos.length} Sales videos from database:`, salesVideos.map(v => v.title))
+      
+      // If still no videos found, create placeholder videos based on expected titles
+      if (salesVideos.length === 0) {
+        console.log("No Sales videos found in database, creating placeholder videos...")
+        const expectedSalesTitles = VIDEO_ORDER["Sales"] || []
+        salesVideos = expectedSalesTitles.map((title, index) => ({
+          id: `sales-placeholder-${index}`,
+          title: title,
+          duration: "5 minutes",
+          thumbnail: "/placeholder.svg?height=180&width=320",
+          description: `Placeholder video for ${title}`,
+          category: "Sales",
+          videoUrl: "",
+          publicId: "",
+          tags: []
+        })) as Video[]
+        console.log(`Created ${salesVideos.length} placeholder Sales videos`)
+      }
+    } else {
+      console.log(`Found ${salesVideos.length} Sales videos in playlist:`, salesVideos.map(v => v.title))
+    }
+    moduleArray.push({
+      name: "Sales Module Overview",
+      category: "Sales",
+      videos: salesVideos,
+    })
+
+    // 3. Always add QA module (fetch from database if not in playlist)
+    let qaVideos = videosByCategory["QA"] || []
+    if (qaVideos.length === 0) {
+      console.log("No QA videos in playlist, fetching from database...")
+      qaVideos = await fetchCategoryVideos("QA")
+      console.log(`Fetched ${qaVideos.length} QA videos from database:`, qaVideos.map(v => v.title))
+      
+      // If still no videos found, create placeholder videos based on expected titles
+      if (qaVideos.length === 0) {
+        console.log("No QA videos found in database, creating placeholder videos...")
+        const expectedQATitles = VIDEO_ORDER["QA"] || []
+        qaVideos = expectedQATitles.map((title, index) => ({
+          id: `qa-placeholder-${index}`,
+          title: title,
+          duration: "5 minutes",
+          thumbnail: "/placeholder.svg?height=180&width=320",
+          description: `Placeholder video for ${title}`,
+          category: "QA",
+          videoUrl: "",
+          publicId: "",
+          tags: []
+        })) as Video[]
+        console.log(`Created ${qaVideos.length} placeholder QA videos`)
+      }
+    } else {
+      console.log(`Found ${qaVideos.length} QA videos in playlist:`, qaVideos.map(v => v.title))
+    }
+    moduleArray.push({
+      name: "QA Module Overview", 
+      category: "QA",
+      videos: qaVideos,
+    })
+
+    // 4. Add selected profession modules (extracted from playlist data)
+    selectedModules.forEach((profession) => {
+      if (videosByCategory[profession] && profession !== "Sales" && profession !== "QA") {
         moduleArray.push({
           name: profession,
           category: profession,
@@ -601,9 +854,9 @@ export default function VideoPlayerPage() {
       }
     })
 
-    // 3. Add other categories as modules (except Company Introduction, Miscellaneous, and AI tools)
+    // 5. Add other categories as modules (except Company Introduction, Miscellaneous, AI tools, Sales, and QA)
     Object.entries(videosByCategory).forEach(([category, categoryVideos]) => {
-      if (category !== "Company Introduction" && category !== "Miscellaneous" && category !== "AI tools") {
+      if (category !== "Company Introduction" && category !== "Miscellaneous" && category !== "AI tools" && category !== "Sales" && category !== "QA" && !selectedModules.has(category)) {
         moduleArray.push({
           name: category,
           category,
@@ -612,14 +865,14 @@ export default function VideoPlayerPage() {
       }
     })
 
-    // 4. Always add Miscellaneous module before AI tools
+    // 6. Always add Miscellaneous module before AI tools
     moduleArray.push({
       name: "Miscellaneous",
       category: "Miscellaneous",
       videos: videosByCategory["Miscellaneous"] || [],
     })
 
-    // 5. Always add AI tools module last - check for various AI-related categories
+    // 7. Always add AI tools module last - check for various AI-related categories
     const aiToolsVideos = videosByCategory["AI tools"] || 
                          videosByCategory["AI Tools"] || 
                          videosByCategory["ai tools"] ||
@@ -915,11 +1168,11 @@ export default function VideoPlayerPage() {
         completeVideo(currentVideo.id, watchDuration);
         
         // Show quiz after video completion (always)
-        const quiz = generateQuizForVideo(currentVideo);
-        setCurrentQuiz(quiz);
-        setShowQuiz(true);
+        // const quiz = generateQuizForVideo(currentVideo);
+        // setCurrentQuiz(quiz);
+        // setShowQuiz(true);
         // Close resume dialog if it's open when quiz starts
-        setShowResumeDialog(false);
+        // setShowResumeDialog(false);
       }
   
       // Reset watch start time
@@ -2317,7 +2570,7 @@ export default function VideoPlayerPage() {
       </Dialog>
 
       {/* Resume Dialog */}
-      <Dialog open={showResumeDialog && !showQuiz} onOpenChange={setShowResumeDialog}>
+      <Dialog open={showResumeDialog /* && !showQuiz */} onOpenChange={setShowResumeDialog}>
         <DialogContent className="sm:max-w-md z-[60]">
           <DialogHeader>
             <DialogTitle>Resume Video?</DialogTitle>
@@ -2337,20 +2590,20 @@ export default function VideoPlayerPage() {
       </Dialog>
 
       {/* Video Quiz */}
-      {currentQuiz && (
+      {/* {currentQuiz && (
         <VideoQuiz
           quiz={currentQuiz}
-          isOpen={showQuiz}
+          isOpen={false}
           onComplete={(score, totalQuestions) => {
-            setShowQuiz(false)
-            setCurrentQuiz(null)
+            // setShowQuiz(false)
+            // setCurrentQuiz(null)
           }}
           onSkip={() => {
-            setShowQuiz(false)
-            setCurrentQuiz(null)
+            // setShowQuiz(false)
+            // setCurrentQuiz(null)
           }}
         />
-      )}
+      )} */}
     </div>
   )
 }
