@@ -567,7 +567,7 @@ export default function VideoPlayerPage() {
   }, [currentVideo /* , showQuiz, currentQuiz */]);
 
   // Add this new function to fetch videos directly from Firestore
-  const fetchCategoryVideos = async (category: string) => {
+  const fetchCategoryVideos = async (category: string): Promise<Video[]> => {
     if (!user) return []
 
     try {
@@ -582,15 +582,22 @@ export default function VideoPlayerPage() {
       const exactCategoryVideos = allVideosSnapshot.docs.filter((doc) => {
         const videoCategory = doc.data().category
         return videoCategory === category
-      }).map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        thumbnail: doc.data().publicId
-          ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${doc.data().publicId}.jpg`
-          : "/placeholder.svg?height=180&width=320",
-        description: doc.data().description || "No description available",
-        category: doc.data().category || "Uncategorized",
-      })) as Video[]
+      }).map((doc) => {
+        const data = doc.data()
+        return {
+          id: doc.id,
+          title: data.title || "Untitled",
+          duration: data.duration || "0 minutes",
+          thumbnail: data.publicId
+            ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${data.publicId}.jpg`
+            : "/placeholder.svg?height=180&width=320",
+          description: data.description || "No description available",
+          category: data.category || "Uncategorized",
+          videoUrl: data.videoUrl || "",
+          publicId: data.publicId || "",
+          tags: data.tags || []
+        } as Video
+      })
 
       console.log(`Found ${exactCategoryVideos.length} videos with exact category: ${category}`)
       
@@ -616,15 +623,22 @@ export default function VideoPlayerPage() {
         const similarVideos = allVideosSnapshot.docs.filter((doc) => {
           const videoCategory = doc.data().category
           return videoCategory === firstSimilarCategory
-        }).map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          thumbnail: doc.data().publicId
-            ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${doc.data().publicId}.jpg`
-            : "/placeholder.svg?height=180&width=320",
-          description: doc.data().description || "No description available",
-          category: doc.data().category || "Uncategorized",
-        })) as Video[]
+        }).map((doc) => {
+          const data = doc.data()
+          return {
+            id: doc.id,
+            title: data.title || "Untitled",
+            duration: data.duration || "0 minutes",
+            thumbnail: data.publicId
+              ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${data.publicId}.jpg`
+              : "/placeholder.svg?height=180&width=320",
+            description: data.description || "No description available",
+            category: data.category || "Uncategorized",
+            videoUrl: data.videoUrl || "",
+            publicId: data.publicId || "",
+            tags: data.tags || []
+          } as Video
+        })
         
         console.log(`Fetched ${similarVideos.length} videos for similar category: ${firstSimilarCategory}`)
         return similarVideos
@@ -648,12 +662,16 @@ export default function VideoPlayerPage() {
         })) {
           videosByTitle.push({
             id: doc.id,
-            ...videoData,
+            title: videoData.title || "Untitled",
+            duration: videoData.duration || "0 minutes",
             thumbnail: videoData.publicId
               ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${videoData.publicId}.jpg`
               : "/placeholder.svg?height=180&width=320",
             description: videoData.description || "No description available",
             category: videoData.category || "Uncategorized",
+            videoUrl: videoData.videoUrl || "",
+            publicId: videoData.publicId || "",
+            tags: videoData.tags || []
           })
         }
       })
@@ -682,12 +700,16 @@ export default function VideoPlayerPage() {
         if (searchText.includes(categoryLower) || categoryLower.includes(searchText)) {
           broaderSearchVideos.push({
             id: doc.id,
-            ...videoData,
+            title: videoData.title || "Untitled",
+            duration: videoData.duration || "0 minutes",
             thumbnail: videoData.publicId
               ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${videoData.publicId}.jpg`
               : "/placeholder.svg?height=180&width=320",
             description: videoData.description || "No description available",
             category: videoData.category || "Uncategorized",
+            videoUrl: videoData.videoUrl || "",
+            publicId: videoData.publicId || "",
+            tags: videoData.tags || []
           })
         }
       })
@@ -735,11 +757,138 @@ export default function VideoPlayerPage() {
     }
   }
 
+  // Helper function to sort videos according to VIDEO_ORDER
+  const sortVideosByOrder = (videos: Video[], moduleName: string): Video[] => {
+    const expectedTitles = VIDEO_ORDER[moduleName] || []
+    return [...videos].sort((a, b) => {
+      // Try exact match first
+      let orderA = expectedTitles.indexOf(a.title)
+      let orderB = expectedTitles.indexOf(b.title)
+      
+      // If exact match not found, try partial match
+      if (orderA === -1) {
+        orderA = expectedTitles.findIndex(expectedTitle => 
+          a.title.toLowerCase().includes(expectedTitle.toLowerCase()) || 
+          expectedTitle.toLowerCase().includes(a.title.toLowerCase())
+        )
+      }
+      
+      if (orderB === -1) {
+        orderB = expectedTitles.findIndex(expectedTitle => 
+          b.title.toLowerCase().includes(expectedTitle.toLowerCase()) || 
+          expectedTitle.toLowerCase().includes(b.title.toLowerCase())
+        )
+      }
+      
+      // If both videos are found in the expected order
+      if (orderA !== -1 && orderB !== -1) {
+        return orderA - orderB
+      }
+      
+      // If only one video is found in the expected order, prioritize it
+      if (orderA !== -1) return -1
+      if (orderB !== -1) return 1
+      
+      // If neither video is in the expected order, sort alphabetically
+      return a.title.localeCompare(b.title)
+    })
+  }
+
+  // Add this function to reorder videos according to the expected module sequence
+  const reorderVideosByModuleSequence = async (videos: Video[]): Promise<Video[]> => {
+    if (!videos || !Array.isArray(videos) || videos.length === 0) return videos
+
+    // Define the expected module order
+    const moduleOrder = [
+      "Company Introduction",
+      "Sales", 
+      "QA",
+      "Processing",
+      "Inventory Management",
+      "Purchase",
+      "Finance and Accounting",
+      "Shipping and Receiving",
+      "CRM",
+      "IT & Security",
+      "Advanced Analytics & Reporting",
+      "Master Data Management",
+      "Contact Management",
+      "Miscellaneous",
+      "AI tools"
+    ]
+
+    // Group videos by category
+    const videosByCategory = videos.reduce((acc, video) => {
+      const category = video.category || "Uncategorized"
+      if (!acc[category]) {
+        acc[category] = []
+      }
+      acc[category].push(video)
+      return acc
+    }, {} as Record<string, Video[]>)
+
+    // Create ordered videos array
+    const orderedVideos: Video[] = []
+
+    // Add videos in the expected module order
+    for (const moduleName of moduleOrder) {
+      let categoryVideos = videosByCategory[moduleName] || []
+      
+      // If Sales or QA videos are missing, try to fetch them from database
+      if ((moduleName === "Sales" || moduleName === "QA") && categoryVideos.length === 0) {
+        console.log(`No ${moduleName} videos in playlist, fetching from database...`)
+        const fetchedVideos = await fetchCategoryVideos(moduleName)
+        if (fetchedVideos.length > 0) {
+          categoryVideos = fetchedVideos
+          console.log(`Fetched ${fetchedVideos.length} ${moduleName} videos from database:`, fetchedVideos.map(v => v.title))
+        } else {
+          // Create placeholder videos if none found in database
+          console.log(`No ${moduleName} videos found in database, creating placeholder videos...`)
+          const expectedTitles = VIDEO_ORDER[moduleName] || []
+          categoryVideos = expectedTitles.map((title, index) => ({
+            id: `${moduleName.toLowerCase()}-placeholder-${index}`,
+            title: title,
+            duration: "5 minutes",
+            thumbnail: "/placeholder.svg?height=180&width=320",
+            description: `Placeholder video for ${title}`,
+            category: moduleName,
+            videoUrl: "",
+            publicId: "",
+            tags: []
+          })) as Video[]
+          console.log(`Created ${categoryVideos.length} placeholder ${moduleName} videos`)
+        }
+      }
+      
+      if (categoryVideos.length > 0) {
+        // Sort videos within the category according to VIDEO_ORDER if available
+        const sortedCategoryVideos = sortVideosByOrder(categoryVideos, moduleName)
+        orderedVideos.push(...sortedCategoryVideos)
+      }
+    }
+
+    // Add any remaining videos that weren't in the module order
+    const remainingVideos = videos.filter(video => {
+      const category = video.category || "Uncategorized"
+      return !moduleOrder.includes(category)
+    })
+
+    if (remainingVideos.length > 0) {
+      orderedVideos.push(...remainingVideos)
+    }
+
+    console.log("Reordered videos:", orderedVideos.map(v => `${v.category}: ${v.title}`))
+    return orderedVideos
+  }
+
   const organizeIntoModules = async (videos: Video[]) => {
     if (!videos || !Array.isArray(videos) || videos.length === 0) return
 
     // Create modules array
     const moduleArray: Module[] = []
+    
+    // Track which categories have already been added to prevent duplicates
+    const addedCategories = new Set<string>()
 
     // Group videos by category
     const videosByCategory = videos.reduce(
@@ -759,10 +908,15 @@ export default function VideoPlayerPage() {
     console.log("AI tools videos:", videosByCategory["AI tools"] || [])
     console.log("Total videos in playlist:", videos.length)
 
-    // Extract selected modules from the playlist data
+    // Extract selected modules from the playlist data (excluding Sales and QA as they're handled separately)
     const selectedModules = new Set<string>()
     videos.forEach(video => {
-      if (video.category && video.category !== "Company Introduction" && video.category !== "Miscellaneous" && video.category !== "AI tools") {
+      if (video.category && 
+          video.category !== "Company Introduction" && 
+          video.category !== "Miscellaneous" && 
+          video.category !== "AI tools" &&
+          video.category !== "Sales" &&
+          video.category !== "QA") {
         selectedModules.add(video.category)
       }
     })
@@ -770,107 +924,90 @@ export default function VideoPlayerPage() {
     console.log("Selected modules from playlist:", Array.from(selectedModules))
 
     // 1. Always add Company Introduction module first
-    moduleArray.push({
-      name: "Company Introduction",
-      category: "Company Introduction",
-      videos: videosByCategory["Company Introduction"] || [],
-    })
+    if (videosByCategory["Company Introduction"] && videosByCategory["Company Introduction"].length > 0) {
+      moduleArray.push({
+        name: "Company Introduction",
+        category: "Company Introduction",
+        videos: videosByCategory["Company Introduction"],
+      })
+      addedCategories.add("Company Introduction")
+    }
 
-    // 2. Always add Sales module (fetch from database if not in playlist)
-    let salesVideos = videosByCategory["Sales"] || []
-    if (salesVideos.length === 0) {
-      console.log("No Sales videos in playlist, fetching from database...")
-      salesVideos = await fetchCategoryVideos("Sales")
-      console.log(`Fetched ${salesVideos.length} Sales videos from database:`, salesVideos.map(v => v.title))
-      
-      // If still no videos found, create placeholder videos based on expected titles
-      if (salesVideos.length === 0) {
-        console.log("No Sales videos found in database, creating placeholder videos...")
-        const expectedSalesTitles = VIDEO_ORDER["Sales"] || []
-        salesVideos = expectedSalesTitles.map((title, index) => ({
-          id: `sales-placeholder-${index}`,
-          title: title,
-          duration: "5 minutes",
-          thumbnail: "/placeholder.svg?height=180&width=320",
-          description: `Placeholder video for ${title}`,
-          category: "Sales",
-          videoUrl: "",
-          publicId: "",
-          tags: []
-        })) as Video[]
-        console.log(`Created ${salesVideos.length} placeholder Sales videos`)
-      }
-    } else {
+    // 2. Add Sales module (only if videos exist in the playlist)
+    const salesVideos = videosByCategory["Sales"] || []
+    if (salesVideos.length > 0 && !addedCategories.has("Sales")) {
       console.log(`Found ${salesVideos.length} Sales videos in playlist:`, salesVideos.map(v => v.title))
-    }
-    moduleArray.push({
-      name: "Sales Module Overview",
-      category: "Sales",
-      videos: salesVideos,
-    })
-
-    // 3. Always add QA module (fetch from database if not in playlist)
-    let qaVideos = videosByCategory["QA"] || []
-    if (qaVideos.length === 0) {
-      console.log("No QA videos in playlist, fetching from database...")
-      qaVideos = await fetchCategoryVideos("QA")
-      console.log(`Fetched ${qaVideos.length} QA videos from database:`, qaVideos.map(v => v.title))
       
-      // If still no videos found, create placeholder videos based on expected titles
-      if (qaVideos.length === 0) {
-        console.log("No QA videos found in database, creating placeholder videos...")
-        const expectedQATitles = VIDEO_ORDER["QA"] || []
-        qaVideos = expectedQATitles.map((title, index) => ({
-          id: `qa-placeholder-${index}`,
-          title: title,
-          duration: "5 minutes",
-          thumbnail: "/placeholder.svg?height=180&width=320",
-          description: `Placeholder video for ${title}`,
-          category: "QA",
-          videoUrl: "",
-          publicId: "",
-          tags: []
-        })) as Video[]
-        console.log(`Created ${qaVideos.length} placeholder QA videos`)
-      }
-    } else {
-      console.log(`Found ${qaVideos.length} QA videos in playlist:`, qaVideos.map(v => v.title))
+      // Sort Sales videos according to VIDEO_ORDER
+      const sortedSalesVideos = sortVideosByOrder(salesVideos, "Sales")
+      
+      moduleArray.push({
+        name: "Sales Module Overview",
+        category: "Sales",
+        videos: sortedSalesVideos,
+      })
+      addedCategories.add("Sales")
     }
-    moduleArray.push({
-      name: "QA Module Overview", 
-      category: "QA",
-      videos: qaVideos,
-    })
 
-    // 4. Add selected profession modules (extracted from playlist data)
+    // 3. Add QA module (only if videos exist in the playlist)
+    const qaVideos = videosByCategory["QA"] || []
+    if (qaVideos.length > 0 && !addedCategories.has("QA")) {
+      console.log(`Found ${qaVideos.length} QA videos in playlist:`, qaVideos.map(v => v.title))
+      
+      // Sort QA videos according to VIDEO_ORDER
+      const sortedQAVideos = sortVideosByOrder(qaVideos, "QA")
+      
+      moduleArray.push({
+        name: "QA Module Overview", 
+        category: "QA",
+        videos: sortedQAVideos,
+      })
+      addedCategories.add("QA")
+    }
+
+    // 4. Add selected profession modules (extracted from playlist data) - excluding Sales and QA
     selectedModules.forEach((profession) => {
-      if (videosByCategory[profession] && profession !== "Sales" && profession !== "QA") {
+      if (videosByCategory[profession] && 
+          profession !== "Sales" && 
+          profession !== "QA" && 
+          !addedCategories.has(profession)) {
         moduleArray.push({
           name: profession,
           category: profession,
           videos: videosByCategory[profession],
         })
+        addedCategories.add(profession)
         console.log("Added profession module:", profession)
       }
     })
 
     // 5. Add other categories as modules (except Company Introduction, Miscellaneous, AI tools, Sales, and QA)
     Object.entries(videosByCategory).forEach(([category, categoryVideos]) => {
-      if (category !== "Company Introduction" && category !== "Miscellaneous" && category !== "AI tools" && category !== "Sales" && category !== "QA" && !selectedModules.has(category)) {
+      if (category !== "Company Introduction" && 
+          category !== "Miscellaneous" && 
+          category !== "AI tools" && 
+          category !== "Sales" && 
+          category !== "QA" && 
+          !selectedModules.has(category) &&
+          !addedCategories.has(category)) {
         moduleArray.push({
           name: category,
           category,
           videos: categoryVideos,
         })
+        addedCategories.add(category)
       }
     })
 
     // 6. Always add Miscellaneous module before AI tools
-    moduleArray.push({
-      name: "Miscellaneous",
-      category: "Miscellaneous",
-      videos: videosByCategory["Miscellaneous"] || [],
-    })
+    if (!addedCategories.has("Miscellaneous")) {
+      moduleArray.push({
+        name: "Miscellaneous",
+        category: "Miscellaneous",
+        videos: videosByCategory["Miscellaneous"] || [],
+      })
+      addedCategories.add("Miscellaneous")
+    }
 
     // 7. Always add AI tools module last - check for various AI-related categories
     const aiToolsVideos = videosByCategory["AI tools"] || 
@@ -881,11 +1018,14 @@ export default function VideoPlayerPage() {
                          []
     
     // Always add AI tools module for testing, even if empty
-    moduleArray.push({
-      name: "AI tools",
-      category: "AI tools",
-      videos: aiToolsVideos,
-    })
+    if (!addedCategories.has("AI tools")) {
+      moduleArray.push({
+        name: "AI tools",
+        category: "AI tools",
+        videos: aiToolsVideos,
+      })
+      addedCategories.add("AI tools")
+    }
     
     if (aiToolsVideos.length > 0) {
       console.log("AI tools module created with", aiToolsVideos.length, "videos")
@@ -894,6 +1034,13 @@ export default function VideoPlayerPage() {
     }
 
     setModules(moduleArray)
+
+    // Debug: Log all modules being created
+    console.log("=== MODULES BEING CREATED ===")
+    moduleArray.forEach((module, index) => {
+      console.log(`${index + 1}. ${module.name} (${module.category}) - ${module.videos.length} videos`)
+    })
+    console.log("=== END MODULES ===")
 
     // Set active module based on current video
     if (currentVideo) {
@@ -922,17 +1069,24 @@ export default function VideoPlayerPage() {
               throw new Error("Invalid playlist data: missing or empty videos array")
             }
 
-            setPlaylist(playlistData)
+            // Reorder videos according to module sequence
+            const reorderedVideos = await reorderVideosByModuleSequence(playlistData.videos)
+            const updatedPlaylistData: Playlist = {
+              ...playlistData,
+              videos: reorderedVideos
+            }
+
+            setPlaylist(updatedPlaylistData)
 
             // Debug: Log playlist data
-            console.log("Playlist data:", playlistData)
-            console.log("Videos in playlist:", playlistData.videos)
+            console.log("Playlist data:", updatedPlaylistData)
+            console.log("Videos in playlist:", updatedPlaylistData.videos)
 
             // Organize videos into modules (now async)
-            await organizeIntoModules(playlistData.videos)
+            await organizeIntoModules(updatedPlaylistData.videos)
 
             // Initialize watch events
-            await initializeWatchEvents(playlistData, initialVideoId)
+            await initializeWatchEvents(updatedPlaylistData, initialVideoId)
             return
           } catch (error) {
             console.error("Error parsing playlist from localStorage:", error)
@@ -959,17 +1113,24 @@ export default function VideoPlayerPage() {
           throw new Error("Invalid playlist data: missing or empty videos array")
         }
 
-        setPlaylist(playlistData)
+        // Reorder videos according to module sequence
+        const reorderedVideos = await reorderVideosByModuleSequence(playlistData.videos)
+        const updatedPlaylistData: Playlist = {
+          ...playlistData,
+          videos: reorderedVideos
+        }
+
+        setPlaylist(updatedPlaylistData)
 
         // Debug: Log playlist data
-        console.log("Playlist data:", playlistData)
-        console.log("Videos in playlist:", playlistData.videos)
+        console.log("Playlist data:", updatedPlaylistData)
+        console.log("Videos in playlist:", updatedPlaylistData.videos)
 
         // Organize videos into modules (now async)
-        await organizeIntoModules(playlistData.videos)
+        await organizeIntoModules(updatedPlaylistData.videos)
 
         // Initialize watch events
-        await initializeWatchEvents(playlistData, initialVideoId)
+        await initializeWatchEvents(updatedPlaylistData, initialVideoId)
       } else {
         toast({
           title: "Error",
