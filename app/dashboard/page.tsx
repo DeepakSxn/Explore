@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Search, LogOut, Clock, Play, CheckCircle, AlertTriangle, Trophy, Zap, Sparkles, Flame, Menu, X, User, List, Home, Info, Phone } from "lucide-react"
+import { Search, LogOut, Clock, Play, CheckCircle, AlertTriangle, Trophy, Zap, Sparkles, Flame, Menu, X, User, List, Home, Info, Phone, BookOpen, Target, TrendingUp } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/components/ui/use-toast"
@@ -544,7 +544,6 @@ export default function Dashboard() {
         MODULE_ORDER.forEach((moduleName) => {
           const videoTitles = VIDEO_ORDER[moduleName]
           if (videoTitles) {
-            // First, add videos that match the exact titles in VIDEO_ORDER
             videoTitles.forEach((title) => {
               const video = videos.find((v) => v.title === title && v.category === moduleName)
               if (video && combinedVideoIds.has(video.id) && !ordered.some((o) => o.id === video.id)) {
@@ -552,7 +551,7 @@ export default function Dashboard() {
               }
             })
           }
-          // Add any videos in this category not in VIDEO_ORDER (this is the key fix!)
+          // Add any videos in this category not in VIDEO_ORDER
           videos
             .filter(
               (v) =>
@@ -561,10 +560,7 @@ export default function Dashboard() {
                 (!videoTitles || !videoTitles.includes(v.title)),
             )
             .forEach((v) => {
-              if (!ordered.some((o) => o.id === v.id)) {
-                console.log(`Adding video not in VIDEO_ORDER: ${v.title} (${v.category})`)
-                ordered.push(v)
-              }
+              if (!ordered.some((o) => o.id === v.id)) ordered.push(v)
             })
         })
         // 3. Miscellaneous at the end
@@ -701,34 +697,38 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 h-14 bg-background border-b z-50 flex items-center px-4">
-        <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50">
+      {/* Enhanced Header */}
+      <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/60 z-50 shadow-sm">
+        <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto px-6">
+          <div className="flex items-center gap-6">
             <img 
               src="/light.webp" 
               alt="EOXS Logo" 
-              className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity" 
+              className="h-10 w-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105" 
               onClick={() => router.push("/")}
             />
+            <div className="hidden md:block">
+              <h1 className="text-lg font-semibold text-slate-800">Learning Dashboard</h1>
+              <p className="text-sm text-slate-500">Master your skills with EOXSplore</p>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {showGamifiedDashboard && userProgress && (
               <>
-                <div className="hidden md:flex items-center gap-2">
-                  <Badge variant="outline" className="bg-blue-50">
-                    <Sparkles className="h-3 w-3 mr-1" />
+                <div className="hidden lg:flex items-center gap-3">
+                  <Badge variant="outline" className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:bg-blue-100 transition-colors">
+                    <Sparkles className="h-3 w-3 mr-1.5" />
                     Level {userProgress.currentLevel}
                   </Badge>
-                  <Badge variant="outline" className="bg-orange-50">
-                    <Flame className="h-3 w-3 mr-1" />
+                  <Badge variant="outline" className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200 text-orange-700 hover:bg-orange-100 transition-colors">
+                    <Flame className="h-3 w-3 mr-1.5" />
                     {userProgress.currentStreak} day streak
                   </Badge>
                 </div>
-                <div className="hidden sm:flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-yellow-500" />
-                  <span className="text-sm font-medium">{userProgress.totalXP} XP</span>
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-full border border-yellow-200">
+                  <Zap className="h-4 w-4 text-yellow-600" />
+                  <span className="text-sm font-medium text-yellow-700">{userProgress.totalXP} XP</span>
                 </div>
               </>
             )}
@@ -736,72 +736,144 @@ export default function Dashboard() {
               variant="outline" 
               size="sm" 
               onClick={() => setShowGamifiedDashboard(!showGamifiedDashboard)}
+              className="bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 transition-all duration-200"
             >
+              <BookOpen className="h-4 w-4 mr-2" />
               {showGamifiedDashboard ? 'Classic View' : 'Gamified View'}
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout}
+              className="hover:bg-red-50 hover:text-red-600 transition-colors"
+            >
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </header>
-      {/* Sidebar Toggle Button */}
+
+      {/* Enhanced Sidebar Toggle Button */}
       <div className={`fixed top-20 z-50 transition-all duration-300 ease-in-out ${
-        isSidebarOpen ? 'left-64' : 'left-4'
+        isSidebarOpen ? 'left-64' : 'left-6'
       }`}>
         <Button
           variant="outline"
           size="icon"
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="bg-white shadow-md hover:bg-gray-50"
+          className="bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white border-slate-200 hover:border-slate-300 hover:shadow-xl transition-all duration-200"
         >
           {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </Button>
       </div>
 
-      {/* Sidebar */}
+      {/* Enhanced Sidebar */}
       {isSidebarOpen && (
-        <aside className="fixed top-14 left-0 z-40 h-[calc(100vh-3.5rem)] w-64 border-r bg-card transition-all duration-300 ease-in-out">
-          <div className="flex h-full w-full flex-col bg-green-600 text-white">
-            <div className="flex flex-col gap-2 p-4">
+        <aside className="fixed top-16 left-0 z-40 h-[calc(100vh-4rem)] w-64 bg-gradient-to-b from-green-600 to-green-700 shadow-xl transition-all duration-300 ease-in-out">
+          <div className="flex h-full w-full flex-col">
+            <div className="flex flex-col gap-1 p-4">
+              <div className="mb-4 px-2">
+                <h2 className="text-white font-semibold text-lg">Navigation</h2>
+                <p className="text-green-100 text-sm">Quick access to features</p>
+              </div>
+              
               <Link href="/profile" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
-                  <a><User className="w-5 h-5" /><span>User Profile</span></a>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
+                  <a className="flex items-center gap-3">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <span>User Profile</span>
+                  </a>
                 </Button>
               </Link>
+              
               <Link href="/playlist" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
-                  <a><List className="w-5 h-5" /><span>My Playlist</span></a>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
+                  <a className="flex items-center gap-3">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <List className="w-4 h-4" />
+                    </div>
+                    <span>My Playlist</span>
+                  </a>
                 </Button>
               </Link>
+              
               <Link href="/leaderboard" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
-                  <a><Trophy className="w-5 h-5" /><span>Leaderboard</span></a>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
+                  <a className="flex items-center gap-3">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <Trophy className="w-4 h-4" />
+                    </div>
+                    <span>Leaderboard</span>
+                  </a>
                 </Button>
               </Link>
+              
               <Link href="/about" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
-                  <a><Info className="w-5 h-5" /><span>About EOXSplore</span></a>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
+                  <a className="flex items-center gap-3">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <Info className="w-4 h-4" />
+                    </div>
+                    <span>About EOXSplore</span>
+                  </a>
                 </Button>
               </Link>
+              
               <Link href="https://eoxs.com" target="_blank" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
-                  <a><Home className="w-5 h-5" /><span>About EOXS</span></a>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
+                  <a className="flex items-center gap-3">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <Home className="w-4 h-4" />
+                    </div>
+                    <span>About EOXS</span>
+                  </a>
                 </Button>
               </Link>
+              
               <Link href="https://eoxs.com/contact" target="_blank" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-700">
-                  <a><Phone className="w-5 h-5" /><span>Contact</span></a>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
+                  <a className="flex items-center gap-3">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <span>Contact</span>
+                  </a>
                 </Button>
               </Link>
             </div>
-            <Separator className="bg-green-800" />
+            
+            <Separator className="bg-green-500/30 mx-4" />
+            
+            {/* Quick Stats Section */}
+            <div className="p-4 mt-auto">
+              <div className="bg-white/10 rounded-lg p-3">
+                <h3 className="text-white font-medium text-sm mb-2">Quick Stats</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-green-100 text-xs">
+                    <span>Videos Watched</span>
+                    <span className="font-medium">{videos.filter(v => v.watched).length}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-green-100 text-xs">
+                    <span>Total Videos</span>
+                    <span className="font-medium">{videos.length}</span>
+                  </div>
+                  <div className="w-full bg-green-500/30 rounded-full h-1.5">
+                    <div 
+                      className="bg-white h-1.5 rounded-full transition-all duration-300"
+                      style={{ width: `${videos.length > 0 ? (videos.filter(v => v.watched).length / videos.length) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </aside>
       )}
       
-      {/* Main Content */}
-      <main className={`pt-14 min-h-screen transition-all duration-300 ease-in-out ${
+      {/* Enhanced Main Content */}
+      <main className={`pt-16 min-h-screen transition-all duration-300 ease-in-out ${
         isSidebarOpen ? 'md:ml-64' : 'md:ml-0'
       }`}>
         {/* Show Gamified Dashboard or Classic Dashboard */}
@@ -809,162 +881,194 @@ export default function Dashboard() {
           <GamifiedDashboard />
         ) : (
           <>
-            {/* Suspension Warning Banner */}
+            {/* Enhanced Suspension Warning Banner */}
             {userData && userData.daysUntilSuspension > 0 && userData.daysUntilSuspension <= 7 && (
-              <div className="max-w-5xl mx-auto p-4">
-                <Alert className="border-amber-200 bg-amber-50">
-                  <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  <AlertDescription className="text-amber-800">
+              <div className="max-w-6xl mx-auto p-6">
+                <Alert className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 shadow-lg">
+                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  <AlertDescription className="text-amber-800 font-medium">
                     <strong>Account Suspension Warning:</strong> Your account will be suspended in {userData.daysUntilSuspension} day{userData.daysUntilSuspension !== 1 ? 's' : ''}. 
-                    To prevent suspension, please contact <a href="mailto:isha@eoxsteam.com" className="underline font-medium">isha@eoxsteam.com</a>.
+                    To prevent suspension, please contact <a href="mailto:isha@eoxsteam.com" className="underline font-semibold hover:text-amber-900 transition-colors">isha@eoxsteam.com</a>.
                   </AlertDescription>
                 </Alert>
               </div>
             )}
             
-            <div className="max-w-5xl mx-auto pb-4 p-0">
-          <div className="flex flex-col sm:flex-row justify-between gap-4 sticky top-0 z-20 bg-background pb-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search videos..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Button
-              onClick={handleWatchSelected}
-              disabled={selectedVideos.length === 0}
-              className="bg-primary hover:bg-primary/90"
-            >
-              <Play className="mr-2 h-4 w-4" />
-              Watch Selected ({selectedVideos.length})
-            </Button>
-          </div>
-          <div className="flex flex-col gap-4">
-            {loading ? (
-              <div className="space-y-2">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-12 bg-muted/30 animate-pulse rounded-md"></div>
-                ))}
-              </div>
-            ) : modules.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No videos found matching your criteria</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Global Select All Checkbox */}
-                <div className="flex items-center mb-2">
-                  <Checkbox
-                    ref={globalCheckboxRef}
-                    checked={
-                      modules.length > 0 &&
-                      modules
-                        .flatMap((module) => module.videos.map((v) => v.id))
-                        .every((id) => selectedVideos.includes(id))
-                    }
-                    onCheckedChange={() => {
-                      const allVideoIds = modules.flatMap((module) => module.videos.map((v) => v.id))
-                      if (selectedVideos.length === allVideoIds.length) {
-                        setSelectedVideos([])
-                      } else {
-                        setSelectedVideos(allVideoIds)
-                      }
-                    }}
-                    className="mr-2"
-                  />
-                  <span className="text-sm">Select All Videos</span>
+            <div className="max-w-6xl mx-auto p-6">
+              {/* Enhanced Search and Actions Section */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                <div className="flex flex-col lg:flex-row justify-between gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      type="search"
+                      placeholder="Search videos by title, tags, or description..."
+                      className="pl-10 h-12 border-slate-200 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleWatchSelected}
+                    disabled={selectedVideos.length === 0}
+                    className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-12 px-6"
+                  >
+                    <Play className="mr-2 h-4 w-4" />
+                    Watch Selected ({selectedVideos.length})
+                  </Button>
                 </div>
-                <Accordion type="multiple" value={expandedModules} onValueChange={setExpandedModules} className="w-full border rounded-md overflow-hidden">
-                  {modules.map((module, moduleIndex) => (
-                    <AccordionItem key={moduleIndex} value={module.category} className="border-b last:border-b-0">
-                      <AccordionTrigger className="px-4 py-3 hover:no-underline bg-muted/30 hover:bg-muted/50">
-                        <div className="flex items-center justify-between w-full bg-muted rounded">
-                          <div className="flex items-center">
-                            {/* Module Select All Checkbox */}
-                            <Checkbox
-                              ref={(el) => {
-                                moduleCheckboxRefs.current[moduleIndex] = el
-                              }}
-                              checked={module.videos.every((v) => selectedVideos.includes(v.id))}
-                              onCheckedChange={() => {
-                                const moduleVideoIds = module.videos.map((v) => v.id)
-                                const allSelected = moduleVideoIds.every((id) => selectedVideos.includes(id))
-                                if (allSelected) {
-                                  setSelectedVideos(selectedVideos.filter((id) => !moduleVideoIds.includes(id)))
-                                } else {
-                                  setSelectedVideos([...new Set([...selectedVideos, ...moduleVideoIds])])
-                                }
-                              }}
-                              className="mr-2"
-                            />
-                            <span className="font-medium text-base">{module.name}</span>
-                            <Badge variant="outline" className="ml-2">
-                              {module.totalDuration}
-                            </Badge>
-                          </div>
-                          <Badge variant="secondary" className="ml-2">
-                            {module.videos.length} videos
-                          </Badge>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-0">
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead className="bg-muted/20">
-                              <tr>
-                                <th className="w-6 px-4 py-2 text-left">
-                                  <span className="sr-only">Select</span>
-                                </th>
-                                <th className="px-4 py-2 text-left font-medium">Feature</th>
-                                {/* <th className="px-4 py-2 text-left font-medium">Description</th> */}
-                                <th className="px-4 py-2 text-left font-medium w-32">Time Required</th>
-                                <th className="px-4 py-2 text-left font-medium w-20">Status</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                              {module.videos.map((video) => (
-                                <tr key={video.id} className="hover:bg-muted/30 transition-colors">
-                                  <td className="px-4 py-3">
-                                    <Checkbox
-                                      checked={selectedVideos.includes(video.id)}
-                                      onCheckedChange={() => handleVideoSelection(video.id)}
-                                    />
-                                  </td>
-                                  <td className="px-4 py-3 font-medium">{video.title}</td>
-                                  {/* <td className="px-4 py-3 text-muted-foreground">{video.description}</td> */}
-                                  <td className="px-4 py-3">
-                                    <div className="flex items-center">
-                                      <Clock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                                      {video.duration}
-                                    </div>
-                                  </td>
-                                  <td className="px-4 py-3">
-                                    {video.watched ? (
-                                      <div className="flex items-center text-green-600 dark:text-green-500">
-                                        <CheckCircle className="h-4 w-4 mr-1" />
-                                        <span className="text-xs">Watched</span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground">Unwatched</span>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
               </div>
-            )}
-          </div>
-        </div>
+
+              {/* Enhanced Content Area */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                {loading ? (
+                  <div className="p-8">
+                    <div className="space-y-4">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-16 bg-gradient-to-r from-slate-100 to-slate-200 animate-pulse rounded-lg"></div>
+                      ))}
+                    </div>
+                  </div>
+                ) : modules.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Search className="h-8 w-8 text-slate-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">No videos found</h3>
+                    <p className="text-slate-500">Try adjusting your search criteria or filters</p>
+                  </div>
+                ) : (
+                  <div className="p-6">
+                    {/* Enhanced Global Select All */}
+                    <div className="flex items-center mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                      <Checkbox
+                        ref={globalCheckboxRef}
+                        checked={
+                          modules.length > 0 &&
+                          modules
+                            .flatMap((module) => module.videos.map((v) => v.id))
+                            .every((id) => selectedVideos.includes(id))
+                        }
+                        onCheckedChange={() => {
+                          const allVideoIds = modules.flatMap((module) => module.videos.map((v) => v.id))
+                          if (selectedVideos.length === allVideoIds.length) {
+                            setSelectedVideos([])
+                          } else {
+                            setSelectedVideos(allVideoIds)
+                          }
+                        }}
+                        className="mr-3"
+                      />
+                      <span className="text-sm font-medium text-slate-700">Select All Videos</span>
+                      <Badge variant="outline" className="ml-auto bg-blue-50 text-blue-700 border-blue-200">
+                        {selectedVideos.length} selected
+                      </Badge>
+                    </div>
+
+                    {/* Enhanced Accordion */}
+                    <Accordion type="multiple" value={expandedModules} onValueChange={setExpandedModules} className="w-full space-y-3">
+                      {modules.map((module, moduleIndex) => (
+                        <AccordionItem key={moduleIndex} value={module.category} className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-200">
+                          <AccordionTrigger className="px-6 py-4 hover:no-underline bg-gradient-to-r from-slate-50 to-white hover:from-slate-100 hover:to-slate-50">
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-4">
+                                {/* Module Select All Checkbox */}
+                                <Checkbox
+                                  ref={(el) => {
+                                    moduleCheckboxRefs.current[moduleIndex] = el
+                                  }}
+                                  checked={module.videos.every((v) => selectedVideos.includes(v.id))}
+                                  onCheckedChange={() => {
+                                    const moduleVideoIds = module.videos.map((v) => v.id)
+                                    const allSelected = moduleVideoIds.every((id) => selectedVideos.includes(id))
+                                    if (allSelected) {
+                                      setSelectedVideos(selectedVideos.filter((id) => !moduleVideoIds.includes(id)))
+                                    } else {
+                                      setSelectedVideos([...new Set([...selectedVideos, ...moduleVideoIds])])
+                                    }
+                                  }}
+                                  className="mr-2"
+                                />
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 bg-green-100 rounded-lg">
+                                    <Target className="h-4 w-4 text-green-600" />
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-slate-900 text-left">{module.name}</span>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                                        <Clock className="h-3 w-3 mr-1" />
+                                        {module.totalDuration}
+                                      </Badge>
+                                      <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+                                        {module.videos.length} videos
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-0">
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead className="bg-slate-50 border-t border-slate-200">
+                                  <tr>
+                                    <th className="w-6 px-6 py-3 text-left">
+                                      <span className="sr-only">Select</span>
+                                    </th>
+                                    <th className="px-6 py-3 text-left font-semibold text-slate-700">Feature</th>
+                                    <th className="px-6 py-3 text-left font-semibold text-slate-700 w-32">Time Required</th>
+                                    <th className="px-6 py-3 text-left font-semibold text-slate-700 w-24">Status</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  {module.videos.map((video) => (
+                                    <tr key={video.id} className="hover:bg-slate-50/50 transition-colors">
+                                      <td className="px-6 py-4">
+                                        <Checkbox
+                                          checked={selectedVideos.includes(video.id)}
+                                          onCheckedChange={() => handleVideoSelection(video.id)}
+                                        />
+                                      </td>
+                                      <td className="px-6 py-4">
+                                        <div className="font-medium text-slate-900">{video.title}</div>
+                                        {video.description && (
+                                          <div className="text-slate-500 text-xs mt-1 line-clamp-2">{video.description}</div>
+                                        )}
+                                      </td>
+                                      <td className="px-6 py-4">
+                                        <div className="flex items-center text-slate-600">
+                                          <Clock className="h-3.5 w-3.5 mr-2 text-slate-400" />
+                                          {video.duration}
+                                        </div>
+                                      </td>
+                                      <td className="px-6 py-4">
+                                        {video.watched ? (
+                                          <div className="flex items-center text-green-600">
+                                            <CheckCircle className="h-4 w-4 mr-1.5" />
+                                            <span className="text-xs font-medium">Completed</span>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center text-slate-500">
+                                            <div className="w-2 h-2 bg-slate-300 rounded-full mr-2"></div>
+                                            <span className="text-xs">Pending</span>
+                                          </div>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </div>
+                )}
+              </div>
+            </div>
           </>
         )}
       </main>
@@ -988,17 +1092,16 @@ export default function Dashboard() {
         }}
       />
 
-
-
       {/* Challenge Mode */}
       <ChallengeMode 
         isVisible={showChallengeMode} 
         onClose={() => setShowChallengeMode(false)}
       />
       
-      <footer className="border-t py-3">
-        <div className="container text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} EOXS. All rights reserved.
+      {/* Enhanced Footer */}
+      <footer className="border-t border-slate-200 bg-white/80 backdrop-blur-sm py-4 mt-12">
+        <div className="container text-center text-xs text-slate-500">
+          © {new Date().getFullYear()} EOXS. All rights reserved. | Built with ❤️ for learning excellence
         </div>
       </footer>
     </div>
