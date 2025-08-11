@@ -21,7 +21,8 @@ import {
   Clock,
   Users,
   BarChart3,
-  Medal
+  Medal,
+  RefreshCw
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -63,6 +64,9 @@ export default function GamifiedDashboard() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [dailyReminder, setDailyReminder] = useState("")
   const [moduleSuggestions, setModuleSuggestions] = useState<any[]>([])
+  const [topVideos, setTopVideos] = useState<Video[]>([])
+  const [videoProgress, setVideoProgress] = useState<{[key: string]: number}>({})
+  const [allVideos, setAllVideos] = useState<Video[]>([])
 
   const [showChallengeMode, setShowChallengeMode] = useState(false)
 
@@ -115,6 +119,59 @@ export default function GamifiedDashboard() {
       setModuleSuggestions(suggestions)
     }
   }, [userProgress])
+
+  // Fetch top videos and their progress
+  const fetchTopVideos = async () => {
+    if (!auth.currentUser) return
+    
+    try {
+      // Get all videos
+      const videosQuery = query(collection(db, "videos"), orderBy("createdAt", "asc"))
+      const videosSnapshot = await getDocs(videosQuery)
+      const allVideos = videosSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Video[]
+
+      // Get user's watch history
+      const watchHistoryQuery = query(
+        collection(db, "videoWatchEvents"),
+        where("userId", "==", auth.currentUser.uid)
+      )
+      const watchHistorySnapshot = await getDocs(watchHistoryQuery)
+      const watchHistory = watchHistorySnapshot.docs.map(doc => doc.data())
+
+      // Calculate progress for each video
+      const progressData: {[key: string]: number} = {}
+      allVideos.forEach(video => {
+        const watchEvent = watchHistory.find(event => event.videoId === video.id)
+        if (watchEvent) {
+          // Calculate progress based on watch position vs duration
+          const duration = parseInt(video.duration.match(/\d+/)?.[0] || "0")
+          const position = watchEvent.lastPosition || 0
+          progressData[video.id] = duration > 0 ? Math.min(100, (position / duration) * 100) : 0
+        } else {
+          progressData[video.id] = 0
+        }
+      })
+
+      // Get top 3 videos by progress (most watched)
+      const sortedVideos = allVideos
+        .sort((a, b) => (progressData[b.id] || 0) - (progressData[a.id] || 0))
+        .slice(0, 3)
+
+      setTopVideos(sortedVideos)
+      setVideoProgress(progressData)
+      setAllVideos(allVideos) // Store all videos for module counting
+    } catch (error) {
+      console.error("Error fetching top videos:", error)
+    }
+  }
+
+  // Fetch top videos when component mounts
+  useEffect(() => {
+    fetchTopVideos()
+  }, [])
 
   const handleModuleClick = (module: any) => {
     if (module.isUnlocked) {
@@ -404,46 +461,111 @@ export default function GamifiedDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {moduleSuggestions.map((module, index) => (
+                <div className="space-y-6">
+                  {/* Top 3 Modules with Progress */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-blue-600">📚 Most Active Modules</h3>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {
+                          fetchTopVideos()
+                          // Also refresh module suggestions if needed
+                        }}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-1" />
+                        Refresh
+                      </Button>
+                    </div>
+                    <p className="text-sm text-blue-600 mb-4">Shows your top 3 modules based on videos watched</p>
+                    <div className="space-y-3">
+                      {(() => {
+                        // Calculate module progress based on videos watched
+                        const moduleProgress: {[key: string]: {progress: number, videoCount: number, watchedCount: number, totalVideos: number}} = {}
+                        
+                        // First, count total videos per module from all videos in the system
+                        allVideos.forEach(video => {
+                          if (!moduleProgress[video.category]) {
+                            moduleProgress[video.category] = {progress: 0, videoCount: 0, watchedCount: 0, totalVideos: 0}
+                          }
+                          moduleProgress[video.category].totalVideos++
+                        })
+                        
+                        // Then, calculate watched videos based on user's actual progress
+                        topVideos.forEach(video => {
+                          if (moduleProgress[video.category]) {
+                            moduleProgress[video.category].videoCount++
+                            
+                            // Count videos that have been watched (any progress > 0)
+                            if ((videoProgress[video.id] || 0) > 0) {
+                              moduleProgress[video.category].watchedCount++
+                            }
+                          }
+                        })
+                        
+                        // Calculate percentage based on videos watched vs total videos in module
+                        Object.keys(moduleProgress).forEach(category => {
+                          const module = moduleProgress[category]
+                          // Progress is based on how many videos from this module the user has watched
+                          module.progress = module.totalVideos > 0 ? (module.watchedCount / module.totalVideos) * 100 : 0
+                        })
+                        
+                        // Get top 3 modules by videos watched (most active modules)
+                        const topModules = Object.entries(moduleProgress)
+                          .sort(([,a], [,b]) => b.watchedCount - a.watchedCount) // Sort by videos watched
+                          .slice(0, 3)
+                        
+                        return topModules.length > 0 ? (
+                          topModules.map(([category, module], index) => (
                     <motion.div
-                      key={module.name}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
+                              key={category}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                        module.isUnlocked 
-                          ? 'border-green-200 bg-green-50 hover:bg-green-100' 
-                          : 'border-gray-200 bg-gray-50 opacity-60'
-                      }`}
-                      onClick={() => handleModuleClick(module)}
+                              className="p-3 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+                              onClick={() => router.push(`/dashboard?module=${category}`)}
                     >
-                      <div className="flex items-center justify-between">
+                              <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
-                          <div className="text-2xl">{module.icon}</div>
-                          <div>
-                            <h3 className="font-medium">{module.name}</h3>
-                            <p className="text-sm text-muted-foreground">{module.description}</p>
+                                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                    {index + 1}
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="font-medium text-sm">{category}</h4>
+                                    <p className="text-xs text-blue-600">
+                                      {module.watchedCount} of {module.totalVideos} videos watched
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-sm font-bold text-blue-700">
+                                    {Math.round(module.progress)}%
+                                  </div>
+                                  <div className="text-xs text-blue-500">Videos Watched</div>
+                                </div>
+                              </div>
+                              <Progress 
+                                value={module.progress} 
+                                className="h-2 bg-blue-200"
+                              />
+                            </motion.div>
+                          ))
+                        ) : (
+                          <div className="text-center py-6 text-gray-500">
+                            <div className="text-4xl mb-2">📚</div>
+                            <p className="text-sm">No modules in progress yet</p>
+                            <p className="text-xs">Start watching videos to see module progress here</p>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {module.isUnlocked ? (
-                            <>
-                              <Badge variant="outline" className="bg-green-100 text-green-700">
-                                +{module.xpReward} XP
-                              </Badge>
-                              <ArrowRight className="h-4 w-4 text-green-600" />
-                            </>
-                          ) : (
-                            <>
-                              <Lock className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-500">Locked</span>
-                            </>
-                          )}
+                        )
+                      })()}
                         </div>
                       </div>
-                    </motion.div>
-                  ))}
+
+
+
+
                 </div>
               </CardContent>
             </Card>

@@ -169,10 +169,16 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-green-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </Button>
                 </Link>
-                <Button variant="outline" size="lg" className="border-2 border-gray-300 hover:border-green-600 text-gray-700 hover:text-green-600 px-12 py-6 text-lg rounded-full transition-all duration-300 group hover:bg-green-50">
-                  <Play className="mr-2 h-5 w-5" />
-                  Watch Demo
-                </Button>
+                <Link href="/demo-video">
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="border-2 border-gray-300 hover:border-green-600 text-gray-700 hover:text-green-600 px-12 py-6 text-lg rounded-full transition-all duration-300 group hover:bg-green-50"
+                  >
+                    <Play className="mr-2 h-5 w-5" />
+                    Watch Demo
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
@@ -228,26 +234,7 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Feature cards */}
-              {features.map((feature, index) => (
-                <div 
-                  key={index}
-                  className="group bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-lg hover:shadow-2xl border border-gray-100 hover:border-green-200 transition-all duration-300 hover:-translate-y-2 cursor-pointer"
-                  onMouseEnter={() => setCurrentFeature(index)}
-                >
-                                     <div className="flex items-start gap-6">
-                     <div className={`bg-gradient-to-br ${feature.gradient} p-4 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                       {React.createElement(feature.icon, { className: "h-8 w-8 text-white" })}
-                     </div>
-                    <div>
-                      <h3 className="text-2xl font-bold mb-3 text-gray-900">{feature.title}</h3>
-                      <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+
           </div>
         </section>
 

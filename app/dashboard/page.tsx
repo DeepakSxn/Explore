@@ -709,7 +709,7 @@ export default function Dashboard() {
               onClick={() => router.push("/")}
             />
             <div className="hidden md:block">
-              <h1 className="text-lg font-semibold text-slate-800">Learning Dashboard</h1>
+             
               
             </div>
           </div>
@@ -722,15 +722,7 @@ export default function Dashboard() {
                 {/* XP badge removed */}
               </>
             )}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowGamifiedDashboard(!showGamifiedDashboard)}
-              className="bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 transition-all duration-200"
-            >
-              <BookOpen className="h-4 w-4 mr-2" />
-              {showGamifiedDashboard ? 'Classic View' : 'Gamified View'}
-            </Button>
+
             <Button 
               variant="ghost" 
               size="icon" 
@@ -832,6 +824,19 @@ export default function Dashboard() {
                   </a>
                 </Button>
               </Link>
+              
+              {/* Classic View Toggle Button */}
+              <Button 
+                variant="ghost" 
+                size="lg" 
+                onClick={() => setShowGamifiedDashboard(!showGamifiedDashboard)}
+                className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg"
+              >
+                <div className="p-2 bg-white/10 rounded-lg">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <span className="ml-3">{showGamifiedDashboard ? 'Classic View' : 'Gamified View'}</span>
+              </Button>
             </div>
             
             <Separator className="bg-green-500/30 mx-4" />
