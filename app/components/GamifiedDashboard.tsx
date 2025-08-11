@@ -353,10 +353,10 @@ export default function GamifiedDashboard() {
               <Card className="bg-gradient-to-br from-pink-500 to-pink-600 text-white border-0">
                 <CardContent className="p-4 text-center">
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
-                    <Star className="h-4 w-4" />
+                    <Zap className="h-4 w-4" />
                   </div>
-                  <p className="text-2xl font-bold">{userProgress.achievements.length}</p>
-                  <p className="text-xs text-pink-100">Achievements</p>
+                  <p className="text-2xl font-bold">{userProgress.totalXP}</p>
+                  <p className="text-xs text-pink-100">Total XP</p>
                 </CardContent>
               </Card>
             </div>

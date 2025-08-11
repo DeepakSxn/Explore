@@ -710,26 +710,16 @@ export default function Dashboard() {
             />
             <div className="hidden md:block">
               <h1 className="text-lg font-semibold text-slate-800">Learning Dashboard</h1>
-              <p className="text-sm text-slate-500">Master your skills with EOXSplore</p>
+              
             </div>
           </div>
           <div className="flex items-center gap-3">
             {showGamifiedDashboard && userProgress && (
               <>
                 <div className="hidden lg:flex items-center gap-3">
-                  <Badge variant="outline" className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:bg-blue-100 transition-colors">
-                    <Sparkles className="h-3 w-3 mr-1.5" />
-                    Level {userProgress.currentLevel}
-                  </Badge>
-                  <Badge variant="outline" className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200 text-orange-700 hover:bg-orange-100 transition-colors">
-                    <Flame className="h-3 w-3 mr-1.5" />
-                    {userProgress.currentStreak} day streak
-                  </Badge>
+                  {/* Level and streak badges removed */}
                 </div>
-                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-full border border-yellow-200">
-                  <Zap className="h-4 w-4 text-yellow-600" />
-                  <span className="text-sm font-medium text-yellow-700">{userProgress.totalXP} XP</span>
-                </div>
+                {/* XP badge removed */}
               </>
             )}
             <Button 

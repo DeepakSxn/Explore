@@ -261,13 +261,31 @@ export const updateSuspensionReason = async (userId: string, reason: string) => 
 // Function to get leaderboard data
 export const getLeaderboardData = async () => {
   try {
+    console.log("getLeaderboardData - Starting to fetch leaderboard data...")
+    
     // Get all users
     const usersCollection = collection(db, "users")
     const usersSnapshot = await getDocs(usersCollection)
     const users = usersSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }))
+    })) as Array<{
+      id: string
+      userId?: string
+      name?: string
+      email?: string
+      companyName?: string
+      department?: string
+      avatar?: string
+      [key: string]: any
+    }>
+    
+    console.log("getLeaderboardData - Found users:", users.length)
+    if (users.length === 0) {
+      console.log("getLeaderboardData - No users found in the system")
+      return []
+    }
+    console.log("getLeaderboardData - Sample user:", users[0])
 
     // Get all user progress data
     const progressCollection = collection(db, "userProgress")
@@ -275,14 +293,37 @@ export const getLeaderboardData = async () => {
     const progressData = progressSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }))
+    })) as Array<{
+      id: string
+      userId?: string
+      totalXP?: number
+      currentLevel?: number
+      currentStreak?: number
+      totalVideosWatched?: number
+      badges?: any[]
+      achievements?: any[]
+      [key: string]: any
+    }>
+    
+    console.log("getLeaderboardData - Found progress entries:", progressData.length)
+    if (progressData.length > 0) {
+      console.log("getLeaderboardData - Sample progress:", progressData[0])
+    }
 
     // Combine user data with progress data
     const leaderboardData = users.map(user => {
-      const userProgress = progressData.find(progress => progress.userId === user.userId)
+      // Try to find progress data by userId field first, then by document ID
+      const userProgress = progressData.find(progress => 
+        progress.userId === user.userId || progress.userId === user.id
+      )
+      
+      console.log(`getLeaderboardData - User ${user.userId || user.id}:`, {
+        hasProgress: !!userProgress,
+        progressData: userProgress
+      })
       
       return {
-        userId: user.userId,
+        userId: user.userId || user.id,
         name: user.name || user.email?.split('@')[0] || 'Anonymous',
         email: user.email || '',
         company: user.companyName || 'EOXS Corp',
@@ -299,10 +340,15 @@ export const getLeaderboardData = async () => {
       }
     })
 
+    console.log("getLeaderboardData - Combined data sample:", leaderboardData[0])
+
     // Sort by total XP and assign ranks
     const sortedData = leaderboardData
       .sort((a, b) => b.totalXP - a.totalXP)
       .map((entry, index) => ({ ...entry, rank: index + 1 }))
+
+    console.log("getLeaderboardData - Final sorted data sample:", sortedData[0])
+    console.log("getLeaderboardData - Total entries:", sortedData.length)
 
     return sortedData
   } catch (error) {

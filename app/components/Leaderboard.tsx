@@ -42,17 +42,12 @@ interface LeaderboardEntry {
   isCurrentUser: boolean
 }
 
-interface LeaderboardProps {
-  isVisible: boolean
-  onClose: () => void
-}
-
-export default function Leaderboard({ isVisible, onClose }: LeaderboardProps) {
+export default function Leaderboard() {
   const { userProgress } = useGamification()
   const { userData } = useAuth()
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([])
   const [filteredData, setFilteredData] = useState<LeaderboardEntry[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("global")
   const [timeFilter, setTimeFilter] = useState("all-time")
   const [departmentFilter, setDepartmentFilter] = useState("all")
@@ -61,39 +56,54 @@ export default function Leaderboard({ isVisible, onClose }: LeaderboardProps) {
   const fetchLeaderboardData = async () => {
     try {
       setLoading(true)
+      console.log("Leaderboard component - Fetching leaderboard data...")
       const data = await getLeaderboardData()
-      setLeaderboardData(data)
+      console.log("Leaderboard component - Received data:", data)
+      setLeaderboardData(data || [])
       // Don't set filteredData here - let the useEffect handle it
     } catch (error) {
       console.error("Error fetching leaderboard data:", error)
       toast({
         title: "Error",
-        description: "Failed to load leaderboard data",
+        description: "Failed to load leaderboard data. Please try again.",
         variant: "destructive"
       })
+      setLeaderboardData([])
     } finally {
       setLoading(false)
     }
   }
 
-  // Fetch leaderboard data and mark current user
+  // Fetch leaderboard data on component mount
   useEffect(() => {
-    if (isVisible) {
-      fetchLeaderboardData()
-    }
-  }, [isVisible])
+    fetchLeaderboardData()
+  }, [])
 
   // Mark current user and apply filters in a single useEffect
   useEffect(() => {
+    console.log("Leaderboard component - Processing data:", {
+      leaderboardDataLength: leaderboardData.length,
+      userData: userData,
+      departmentFilter,
+      timeFilter
+    })
+    
     if (leaderboardData.length > 0) {
-      let processedData = leaderboardData.map(entry => ({
-        ...entry,
-        isCurrentUser: userData ? entry.userId === userData.userId : false
-      }))
+      let processedData = leaderboardData.map(entry => {
+        const isCurrentUser = userData ? entry.userId === userData.userId : false
+        console.log(`Leaderboard component - User ${entry.name} (${entry.userId}): isCurrentUser = ${isCurrentUser}, userData.userId = ${userData?.userId}`)
+        return {
+          ...entry,
+          isCurrentUser
+        }
+      })
+
+      console.log("Leaderboard component - Processed data sample:", processedData[0])
 
       // Apply department filter
       if (departmentFilter !== "all") {
         processedData = processedData.filter(entry => entry.department === departmentFilter)
+        console.log("Leaderboard component - After department filter:", processedData.length, "entries")
       }
 
       // Apply time filter (mock implementation)
@@ -103,7 +113,11 @@ export default function Leaderboard({ isVisible, onClose }: LeaderboardProps) {
         processedData = processedData.slice(0, 15) // Show top 15 for this month
       }
 
+      console.log("Leaderboard component - Final filtered data:", processedData.length, "entries")
       setFilteredData(processedData)
+    } else {
+      console.log("Leaderboard component - No leaderboard data available")
+      setFilteredData([])
     }
   }, [leaderboardData, userData, timeFilter, departmentFilter])
 
@@ -149,147 +163,167 @@ export default function Leaderboard({ isVisible, onClose }: LeaderboardProps) {
 
   const departmentStats = getDepartmentStats()
 
-  if (!isVisible) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-6xl max-h-[90vh] overflow-hidden bg-background rounded-lg shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center gap-3">
-            <Trophy className="h-8 w-8 text-yellow-500" />
-            <div>
-              <h2 className="text-2xl font-bold">Leaderboard</h2>
-              <p className="text-muted-foreground">See how you rank against your colleagues</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refreshLeaderboard}
-              disabled={loading}
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button variant="outline" size="sm" onClick={onClose}>
-              Close
-            </Button>
+    <div className="w-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Trophy className="h-8 w-8 text-yellow-500" />
+          <div>
+            <h2 className="text-2xl font-bold">Leaderboard</h2>
+            <p className="text-muted-foreground">See how you rank against your colleagues</p>
           </div>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={refreshLeaderboard}
+          disabled={loading}
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] min-h-[600px]">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="global">Global Rankings</TabsTrigger>
-              <TabsTrigger value="department">Department Battle</TabsTrigger>
-              <TabsTrigger value="stats">Statistics</TabsTrigger>
-            </TabsList>
+      {/* Content */}
+      <div className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="global">Global Rankings</TabsTrigger>
+            <TabsTrigger value="department">Department Battle</TabsTrigger>
+            <TabsTrigger value="stats">Statistics</TabsTrigger>
+          </TabsList>
 
-            {/* Filters */}
-            <div className="flex items-center gap-4">
-              <Select value={timeFilter} onValueChange={setTimeFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Time Period" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-time">All Time</SelectItem>
-                  <SelectItem value="this-month">This Month</SelectItem>
-                  <SelectItem value="this-week">This Week</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* Filters */}
+          <div className="flex items-center gap-4">
+            <Select value={timeFilter} onValueChange={setTimeFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Time Period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all-time">All Time</SelectItem>
+                <SelectItem value="this-month">This Month</SelectItem>
+                <SelectItem value="this-week">This Week</SelectItem>
+              </SelectContent>
+            </Select>
 
-              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
-                  {Array.from(new Set(leaderboardData.map(entry => entry.department))).map(dept => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Department" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Departments</SelectItem>
+                {Array.from(new Set(leaderboardData.map(entry => entry.department).filter(Boolean))).map(dept => (
+                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            {/* Global Rankings Tab */}
-            <TabsContent value="global" className="space-y-4 min-h-[500px]">
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  <span className="ml-2">Loading leaderboard...</span>
-                </div>
-              ) : filteredData.length === 0 ? (
-                <div className="text-center py-12">
-                  <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Data Available</h3>
-                  <p className="text-muted-foreground">No users have completed any activities yet.</p>
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                                    {filteredData.map((entry, index) => (
-                    <div
-                      key={entry.userId}
-                    >
-                      <Card className={`${entry.isCurrentUser ? 'ring-2 ring-primary' : ''}`}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${getRankBadge(entry.rank)}`}>
-                                {getRankIcon(entry.rank)}
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10">
-                                  <AvatarImage src={entry.avatar} />
-                                  <AvatarFallback>
-                                    {entry.name.split(' ').map(n => n[0]).join('')}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold">{entry.name}</h3>
-                                    {entry.isCurrentUser && (
-                                      <Badge variant="secondary">You</Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-muted-foreground">{entry.department}</p>
-                                </div>
-                              </div>
+          {/* Global Rankings Tab */}
+          <TabsContent value="global" className="space-y-4 min-h-[500px]">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="ml-2">Loading leaderboard...</span>
+              </div>
+            ) : leaderboardData.length === 0 ? (
+              <div className="text-center py-12">
+                <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Users Found</h3>
+                <p className="text-muted-foreground">There are no users in the system yet.</p>
+              </div>
+            ) : filteredData.length === 0 ? (
+              <div className="text-center py-12">
+                <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Data Available</h3>
+                <p className="text-muted-foreground">No users match the current filters.</p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setDepartmentFilter("all")
+                    setTimeFilter("all-time")
+                  }}
+                  className="mt-4"
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {filteredData.map((entry, index) => (
+                  <div
+                    key={entry.userId}
+                  >
+                    <Card className={`${entry.isCurrentUser ? 'ring-2 ring-primary' : ''}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${getRankBadge(entry.rank)}`}>
+                              {getRankIcon(entry.rank)}
                             </div>
-                            
-                            <div className="flex items-center gap-6">
-                              <div className="text-right">
-                                <div className="flex items-center gap-1">
-                                  <Star className="h-4 w-4 text-yellow-500" />
-                                  <span className="font-bold">{entry.totalXP.toLocaleString()} XP</span>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={entry.avatar} />
+                                <AvatarFallback>
+                                  {entry.name.split(' ').map(n => n[0]).join('')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-semibold">{entry.name}</h3>
+                                  {entry.isCurrentUser && (
+                                    <Badge variant="secondary">You</Badge>
+                                  )}
                                 </div>
-                                <p className="text-sm text-muted-foreground">Level {entry.currentLevel}</p>
-                              </div>
-                              
-                              <div className="flex items-center gap-4 text-sm">
-                                <div className="flex items-center gap-1">
-                                  <Flame className="h-4 w-4 text-orange-500" />
-                                  <span>{entry.currentStreak} days</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Target className="h-4 w-4 text-blue-500" />
-                                  <span>{entry.badgesEarned} badges</span>
-                                </div>
+                                <p className="text-sm text-muted-foreground">{entry.department}</p>
                               </div>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
+                          
+                          <div className="flex items-center gap-6">
+                            <div className="text-right">
+                              <div className="flex items-center gap-1">
+                                <Star className="h-4 w-4 text-yellow-500" />
+                                <span className="font-bold">{entry.totalXP.toLocaleString()} XP</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">Level {entry.currentLevel}</p>
+                            </div>
+                            
+                            <div className="flex items-center gap-4 text-sm">
+                              <div className="flex items-center gap-1">
+                                <Flame className="h-4 w-4 text-orange-500" />
+                                <span>{entry.currentStreak} days</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Target className="h-4 w-4 text-blue-500" />
+                                <span>{entry.badgesEarned} badges</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
-            {/* Department Battle Tab */}
-            <TabsContent value="department" className="space-y-6 min-h-[500px]">
+          {/* Department Battle Tab */}
+          <TabsContent value="department" className="space-y-6 min-h-[500px]">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="ml-2">Loading department stats...</span>
+              </div>
+            ) : Object.keys(departmentStats).length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Department Data</h3>
+                <p className="text-muted-foreground">No department information available.</p>
+              </div>
+            ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {Object.entries(departmentStats).map(([dept, stats]) => (
                   <Card key={dept} className="relative overflow-hidden">
@@ -324,10 +358,23 @@ export default function Leaderboard({ isVisible, onClose }: LeaderboardProps) {
                   </Card>
                 ))}
               </div>
-            </TabsContent>
+            )}
+          </TabsContent>
 
-            {/* Statistics Tab */}
-            <TabsContent value="stats" className="space-y-6 min-h-[500px]">
+          {/* Statistics Tab */}
+          <TabsContent value="stats" className="space-y-6 min-h-[500px]">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="ml-2">Loading statistics...</span>
+              </div>
+            ) : filteredData.length === 0 ? (
+              <div className="text-center py-12">
+                <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Statistics Available</h3>
+                <p className="text-muted-foreground">No data available to display statistics.</p>
+              </div>
+            ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                   <CardContent className="p-6">
@@ -346,7 +393,7 @@ export default function Leaderboard({ isVisible, onClose }: LeaderboardProps) {
                       <h3 className="font-semibold">Avg XP</h3>
                     </div>
                     <p className="text-2xl font-bold mt-2">
-                      {Math.round(filteredData.reduce((sum, entry) => sum + entry.totalXP, 0) / filteredData.length).toLocaleString()}
+                      {filteredData.length > 0 ? Math.round(filteredData.reduce((sum, entry) => sum + entry.totalXP, 0) / filteredData.length).toLocaleString() : 0}
                     </p>
                   </CardContent>
                 </Card>
@@ -358,7 +405,7 @@ export default function Leaderboard({ isVisible, onClose }: LeaderboardProps) {
                       <h3 className="font-semibold">Avg Streak</h3>
                     </div>
                     <p className="text-2xl font-bold mt-2">
-                      {Math.round(filteredData.reduce((sum, entry) => sum + entry.currentStreak, 0) / filteredData.length)} days
+                      {filteredData.length > 0 ? Math.round(filteredData.reduce((sum, entry) => sum + entry.currentStreak, 0) / filteredData.length) : 0} days
                     </p>
                   </CardContent>
                 </Card>
@@ -374,9 +421,9 @@ export default function Leaderboard({ isVisible, onClose }: LeaderboardProps) {
                   </CardContent>
                 </Card>
               </div>
-            </TabsContent>
-          </Tabs>
-        </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )
