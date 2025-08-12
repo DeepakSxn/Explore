@@ -159,10 +159,17 @@ export default function Login() {
       <main className="flex-1 flex flex-col items-center justify-center py-12 px-4 relative z-10">
         <div className="w-full max-w-md text-center mb-8">
           <div className={`transform transition-all duration-700 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <Sparkles className="h-6 w-6 text-green-500 animate-pulse" />
-              <span className="text-green-600 font-semibold text-xl">Welcome Back</span>
-              <Sparkles className="h-6 w-6 text-green-500 animate-pulse" />
+            <div className="flex flex-col items-center justify-center gap-4 mb-6">
+              <img 
+                src="lVJ7PU01.svg"
+                alt="EOXS Logo"
+                className="h-12.5 w-auto mb-4"
+              />
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-green-500 animate-pulse" />
+                <span className="text-green-600 font-semibold text-xl">Sign In</span>
+                <Sparkles className="h-6 w-6 text-green-500 animate-pulse" />
+              </div>
             </div>
             
             <h1 className="text-4xl font-bold text-gray-900 mb-3">
@@ -305,7 +312,7 @@ export default function Login() {
         <div className="container px-4 md:px-6 max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-4">
-              <img src="/light.webp" alt="EOXS Logo" className="h-8 w-auto" />
+              <img src="/EOXS Logo- White-main.png" alt="EOXS Logo" className="h-8 w-auto" />
               <span className="text-gray-400">© 2024 DemoX. All rights reserved.</span>
             </div>
             <div className="flex gap-8 text-sm">

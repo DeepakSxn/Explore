@@ -73,7 +73,7 @@ export default function EOXSplorePage() {
               </div>
             </div>
             <div className="flex justify-center items-center mb-8 gap-4">
-              <img src="logoxplore.jpg" alt="EOXSplore Logo" height={360} width={200} />
+              <img src="/lVJ7PU01.svg" alt="EOXSplore Logo" height={360} width={200} />
             </div>
           </div>
         </section>

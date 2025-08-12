@@ -759,73 +759,7 @@ export default function Dashboard() {
                 <p className="text-green-100 text-sm">Quick access to features</p>
               </div>
               
-              <Link href="/profile" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
-                  <a className="flex items-center gap-3">
-                    <div className="p-2 bg-white/10 rounded-lg">
-                      <User className="w-4 h-4" />
-                    </div>
-                    <span>User Profile</span>
-                  </a>
-                </Button>
-              </Link>
-              
-              <Link href="/playlist" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
-                  <a className="flex items-center gap-3">
-                    <div className="p-2 bg-white/10 rounded-lg">
-                      <List className="w-4 h-4" />
-                    </div>
-                    <span>My Playlist</span>
-                  </a>
-                </Button>
-              </Link>
-              
-              <Link href="/leaderboard" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
-                  <a className="flex items-center gap-3">
-                    <div className="p-2 bg-white/10 rounded-lg">
-                      <Trophy className="w-4 h-4" />
-                    </div>
-                    <span>Leaderboard</span>
-                  </a>
-                </Button>
-              </Link>
-              
-              <Link href="/about" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
-                  <a className="flex items-center gap-3">
-                    <div className="p-2 bg-white/10 rounded-lg">
-                      <Info className="w-4 h-4" />
-                    </div>
-                    <span>About EOXSplore</span>
-                  </a>
-                </Button>
-              </Link>
-              
-              <Link href="https://eoxs.com" target="_blank" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
-                  <a className="flex items-center gap-3">
-                    <div className="p-2 bg-white/10 rounded-lg">
-                      <Home className="w-4 h-4" />
-                    </div>
-                    <span>About EOXS</span>
-                  </a>
-                </Button>
-              </Link>
-              
-              <Link href="https://eoxs.com/contact" target="_blank" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
-                  <a className="flex items-center gap-3">
-                    <div className="p-2 bg-white/10 rounded-lg">
-                      <Phone className="w-4 h-4" />
-                    </div>
-                    <span>Contact</span>
-                  </a>
-                </Button>
-              </Link>
-              
-              {/* Classic View Toggle Button */}
+              {/* Classic View Toggle Button - Now First */}
               <Button 
                 variant="ghost" 
                 size="lg" 
@@ -833,10 +767,76 @@ export default function Dashboard() {
                 className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg"
               >
                 <div className="p-2 bg-white/10 rounded-lg">
-                  <BookOpen className="w-4 h-4" />
+                  <BookOpen className="w-4 h-4 text-white" />
                 </div>
-                <span className="ml-3">{showGamifiedDashboard ? 'Classic View' : 'Gamified View'}</span>
+                <span className="ml-3 text-white">My Dashboard</span>
               </Button>
+              
+              <Link href="/profile" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
+                  <a className="flex items-center gap-3 text-white">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-white">User Profile</span>
+                  </a>
+                </Button>
+              </Link>
+              
+              <Link href="/playlist" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
+                  <a className="flex items-center gap-3 text-white">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <List className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-white">My Playlist</span>
+                  </a>
+                </Button>
+              </Link>
+              
+              <Link href="/leaderboard" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
+                  <a className="flex items-center gap-3 text-white">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <Trophy className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-white">Leaderboard</span>
+                  </a>
+                </Button>
+              </Link>
+              
+              <Link href="/about" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
+                  <a className="flex items-center gap-3 text-white">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <Info className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-white">About EOXSplore</span>
+                  </a>
+                </Button>
+              </Link>
+              
+              <Link href="https://eoxs.com" target="_blank" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
+                  <a className="flex items-center gap-3 text-white">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <Home className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-white">About EOXS</span>
+                  </a>
+                </Button>
+              </Link>
+              
+              <Link href="https://eoxs.com/contact" target="_blank" passHref legacyBehavior>
+                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
+                  <a className="flex items-center gap-3 text-white">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <Phone className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-white">Contact</span>
+                  </a>
+                </Button>
+              </Link>
             </div>
             
             <Separator className="bg-green-500/30 mx-4" />
@@ -846,13 +846,13 @@ export default function Dashboard() {
               <div className="bg-white/10 rounded-lg p-3">
                 <h3 className="text-white font-medium text-sm mb-2">Quick Stats</h3>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-green-100 text-xs">
-                    <span>Videos Watched</span>
-                    <span className="font-medium">{videos.filter(v => v.watched).length}</span>
+                  <div className="flex items-center justify-between text-white text-xs">
+                    <span className="text-white">Videos Watched</span>
+                    <span className="font-medium text-white">{videos.filter(v => v.watched).length}</span>
                   </div>
-                  <div className="flex items-center justify-between text-green-100 text-xs">
-                    <span>Total Videos</span>
-                    <span className="font-medium">{videos.length}</span>
+                  <div className="flex items-center justify-between text-white text-xs">
+                    <span className="text-white">Total Videos</span>
+                    <span className="font-medium text-white">{videos.length}</span>
                   </div>
                   <div className="w-full bg-green-500/30 rounded-full h-1.5">
                     <div 

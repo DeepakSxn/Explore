@@ -326,7 +326,7 @@ export default function GamifiedDashboard() {
                       <Clock className="h-5 w-5" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium">{dailyReminder}</p>
+                      <p className="font-medium text-white">{dailyReminder}</p>
                     </div>
                     <Button 
                       variant="secondary" 
@@ -609,19 +609,19 @@ export default function GamifiedDashboard() {
                       <Flame className="h-6 w-6" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold">Amazing Streak!</h3>
-                      <p className="text-orange-100">
+                      <h3 className="text-lg font-bold text-white">Amazing Streak!</h3>
+                      <p className="text-white">
                         You've been learning for {userProgress.currentStreak} day{userProgress.currentStreak !== 1 ? 's' : ''} in a row!
                       </p>
                       {userProgress.currentStreak >= 7 && (
-                        <p className="text-sm text-orange-200 mt-1">
+                        <p className="text-sm text-white mt-1">
                           🎉 You've earned the "Week Warrior" badge!
                         </p>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold">{userProgress.currentStreak}</p>
-                      <p className="text-sm text-orange-100">days</p>
+                      <p className="text-2xl font-bold text-white">{userProgress.currentStreak}</p>
+                      <p className="text-sm text-white">days</p>
                     </div>
                   </div>
                 </CardContent>

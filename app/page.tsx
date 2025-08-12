@@ -9,7 +9,6 @@ import React from "react"
 export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false)
   const [currentFeature, setCurrentFeature] = useState(0)
-  const [isHovered, setIsHovered] = useState(false)
 
   useEffect(() => {
     setTimeout(() => {
@@ -134,7 +133,7 @@ export default function Home() {
               <div className={`transform transition-all duration-700 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
                 <div className="relative group">
                   <img 
-                    src="logoxplore.jpg" 
+                    src="Main-EOXS-landing.jpg" 
                     alt="Demox" 
                     className="h-80 w-auto drop-shadow-2xl hover:scale-105 transition-transform duration-300"
                   />
@@ -189,7 +188,7 @@ export default function Home() {
           <div className="container px-4 md:px-6 max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                Why Choose <span className="text-green-600">DemoX</span>?
+                Why Choose <span className="text-green-600">EOXSplore</span>?
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                 Experience software demos like never before with our innovative platform
@@ -280,38 +279,24 @@ export default function Home() {
                     <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
-                <Button variant="outline" size="lg" className="border-2 border-gray-300 hover:border-green-600 text-gray-700 hover:text-green-600 px-12 py-6 text-lg rounded-full transition-all duration-300">
-                  <MessageCircle className="mr-2 h-5 w-5" />
-                  Contact Sales
-                </Button>
+                <Link href="https://eoxs.com/contact/" target="_blank">
+                  <Button variant="outline" size="lg" className="border-2 border-gray-300 hover:border-green-600 text-gray-700 hover:text-green-600 px-12 py-6 text-lg rounded-full transition-all duration-300">
+                    <MessageCircle className="mr-2 h-5 w-5" />
+                    Contact Sales
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Floating Action Button */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <button 
-          className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-        >
-          <MessageCircle className="h-6 w-6" />
-          {isHovered && (
-            <div className="absolute bottom-full right-0 mb-2 bg-white text-gray-800 px-3 py-2 rounded-lg shadow-lg text-sm whitespace-nowrap">
-              Need help? Chat with us!
-            </div>
-          )}
-        </button>
-      </div>
-
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container px-4 md:px-6 max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-4">
-              <img src="/light.webp" alt="EOXS Logo" className="h-8 w-auto" />
+              <img src="../public/EOXS Logo- White-main.png" alt="EOXS Logo" className="h-8 w-auto" />
               <span className="text-gray-400">© 2024 DemoX. All rights reserved.</span>
             </div>
             <div className="flex gap-8 text-sm">
