@@ -21,7 +21,7 @@ import { useAuth } from "../context/AuthContext"
 import { useGamification } from "../context/GamificationContext"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import GamifiedDashboard from "../components/GamifiedDashboard"
-import InteractiveGuide from "../components/InteractiveGuide"
+
 
 import ChallengeMode from "../components/ChallengeMode"
 
@@ -143,7 +143,7 @@ export default function Dashboard() {
   const [expandedModules, setExpandedModules] = useState<string[]>([])
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null)
   const [showGamifiedDashboard, setShowGamifiedDashboard] = useState(true)
-  const [showGuide, setShowGuide] = useState(true)
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   const [showChallengeMode, setShowChallengeMode] = useState(false)
@@ -1091,24 +1091,7 @@ export default function Dashboard() {
         )}
       </main>
       
-      {/* Interactive Guide */}
-      <InteractiveGuide 
-        isVisible={showGuide} 
-        onClose={() => setShowGuide(false)}
-        onAction={(action) => {
-          switch (action) {
-            case 'start-learning':
-              setShowGamifiedDashboard(false)
-              break
-            case 'watch-video':
-              setShowGamifiedDashboard(false)
-              break
-            case 'earn-xp':
-              setShowGamifiedDashboard(false)
-              break
-          }
-        }}
-      />
+
 
       {/* Challenge Mode */}
       <ChallengeMode 

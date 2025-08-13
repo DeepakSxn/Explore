@@ -26,12 +26,10 @@ interface ChatMessage {
 }
 
 interface InteractiveGuideProps {
-  isVisible: boolean
-  onClose: () => void
   onAction?: (action: string) => void
 }
 
-export default function InteractiveGuide({ isVisible, onClose, onAction }: InteractiveGuideProps) {
+export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
   const { userProgress } = useGamification()
   const { userData } = useAuth()
   const [isExpanded, setIsExpanded] = useState(false)
@@ -173,14 +171,13 @@ export default function InteractiveGuide({ isVisible, onClose, onAction }: Inter
 
   const handleClose = () => {
     setIsExpanded(false)
-    onClose()
   }
 
   const handleExpand = () => {
     setIsExpanded(!isExpanded)
   }
 
-  if (!isVisible) return null
+
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
