@@ -275,6 +275,46 @@ export default function VideoPlayerPage() {
     }
   };
 
+  // 5-second forward handler
+  const handleForward5Seconds = () => {
+    if (videoRef.current) {
+      const newTime = videoRef.current.currentTime + 5;
+      videoRef.current.currentTime = Math.min(newTime, videoRef.current.duration);
+    }
+  };
+
+  // Keyboard shortcuts for video controls
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle keyboard shortcuts when video player is focused
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          handleRewind5Seconds();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          handleForward5Seconds();
+          break;
+        case ' ':
+          e.preventDefault();
+          if (isPlaying) {
+            handleVideoPause();
+          } else {
+            handleVideoPlay();
+          }
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isPlaying]);
+
   useEffect(() => {
     // Check if user is authenticated
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
@@ -2231,6 +2271,22 @@ export default function VideoPlayerPage() {
                           }}
                         >
                           <img src="/rewind-double-arrow.png" alt="Rewind 5s" width="22" height="22" style={{ display: 'inline', verticalAlign: 'middle' }} />
+                          <span className="ml-0.3 text-xs text-white">5s</span>
+                        </div>
+
+                        {/* Forward 5 Seconds Button */}
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          className="text-white hover:bg-white/20 p-2 rounded cursor-pointer"
+                          onClick={handleForward5Seconds}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              handleForward5Seconds();
+                            }
+                          }}
+                        >
+                          <img src="/rewind-double-arrow.png" alt="Forward 5s" width="22" height="22" style={{ display: 'inline', verticalAlign: 'middle', transform: 'scaleX(-1)' }} />
                           <span className="ml-0.3 text-xs text-white">5s</span>
                         </div>
 
