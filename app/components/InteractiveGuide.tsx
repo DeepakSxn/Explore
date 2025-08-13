@@ -64,6 +64,14 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
     }
   }, [isExpanded])
 
+  // Persist a thread id so every message stays in context per session
+  const [threadId, setThreadId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem("sparky_thread_id")
+    if (saved) setThreadId(saved)
+  }, [])
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return
 
@@ -79,13 +87,25 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
     setIsLoading(true)
 
     try {
-      // Simulate AI response - replace with actual AI API call
-      const aiResponse = await generateAIResponse(inputValue.trim())
-      
+      // Call our serverless endpoint which talks to OpenAI Assistants
+      const res = await fetch("/api/ai-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage.content, threadId }),
+      })
+      if (!res.ok) {
+        throw new Error("Request failed")
+      }
+      const data = await res.json()
+      if (data.threadId && data.threadId !== threadId) {
+        setThreadId(data.threadId)
+        sessionStorage.setItem("sparky_thread_id", data.threadId)
+      }
+
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: aiResponse,
+        content: data.reply || "",
         timestamp: new Date()
       }
 
@@ -103,64 +123,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
     }
   }
 
-  const generateAIResponse = async (userInput: string): Promise<string> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000))
-
-    const input = userInput.toLowerCase()
-    
-    // Contextual responses based on user input
-    if (input.includes('hello') || input.includes('hi') || input.includes('hey')) {
-      return "Hello! Great to see you! How can I help you with your EOXS learning journey today?"
-    }
-    
-    if (input.includes('help') || input.includes('what can you do')) {
-      return "I'm here to help you with:\n\n• Understanding EOXS concepts and workflows\n• Finding specific videos or modules\n• Study strategies and learning tips\n• Platform navigation and features\n• General questions about the system\n\nWhat would you like to know more about?"
-    }
-    
-    if (input.includes('video') || input.includes('watch') || input.includes('learning')) {
-      return "Great question! Here are some learning tips:\n\n• Start with the Company Introduction module for basics\n• Watch videos in sequence for better understanding\n• Take quizzes after videos to reinforce learning\n• Use the progress tracking to monitor your advancement\n• Set daily learning goals to maintain your streak\n\nWhich module are you currently working on?"
-    }
-    
-    if (input.includes('sales') || input.includes('order')) {
-      return "The Sales module covers important topics like:\n\n• Sales order processing for different materials\n• Handling backorders and partial deliveries\n• Buyout processes in the system\n• Customer relationship management\n\nWould you like me to explain any specific sales concept in detail?"
-    }
-    
-    if (input.includes('inventory') || input.includes('stock')) {
-      return "Inventory management is crucial! Key areas include:\n\n• Material traceability with heat numbers\n• FIFO and average costing methods\n• Scrap management and valuation\n• Real-time inventory tracking\n\nWhat specific inventory topic would you like to explore?"
-    }
-    
-    if (input.includes('finance') || input.includes('accounting')) {
-      return "Finance & Accounting covers:\n\n• Customer and vendor invoicing\n• Accounts payable and receivable\n• Multi-stage invoicing for complex orders\n• Financial reporting and P&L statements\n• Tax compliance and multi-currency transactions\n\nWhich financial aspect interests you most?"
-    }
-    
-    if (input.includes('processing') || input.includes('work order')) {
-      return "Processing operations include:\n\n• Applying processing costs to materials\n• Toll processing purchase orders\n• Work order status tracking\n• Multiple processing line management\n\nAre you looking for information on a specific processing workflow?"
-    }
-    
-    if (input.includes('streak') || input.includes('motivation')) {
-      return "Maintaining your learning streak is awesome! Here's how:\n\n• Watch at least one video daily\n• Set reminders for consistent learning\n• Celebrate small wins and progress\n• Use the gamification features to stay engaged\n• Remember: consistency beats perfection!\n\nWhat's your current streak goal?"
-    }
-    
-    if (input.includes('level') || input.includes('xp') || input.includes('experience')) {
-      return "Leveling up is exciting! Here's how to earn XP:\n\n• Complete videos (base XP)\n• Take quizzes after videos (bonus XP)\n• Maintain daily streaks (streak bonuses)\n• Leave feedback on videos\n• Complete learning milestones\n\nKeep pushing forward - every bit of progress counts!"
-    }
-    
-    if (input.includes('quiz') || input.includes('test')) {
-      return "Quizzes are excellent for learning! Benefits include:\n\n• Reinforcing video content\n• Earning bonus XP\n• Testing your understanding\n• Identifying areas for review\n• Building confidence in your knowledge\n\nTry to complete quizzes after each video for maximum learning!"
-    }
-    
-    if (input.includes('badge') || input.includes('achievement')) {
-      return "Badges are earned through various achievements:\n\n• First video completion\n• Learning streaks\n• Quiz mastery\n• Module completion\n• Consistent engagement\n\nThey're great motivators and show your progress. Which badge are you working toward?"
-    }
-    
-    if (input.includes('thank') || input.includes('thanks')) {
-      return "You're very welcome! I'm here to support your learning journey. Feel free to ask me anything about EOXS, learning strategies, or the platform. Good luck with your studies!"
-    }
-    
-    // Default response for unrecognized inputs
-    return "That's an interesting question! While I'm designed to help with EOXS learning and platform questions, I can also provide general study tips and motivation. Could you rephrase your question or ask something specific about the EOXS system or your learning progress?"
-  }
+  // remove simulated generator - now handled by API
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -233,7 +196,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                 {/* Messages Area */}
                 <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
                   {messages.map((message) => (
-                    <motion.div
+                  <motion.div
                       key={message.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -257,21 +220,21 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                           message.type === 'user' ? 'text-right' : 'text-left'
                         }`}>
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </div>
+                      </div>
                       </div>
                       
                       {message.type === 'user' && (
                         <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0">
                           <User className="h-3 w-3 text-white" />
-                        </div>
-                      )}
-                    </motion.div>
+                    </div>
+                    )}
+                  </motion.div>
                   ))}
                   
                   {isLoading && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                       className="flex gap-2 justify-start"
                     >
                       <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
@@ -284,7 +247,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                   )}
                   
                   <div ref={messagesEndRef} />
-                </div>
+                      </div>
 
                 {/* Input Area */}
                 <div className="flex gap-2">
@@ -305,7 +268,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                   >
                     <Send className="h-4 w-4" />
                   </Button>
-                </div>
+                      </div>
 
 
               </CardContent>
