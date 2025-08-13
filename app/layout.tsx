@@ -6,7 +6,6 @@ import { ThemeProvider } from "./theme-provider"
 import { AuthProvider } from "./context/AuthContext"
 import { GamificationProvider } from "./context/GamificationContext"
 import SuspensionWrapper from "./components/SuspensionWrapper"
-import InteractiveGuide from "./components/InteractiveGuide"
 
 export const metadata: Metadata = {
   title: "EOXS Video Management Tool",
@@ -27,7 +26,6 @@ export default function RootLayout({
             <GamificationProvider>
               <SuspensionWrapper>
                 {children}
-                <InteractiveGuide />
               </SuspensionWrapper>
             </GamificationProvider>
           </AuthProvider>

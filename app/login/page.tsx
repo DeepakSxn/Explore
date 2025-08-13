@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -166,16 +164,14 @@ export default function Login() {
                 className="h-12.5 w-auto mb-4"
               />
               <div className="flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-green-500 animate-pulse" />
-                <span className="text-green-600 font-semibold text-xl">Sign In</span>
-                <Sparkles className="h-6 w-6 text-green-500 animate-pulse" />
+               
               </div>
             </div>
             
             <h1 className="text-4xl font-bold text-gray-900 mb-3">
               Sign in to your account
             </h1>
-            <p className="text-lg text-gray-600">Access your personalized demo experience</p>
+           
           </div>
         </div>
 
@@ -253,19 +249,19 @@ export default function Login() {
 
               <Button
                 type="submit"
-                className="w-full h-12 text-base bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
+                className="w-full h-12 text-base text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
                 disabled={loading}
               >
-                <span className="relative z-10 flex items-center justify-center">
+                <span className="relative z-10 flex items-center justify-center text-white">
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Signing in...
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin text-white" />
+                      <span className="text-white">Signing in...</span>
                     </>
                   ) : (
                     <>
-                      Sign In
-                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      <span className="text-white">Sign In</span>
+                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform text-white" />
                     </>
                   )}
                 </span>

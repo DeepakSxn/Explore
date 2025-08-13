@@ -778,8 +778,8 @@ export default function Dashboard() {
           <div className="flex h-full w-full flex-col">
             <div className="flex flex-col gap-1 p-4">
               <div className="mb-4 px-2">
-                <h2 className="text-white font-semibold text-lg">Navigation</h2>
-                <p className="text-green-100 text-sm">Quick access to features</p>
+               
+                
               </div>
               
               {/* Classic View Toggle Button - Now First */}
@@ -1102,7 +1102,7 @@ export default function Dashboard() {
       {/* Enhanced Footer */}
       <footer className="border-t border-slate-200 bg-white/80 backdrop-blur-sm py-4 mt-12">
         <div className="container text-center text-xs text-slate-500">
-          © {new Date().getFullYear()} EOXS. All rights reserved. | Built with ❤️ for learning excellence
+          © {new Date().getFullYear()} EOXS. All rights reserved. |
         </div>
       </footer>
     </div>

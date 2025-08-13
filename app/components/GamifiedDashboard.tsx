@@ -368,21 +368,21 @@ export default function GamifiedDashboard() {
                     {getLevelIcon(userProgress.currentLevel)}
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold">{getLevelTitle(userProgress.currentLevel)}</h2>
-                    <p className="text-blue-100">Level {userProgress.currentLevel}</p>
+                    <h2 className="text-2xl font-bold text-white">{getLevelTitle(userProgress.currentLevel)}</h2>
+                    <p className="text-white">Level {userProgress.currentLevel}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span>Progress to Level {userProgress.currentLevel + 1}</span>
-                    <span>{Math.round(getLevelProgress())}%</span>
+                    <span className="text-white">Progress to Level {userProgress.currentLevel + 1}</span>
+                    <span className="text-white">{Math.round(getLevelProgress())}%</span>
                   </div>
                   <Progress 
                     value={getLevelProgress()} 
                     className="h-2 bg-white/20"
                   />
-                  <p className="text-xs text-blue-100">
+                  <p className="text-xs text-white">
                     {getXPToNextLevel()} XP needed for next level
                   </p>
                 </div>
@@ -396,7 +396,7 @@ export default function GamifiedDashboard() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Play className="h-4 w-4" />
                   </div>
-                  <p className="text-2xl font-bold">{userProgress.totalVideosWatched}</p>
+                  <p className="text-2xl font-bold text-white">{userProgress.totalVideosWatched}</p>
                   <p className="text-xs text-green-100">Videos Watched</p>
                 </CardContent>
               </Card>
@@ -406,7 +406,7 @@ export default function GamifiedDashboard() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Flame className="h-4 w-4" />
                   </div>
-                  <p className="text-2xl font-bold">{userProgress.currentStreak}</p>
+                  <p className="text-2xl font-bold text-white">{userProgress.currentStreak}</p>
                   <p className="text-xs text-orange-100">Day Streak</p>
                 </CardContent>
               </Card>
@@ -416,7 +416,7 @@ export default function GamifiedDashboard() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Award className="h-4 w-4" />
                   </div>
-                  <p className="text-2xl font-bold">{userProgress.badges.length}</p>
+                  <p className="text-2xl font-bold text-white">{userProgress.badges.length}</p>
                   <p className="text-xs text-purple-100">Badges Earned</p>
                 </CardContent>
               </Card>
@@ -426,7 +426,7 @@ export default function GamifiedDashboard() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Zap className="h-4 w-4" />
                   </div>
-                  <p className="text-2xl font-bold">{userProgress.totalXP}</p>
+                  <p className="text-2xl font-bold text-white">{userProgress.totalXP}</p>
                   <p className="text-xs text-pink-100">Total XP</p>
                 </CardContent>
               </Card>

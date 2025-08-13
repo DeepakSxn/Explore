@@ -20,7 +20,7 @@ export default function Home() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentFeature((prev) => (prev + 1) % 4)
-    }, 3000)
+    }, 12000)
     return () => clearInterval(interval)
   }, [])
 
@@ -81,21 +81,6 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 relative overflow-hidden">
-      {/* Particle effects */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-2 h-2 bg-green-400 rounded-full opacity-20 animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${2 + Math.random() * 2}s`
-            }}
-          />
-        ))}
-      </div>
 
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
@@ -105,16 +90,7 @@ export default function Home() {
               <img src="/light.webp" alt="EOXS Logo" className="h-8 w-auto transition-transform group-hover:scale-105" />
             </Link>
           </div>
-          <nav className="ml-auto flex gap-8 items-center">
-            <Link href="/about" className="text-base font-medium text-gray-700 hover:text-green-600 transition-colors relative group">
-              About
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 transition-all group-hover:w-full"></span>
-            </Link>
-            <Link href="https://eoxs.com/contact" className="text-base font-medium text-gray-700 hover:text-green-600 transition-colors relative group">
-              Contact
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 transition-all group-hover:w-full"></span>
-            </Link>
-          </nav>
+
         </div>
       </header>
 
@@ -123,9 +99,6 @@ export default function Home() {
         <section className="w-full py-20 md:py-32 relative overflow-hidden">
           {/* Background decoration */}
           <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 via-transparent to-blue-50/30"></div>
-          <div className="absolute top-20 left-10 w-72 h-72 bg-green-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-          <div className="absolute top-40 right-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
           
           <div className="container px-4 md:px-6 max-w-7xl mx-auto relative z-10">
             <div className="flex flex-col items-center justify-center space-y-12 text-center">
@@ -144,9 +117,9 @@ export default function Home() {
               {/* Main heading */}
               <div className={`space-y-6 transform transition-all duration-700 delay-200 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
                 <div className="flex items-center justify-center gap-2 mb-4">
-                  <Sparkles className="h-6 w-6 text-green-500 animate-pulse" />
-                  <span className="text-green-600 font-semibold text-lg">Revolutionary Demo Platform</span>
-                  <Sparkles className="h-6 w-6 text-green-500 animate-pulse" />
+                 
+                  
+                  
                 </div>
                 <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-gray-900 via-green-800 to-green-600 bg-clip-text text-transparent gradient-text-animate">
                   Explore Software Features
@@ -158,24 +131,14 @@ export default function Home() {
               </div>
 
               {/* CTA Buttons */}
-              <div className={`flex flex-col sm:flex-row gap-4 transform transition-all duration-700 delay-400 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+              <div className={`flex justify-center transform transition-all duration-700 delay-400 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
                 <Link href={'login'}>
                   <Button size="lg" className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-12 py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden">
                     <span className="relative z-10 flex items-center">
-                      Get Started Free
+                      Get Started
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </span>
                     <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-green-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  </Button>
-                </Link>
-                <Link href="/demo-video">
-                  <Button 
-                    variant="outline" 
-                    size="lg" 
-                    className="border-2 border-gray-300 hover:border-green-600 text-gray-700 hover:text-green-600 px-12 py-6 text-lg rounded-full transition-all duration-300 group hover:bg-green-50"
-                  >
-                    <Play className="mr-2 h-5 w-5" />
-                    Watch Demo
                   </Button>
                 </Link>
               </div>
@@ -191,7 +154,7 @@ export default function Home() {
                 Why choose <span className="text-green-600">EOXSplore</span>?
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Experience software demos like never before with our innovative platform
+                Experience EOXS software demos like never before with our innovative platform
               </p>
             </div>
             
@@ -244,19 +207,12 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
               <div className="text-white group">
                 <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">100+</div>
-                <div className="text-green-100 text-lg">Features Demos</div>
+                <div className="text-green-100 text-lg">Features demos</div>
               </div>
-              <div className="text-white group">
-                <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">Interactive</div>
-                <div className="text-green-100 text-lg">Interface</div>
-              </div>
-              <div className="text-white group">
-                <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">Gamified</div>
-                <div className="text-green-100 text-lg">Experience</div>
-              </div>
+             
               <div className="text-white group">
                 <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">24/7</div>
-                <div className="text-green-100 text-lg">Support</div>
+                <div className="text-green-100 text-lg">Accessibility</div>
               </div>
             </div>
           </div>
@@ -267,15 +223,13 @@ export default function Home() {
           <div className="container px-4 md:px-6 max-w-4xl mx-auto text-center">
             <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-3xl p-12 shadow-xl border border-green-100">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                Ready to Get Started?
+                Ready to get Started?
               </h2>
-              <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-                Join thousands of users who are already experiencing the future of software demos
-              </p>
+             
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href={'login'}>
                   <Button size="lg" className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-12 py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group">
-                    Start Your Free Trial
+                    Get Started 
                     <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
