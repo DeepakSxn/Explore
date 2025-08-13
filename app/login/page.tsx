@@ -313,7 +313,7 @@ export default function Login() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-4">
               <img src="/EOXS Logo- White-main.png" alt="EOXS Logo" className="h-8 w-auto" />
-              <span className="text-gray-400">© 2024 DemoX. All rights reserved.</span>
+              <span className="text-gray-400">© 2025 EOXSplore. All rights reserved.</span>
             </div>
             <div className="flex gap-8 text-sm">
               <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">

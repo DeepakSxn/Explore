@@ -1157,9 +1157,9 @@ export default function VideoPlayerPage() {
 
     const watchEvents: Record<string, boolean | null> = {}
 
-    // Initialize all videos as locked initially
-    playlistData.videos.forEach((video, index) => {
-      watchEvents[video.id] = index === 0 ? false : null
+    // Initialize all videos as unlocked (false = unlocked but not watched)
+    playlistData.videos.forEach((video) => {
+      watchEvents[video.id] = false
     })
 
     try {
@@ -1173,46 +1173,29 @@ export default function VideoPlayerPage() {
       const watchHistorySnapshot = await getDocs(watchHistoryQuery)
       const watchedVideoIds = new Set(watchHistorySnapshot.docs.map((doc) => doc.data().videoId))
 
+      // Mark watched videos as true; leave others as false (unlocked)
       if (watchedVideoIds.size > 0) {
-        // First pass: Mark watched videos
         playlistData.videos.forEach((video) => {
           if (watchedVideoIds.has(video.id)) {
             watchEvents[video.id] = true
           }
         })
+      }
 
-        // Second pass: Unlock videos in sequence
-        let lastUnlockedIndex = 0
-        for (let i = 0; i < playlistData.videos.length; i++) {
-          const videoId = playlistData.videos[i].id
+      // Apply the computed watch events (all unlocked; watched are true)
+      setVideoWatchEvents(watchEvents)
 
-          // If this video is watched, update lastUnlockedIndex
-          if (watchEvents[videoId] === true) {
-            lastUnlockedIndex = i + 1
-          }
-
-          // Unlock videos up to lastUnlockedIndex
-          if (i <= lastUnlockedIndex && watchEvents[videoId] === null) {
-            watchEvents[videoId] = false // Unlocked but not watched
-          }
-        }
-
-        setVideoWatchEvents(watchEvents)
-
-        // Set current video based on initialVideoId or find the first unlocked unwatched video
-        if (initialVideoId) {
-          const index = playlistData.videos.findIndex((v) => v.id === initialVideoId)
-          if (index !== -1 && (watchEvents[initialVideoId] === true || watchEvents[initialVideoId] === false)) {
-            setCurrentVideoIndex(index)
-            setCurrentVideo(playlistData.videos[index])
-          } else {
-            // If the initialVideoId is locked, find the first unlocked video
-            findAndSetFirstPlayableVideo(playlistData.videos, watchEvents)
-          }
+      // Set current video based on initialVideoId or find the first unlocked/unwatched video
+      if (initialVideoId) {
+        const index = playlistData.videos.findIndex((v) => v.id === initialVideoId)
+        if (index !== -1 && (watchEvents[initialVideoId] === true || watchEvents[initialVideoId] === false)) {
+          setCurrentVideoIndex(index)
+          setCurrentVideo(playlistData.videos[index])
         } else {
-          // No initialVideoId, find the first unlocked unwatched video
           findAndSetFirstPlayableVideo(playlistData.videos, watchEvents)
         }
+      } else {
+        findAndSetFirstPlayableVideo(playlistData.videos, watchEvents)
       }
     } catch (error) {
       console.error("Error initializing watch events:", error)
@@ -1735,43 +1718,27 @@ export default function VideoPlayerPage() {
     const nextIndex = currentVideoIndex + 1
     if (nextIndex < playlist.videos.length) {
       const nextVideoId = playlist.videos[nextIndex].id
-      const currentVideoWatched = videoWatchEvents[currentVideo.id] === true
 
-      // Check if the next video is unlocked OR if current video is watched
-      if (videoWatchEvents[nextVideoId] === true || videoWatchEvents[nextVideoId] === false || currentVideoWatched) {
-        // If current video is watched but next video is locked, unlock it
-        if (currentVideoWatched && videoWatchEvents[nextVideoId] === null) {
-          const updatedWatchEvents = { ...videoWatchEvents }
-          updatedWatchEvents[nextVideoId] = false // Unlock but not watched
-          setVideoWatchEvents(updatedWatchEvents)
+      // Always allow moving to the next video
+      videoChangeRef.current = true
+      setCurrentVideoIndex(nextIndex)
+      setCurrentVideo(playlist.videos[nextIndex])
+      setProgress(0)
+      setCurrentTime(0)
+
+      // Update URL without refreshing the page
+      const newUrl = `/video-player?videoId=${nextVideoId}&playlistId=${playlist.id}`
+      window.history.pushState({}, "", newUrl)
+
+      // Update active module if needed
+      if (modules.length > 0) {
+        const moduleIndex = modules.findIndex((module) =>
+          module.videos.some((video) => video.id === playlist.videos[nextIndex].id),
+        )
+
+        if (moduleIndex !== -1 && moduleIndex !== activeModuleIndex) {
+          setActiveModuleIndex(moduleIndex)
         }
-
-        videoChangeRef.current = true
-        setCurrentVideoIndex(nextIndex)
-        setCurrentVideo(playlist.videos[nextIndex])
-        setProgress(0)
-        setCurrentTime(0)
-
-        // Update URL without refreshing the page
-        const newUrl = `/video-player?videoId=${nextVideoId}&playlistId=${playlist.id}`
-        window.history.pushState({}, "", newUrl)
-
-        // Update active module if needed
-        if (modules.length > 0) {
-          const moduleIndex = modules.findIndex((module) =>
-            module.videos.some((video) => video.id === playlist.videos[nextIndex].id),
-          )
-
-          if (moduleIndex !== -1 && moduleIndex !== activeModuleIndex) {
-            setActiveModuleIndex(moduleIndex)
-          }
-        }
-      } else {
-        toast({
-          title: "Video Locked",
-          description: "You need to watch the previous videos first",
-          variant: "destructive",
-        })
       }
     }
   }
@@ -1940,8 +1907,8 @@ export default function VideoPlayerPage() {
       return false
     }
 
-    const video = playlist.videos[index]
-    return videoWatchEvents[video.id] === true || videoWatchEvents[video.id] === false
+    // Unlock all videos: always allow playback
+    return true
   }
 
   const generateQuizForVideo = (video: Video) => {
@@ -2058,24 +2025,19 @@ export default function VideoPlayerPage() {
     const video = modules[moduleIndex].videos[videoIndex]
     const playlistIndex = playlist.videos.findIndex((v) => v.id === video.id)
 
-    if (playlistIndex !== -1 && isVideoPlayable(playlistIndex)) {
-      videoChangeRef.current = true
-      setCurrentVideoIndex(playlistIndex)
-      setCurrentVideo(playlist.videos[playlistIndex])
-      setProgress(0)
-      setCurrentTime(0)
-      setActiveModuleIndex(moduleIndex)
+    if (playlistIndex === -1) return
 
-      // Update URL without refreshing the page
-      const newUrl = `/video-player?videoId=${video.id}&playlistId=${playlist.id}`
-      window.history.pushState({}, "", newUrl)
-    } else {
-      toast({
-        title: "Video Locked",
-        description: "You need to watch the previous videos first",
-        variant: "destructive",
-      })
-    }
+    // Always allow playing any video from module list
+    videoChangeRef.current = true
+    setCurrentVideoIndex(playlistIndex)
+    setCurrentVideo(playlist.videos[playlistIndex])
+    setProgress(0)
+    setCurrentTime(0)
+    setActiveModuleIndex(moduleIndex)
+
+    // Update URL without refreshing the page
+    const newUrl = `/video-player?videoId=${video.id}&playlistId=${playlist.id}`
+    window.history.pushState({}, "", newUrl)
   }
 
   // Function to handle playback rate change

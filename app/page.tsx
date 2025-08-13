@@ -60,7 +60,7 @@ export default function Home() {
       name: "Sarah Johnson",
       role: "Product Manager",
       company: "TechCorp",
-      content: "DemoX transformed how we evaluate software. The AI recommendations are spot-on!",
+              content: "EOXSplore transformed how we evaluate software. The AI recommendations are spot-on!",
       rating: 5
     },
     {
@@ -134,7 +134,7 @@ export default function Home() {
                 <div className="relative group">
                   <img 
                     src="Main-EOXS-landing.jpg" 
-                    alt="Demox" 
+                    alt="EOXSplore" 
                     className="h-80 w-auto drop-shadow-2xl hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute -inset-4 bg-gradient-to-r from-green-400/20 to-blue-400/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -188,7 +188,7 @@ export default function Home() {
           <div className="container px-4 md:px-6 max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                Why Choose <span className="text-green-600">EOXSplore</span>?
+                Why choose <span className="text-green-600">EOXSplore</span>?
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                 Experience software demos like never before with our innovative platform
@@ -243,16 +243,16 @@ export default function Home() {
           <div className="container px-4 md:px-6 max-w-7xl mx-auto relative z-10">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
               <div className="text-white group">
-                <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">500+</div>
-                <div className="text-green-100 text-lg">Software Demos</div>
+                <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">100+</div>
+                <div className="text-green-100 text-lg">Features Demos</div>
               </div>
               <div className="text-white group">
-                <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">50K+</div>
-                <div className="text-green-100 text-lg">Happy Users</div>
+                <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">Interactive</div>
+                <div className="text-green-100 text-lg">Interface</div>
               </div>
               <div className="text-white group">
-                <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">99.9%</div>
-                <div className="text-green-100 text-lg">Uptime</div>
+                <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">Gamified</div>
+                <div className="text-green-100 text-lg">Experience</div>
               </div>
               <div className="text-white group">
                 <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">24/7</div>
@@ -296,8 +296,8 @@ export default function Home() {
         <div className="container px-4 md:px-6 max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-4">
-              <img src="../public/EOXS Logo- White-main.png" alt="EOXS Logo" className="h-8 w-auto" />
-              <span className="text-gray-400">© 2024 DemoX. All rights reserved.</span>
+              <img src="/EOXS Logo- White-main.png" alt="EOXS Logo" className="h-8 w-auto" />
+              <span className="text-gray-400">© 2025 EOXSplore. All rights reserved.</span>
             </div>
             <div className="flex gap-8 text-sm">
               <Link href="#" className="text-gray-400 hover:text-white transition-colors">
