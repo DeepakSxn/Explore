@@ -246,12 +246,33 @@ export default function Dashboard() {
   useEffect(() => {
     const moduleParam = searchParams.get('module')
     if (moduleParam && modules.length > 0) {
+      console.log(`Looking for module: "${moduleParam}"`)
+      console.log(`Available modules:`, modules.map(m => ({ name: m.name, category: m.category })))
+      
       // Find the module that matches the parameter
-      const targetModule = modules.find(module => 
+      let targetModule = modules.find(module => 
         module.name.toLowerCase() === moduleParam.toLowerCase()
       )
       
+      // If exact match not found, try matching by category name
+      if (!targetModule) {
+        console.log(`No exact name match found, trying category match...`)
+        targetModule = modules.find(module => 
+          module.category.toLowerCase() === moduleParam.toLowerCase()
+        )
+      }
+      
+      // If still not found, try matching by partial name (e.g., "Sales" should match "Sales Module Overview")
+      if (!targetModule) {
+        console.log(`No category match found, trying partial match...`)
+        targetModule = modules.find(module => 
+          module.name.toLowerCase().includes(moduleParam.toLowerCase()) ||
+          module.category.toLowerCase().includes(moduleParam.toLowerCase())
+        )
+      }
+      
       if (targetModule) {
+        console.log(`Found target module:`, targetModule)
         // Switch to classic view and expand the target module
         setShowGamifiedDashboard(false)
         setExpandedModules([targetModule.category])
@@ -260,6 +281,8 @@ export default function Dashboard() {
         const newUrl = new URL(window.location.href)
         newUrl.searchParams.delete('module')
         window.history.replaceState({}, '', newUrl.toString())
+      } else {
+        console.log(`No module found for parameter: "${moduleParam}"`)
       }
     }
   }, [searchParams, modules])
@@ -335,7 +358,7 @@ export default function Dashboard() {
           ...data,
           thumbnail: getSafeUrl(
             data.publicId
-              ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${data.publicId}.jpg`
+              ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.publicId}.jpg`
               : undefined,
           ),
           description: data.description || "-",

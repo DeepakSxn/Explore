@@ -585,12 +585,12 @@ export default function VideoPlayerPage() {
       }).map((doc) => {
         const data = doc.data()
         return {
-        id: doc.id,
+          id: doc.id,
           title: data.title || "Untitled",
           duration: data.duration || "0 minutes",
           thumbnail: data.publicId
             ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${data.publicId}.jpg`
-          : "/placeholder.svg?height=180&width=320",
+            : "/placeholder.svg?height=180&width=320",
           description: data.description || "No description available",
           category: data.category || "Uncategorized",
           videoUrl: data.videoUrl || "",
@@ -925,11 +925,11 @@ export default function VideoPlayerPage() {
 
     // 1. Always add Company Introduction module first
     if (videosByCategory["Company Introduction"] && videosByCategory["Company Introduction"].length > 0) {
-    moduleArray.push({
-      name: "Company Introduction",
-      category: "Company Introduction",
+      moduleArray.push({
+        name: "Company Introduction",
+        category: "Company Introduction",
         videos: videosByCategory["Company Introduction"],
-    })
+      })
       addedCategories.add("Company Introduction")
     }
 
@@ -1001,11 +1001,11 @@ export default function VideoPlayerPage() {
 
     // 6. Always add Miscellaneous module before AI tools
     if (!addedCategories.has("Miscellaneous")) {
-    moduleArray.push({
-      name: "Miscellaneous",
-      category: "Miscellaneous",
-      videos: videosByCategory["Miscellaneous"] || [],
-    })
+      moduleArray.push({
+        name: "Miscellaneous",
+        category: "Miscellaneous",
+        videos: videosByCategory["Miscellaneous"] || [],
+      })
       addedCategories.add("Miscellaneous")
     }
 
@@ -1019,11 +1019,11 @@ export default function VideoPlayerPage() {
     
     // Always add AI tools module for testing, even if empty
     if (!addedCategories.has("AI tools")) {
-    moduleArray.push({
-      name: "AI tools",
-      category: "AI tools",
-      videos: aiToolsVideos,
-    })
+      moduleArray.push({
+        name: "AI tools",
+        category: "AI tools",
+        videos: aiToolsVideos,
+      })
       addedCategories.add("AI tools")
     }
     

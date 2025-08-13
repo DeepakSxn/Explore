@@ -95,6 +95,20 @@ export default function GamifiedDashboard() {
     if (userProgress) {
       const suggestions = [
         {
+          name: "Sales",
+          xpReward: 50,
+          description: "Learn about sales operations",
+          icon: "💰",
+          isUnlocked: userProgress.unlockedModules.includes("Sales")
+        },
+        {
+          name: "QA",
+          xpReward: 75,
+          description: "Master quality assurance",
+          icon: "🔍",
+          isUnlocked: userProgress.unlockedModules.includes("QA")
+        },
+        {
           name: "Processing",
           xpReward: 50,
           description: "Learn about processing operations",
@@ -112,7 +126,7 @@ export default function GamifiedDashboard() {
           name: "Finance",
           xpReward: 100,
           description: "Understand financial operations",
-          icon: "💰",
+          icon: "💳",
           isUnlocked: userProgress.unlockedModules.includes("Finance and Accounting")
         }
       ]
