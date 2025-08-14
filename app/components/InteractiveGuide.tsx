@@ -23,6 +23,14 @@ interface ChatMessage {
   type: 'user' | 'ai'
   content: string
   timestamp: Date
+  videoReferences?: VideoReference[]
+}
+
+interface VideoReference {
+  videoId: string
+  title?: string
+  thumbnail?: string
+  duration?: string
 }
 
 interface InteractiveGuideProps {
@@ -31,7 +39,7 @@ interface InteractiveGuideProps {
 
 export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
   const { userProgress } = useGamification()
-  const { userData } = useAuth()
+  const { userData, loading: authLoading } = useAuth()
   const [isExpanded, setIsExpanded] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState("")
@@ -41,16 +49,23 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
 
   // Initialize with welcome message
   useEffect(() => {
-    if (isExpanded && messages.length === 0) {
-      const welcomeMessage: ChatMessage = {
-        id: 'welcome',
-        type: 'ai',
-        content: `Hi ${userData?.name || 'there'}! I'm Sparky, your AI learning assistant. I can help you with:\n\n• Learning questions about EOXS\n• Study tips and strategies\n• Course navigation help\n• General questions about the platform\n\nHow can I assist you today?`,
-        timestamp: new Date()
-      }
-      setMessages([welcomeMessage])
+    console.log("Setting welcome message, messages length:", messages.length)
+    const welcomeMessage: ChatMessage = {
+      id: 'welcome',
+      type: 'ai',
+      content: `Hi ${userData?.name || 'there'}! I'm EOXSplore, your AI learning assistant. I can help you with:\n\n• Learning questions about EOXS\n• Study tips and strategies\n• Course navigation help\n• General questions about the platform\n\nWhen I reference specific videos, I'll show them as clickable links below my responses. For example, if I mention video tqurzenwnlhmobbu23uz, you'll see it displayed below.\n\nHow can I assist you today?`,
+      timestamp: new Date(),
+      videoReferences: [
+        {
+          videoId: "tqurzenwnlhmobbu23uz",
+          title: "Example Video Reference",
+          thumbnail: "/placeholder.svg?height=120&width=200",
+          duration: "5 min"
+        }
+      ]
     }
-  }, [isExpanded, messages.length, userData?.name])
+    setMessages([welcomeMessage])
+  }, [userData?.name])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -84,19 +99,30 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
 
     setMessages(prev => [...prev, userMessage])
     setInputValue("")
+    console.log("Setting loading to true")
     setIsLoading(true)
 
     try {
+      console.log("Sending message to API:", userMessage.content, "Thread ID:", threadId)
+      
       // Call our serverless endpoint which talks to OpenAI Assistants
       const res = await fetch("/api/ai-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMessage.content, threadId }),
       })
+      
+      console.log("API Response status:", res.status)
+      
       if (!res.ok) {
-        throw new Error("Request failed")
+        const errorText = await res.text()
+        console.error("API Error:", errorText)
+        throw new Error(`Request failed: ${res.status} ${errorText}`)
       }
+      
       const data = await res.json()
+      console.log("API Response data:", data)
+      
       if (data.threadId && data.threadId !== threadId) {
         setThreadId(data.threadId)
         sessionStorage.setItem("sparky_thread_id", data.threadId)
@@ -105,8 +131,9 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: data.reply || "",
-        timestamp: new Date()
+        content: data.reply || "No response from AI",
+        timestamp: new Date(),
+        videoReferences: extractVideoReferences(data.reply || "")
       }
 
       setMessages(prev => [...prev, aiMessage])
@@ -119,7 +146,99 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
       }
       setMessages(prev => [...prev, errorMessage])
     } finally {
+      console.log("Setting loading to false")
       setIsLoading(false)
+    }
+  }
+
+  // Extract video references from AI responses - Improved approach
+  const extractVideoReferences = (content: string): VideoReference[] => {
+    const videoRefs: VideoReference[] = []
+    
+    // Look for video IDs in the format: tqurzenwnlhmobbu23uz
+    const videoIdRegex = /([a-zA-Z0-9]{20,})/g
+    const matches = content.match(videoIdRegex)
+    
+    if (matches) {
+      matches.forEach(match => {
+        // Check if it looks like a video ID (20+ characters, alphanumeric)
+        if (match.length >= 20 && /^[a-zA-Z0-9]+$/.test(match)) {
+          videoRefs.push({
+            videoId: match,
+            title: `Video ${match.substring(0, 8)}...`,
+            thumbnail: `/placeholder.svg?height=120&width=200`,
+            duration: "5 min"
+          })
+        }
+      })
+    }
+    
+    return videoRefs
+  }
+
+  // Manual video reference function - more reliable
+  const addVideoReference = (videoId: string, title?: string) => {
+    const videoRef: VideoReference = {
+      videoId,
+      title: title || `Video ${videoId.substring(0, 8)}...`,
+      thumbnail: `/placeholder.svg?height=120&width=200`,
+      duration: "5 min"
+    }
+    
+    // Add to current AI message if it exists
+    setMessages(prev => {
+      const newMessages = [...prev]
+      const lastMessage = newMessages[newMessages.length - 1]
+      
+      if (lastMessage && lastMessage.type === 'ai') {
+        lastMessage.videoReferences = [...(lastMessage.videoReferences || []), videoRef]
+      }
+      
+      return newMessages
+    })
+  }
+
+  // Handle video opening with multiple fallbacks
+  const openVideo = (videoId: string) => {
+    console.log("Attempting to open video:", videoId)
+    
+    // Method 1: Try direct navigation
+    try {
+      const videoUrl = `/video-player?videoId=${videoId}`
+      console.log("Navigating to:", videoUrl)
+      window.location.href = videoUrl
+    } catch (error) {
+      console.error("Direct navigation failed:", error)
+      
+      // Method 2: Try new tab
+      try {
+        window.open(`/video-player?videoId=${videoId}`, '_blank')
+      } catch (error2) {
+        console.error("New tab failed:", error2)
+        
+        // Method 3: Try router push (if available)
+        if (typeof window !== 'undefined' && window.history) {
+          window.history.pushState({}, '', `/video-player?videoId=${videoId}`)
+          window.location.reload()
+        }
+      }
+    }
+  }
+
+  // Fetch video details from database (optional enhancement)
+  const fetchVideoDetails = async (videoId: string): Promise<VideoReference | null> => {
+    try {
+      // This could be enhanced to fetch from your Firebase database
+      // For now, return the basic structure
+      return {
+        videoId,
+        title: `Video ${videoId.substring(0, 8)}...`,
+        thumbnail: `/placeholder.svg?height=120&width=200`,
+        duration: "5 min"
+      }
+    } catch (error) {
+      console.error("Error fetching video details:", error)
+      return null
     }
   }
 
@@ -137,11 +256,31 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
   }
 
   const handleExpand = () => {
+    console.log("Chat button clicked, current state:", isExpanded)
     setIsExpanded(!isExpanded)
+    
+    // Test: Add a test message if this is the first time opening
+    if (!isExpanded && messages.length === 0) {
+      console.log("First time opening chat, adding test message")
+      const testMessage: ChatMessage = {
+        id: 'test',
+        type: 'ai',
+        content: 'Test message to verify chat is working!',
+        timestamp: new Date()
+      }
+      setMessages([testMessage])
+    }
   }
 
 
 
+  console.log("Rendering InteractiveGuide, isExpanded:", isExpanded, "messages length:", messages.length, "isLoading:", isLoading, "authLoading:", authLoading)
+  
+  // Don't render until auth is loaded
+  if (authLoading) {
+    return null
+  }
+  
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {/* Main Chat Button */}
@@ -153,7 +292,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
       >
         <Button
           onClick={handleExpand}
-          className="h-16 w-16 rounded-full shadow-lg bg-green-500 hover:bg-green-600"
+          className="h-16 w-16 rounded-full shadow-2xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-200 hover:scale-105"
           variant="default"
         >
           <MessageCircle className="h-7 w-7 text-white" />
@@ -168,80 +307,120 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="absolute bottom-16 right-0 w-96 h-[500px]"
+            className="absolute bottom-16 right-0 w-96 h-[500px] z-50"
+            style={{ zIndex: 9999 }}
           >
-            <Card className="shadow-xl border-0 bg-gradient-to-br from-blue-50 to-purple-50 h-full flex flex-col">
-              <CardContent className="p-4 flex flex-col h-full">
+            <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm h-full flex flex-col">
+              <CardContent className="p-6 flex flex-col h-full">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                      <Sparkles className="h-4 w-4 text-white" />
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-700 rounded-xl flex items-center justify-center shadow-lg">
+                      <Sparkles className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-sm">Sparky</h3>
-                      <p className="text-xs text-muted-foreground">AI Learning Assistant</p>
+                      <h3 className="font-bold text-lg text-gray-800">EOXSplore</h3>
+                      <p className="text-sm text-gray-600">AI Learning Assistant</p>
                     </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleClose}
-                    className="h-6 w-6 p-0"
+                    className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4 text-gray-600" />
                   </Button>
                 </div>
 
-                {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
+                                {/* Messages Area */}
+                <div className="flex-1 overflow-y-auto space-y-4 mb-6 pr-2">
                   {messages.map((message) => (
-                  <motion.div
+                    <motion.div
                       key={message.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`flex gap-2 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                      className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       {message.type === 'ai' && (
-                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Bot className="h-3 w-3 text-white" />
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                          <Bot className="h-4 w-4 text-white" />
                         </div>
                       )}
                       
-                      <div className={`max-w-[80%] ${message.type === 'user' ? 'order-first' : ''}`}>
-                        <div className={`rounded-lg px-3 py-2 text-sm ${
+                      <div className={`max-w-[85%] ${message.type === 'user' ? 'order-first' : ''}`}>
+                        <div className={`rounded-2xl px-4 py-3 text-sm shadow-sm ${
                           message.type === 'user' 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-white border border-gray-200 text-gray-800'
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
+                            : 'bg-white border border-gray-100 text-gray-800 shadow-sm'
                         }`}>
-                          <div className="whitespace-pre-line">{message.content}</div>
+                          <div className="whitespace-pre-line leading-relaxed">{message.content}</div>
+                          
+                          {/* Video References */}
+                          {message.videoReferences && message.videoReferences.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                              <p className="text-xs text-gray-500 mb-2">Referenced Videos:</p>
+                              <div className="space-y-2">
+                                {message.videoReferences.map((video, index) => (
+                                  <div 
+                                    key={`${video.videoId}-${index}`}
+                                    className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors border border-gray-200"
+                                    onClick={() => openVideo(video.videoId)}
+                                  >
+                                    <div className="w-16 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                      <span className="text-2xl">🎥</span>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-gray-800 truncate">
+                                        {video.title}
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        ID: {video.videoId.substring(0, 12)}...
+                                      </p>
+                                      <p className="text-xs text-blue-600 font-medium">
+                                        Click to watch →
+                                      </p>
+                                    </div>
+                                    <div className="text-blue-500">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className={`text-xs text-muted-foreground mt-1 ${
+                        <div className={`text-xs text-gray-500 mt-2 ${
                           message.type === 'user' ? 'text-right' : 'text-left'
                         }`}>
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
+                        </div>
                       </div>
                       
                       {message.type === 'user' && (
-                        <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0">
-                          <User className="h-3 w-3 text-white" />
-                    </div>
-                    )}
-                  </motion.div>
+                        <div className="w-8 h-8 bg-gradient-to-r from-gray-500 to-gray-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                          <User className="h-4 w-4 text-white" />
+                        </div>
+                      )}
+                    </motion.div>
                   ))}
                   
-                  {isLoading && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                      className="flex gap-2 justify-start"
+                                    {isLoading && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex gap-3 justify-start"
                     >
-                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                        <Bot className="h-3 w-3 text-white" />
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
+                        <Bot className="h-4 w-4 text-white" />
                       </div>
-                      <div className="bg-white border border-gray-200 rounded-lg px-3 py-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                      <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3 shadow-sm">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                          <span className="text-sm text-gray-600">EOXSplore is thinking...</span>
+                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -249,26 +428,28 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                   <div ref={messagesEndRef} />
                       </div>
 
-                {/* Input Area */}
-                <div className="flex gap-2">
+                                {/* Input Area */}
+                <div className="flex gap-3">
                   <Input
                     ref={inputRef}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Ask me anything about EOXS..."
-                    className="flex-1 text-sm"
+                    className="flex-1 text-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                     disabled={isLoading}
                   />
                   <Button
                     onClick={handleSendMessage}
                     disabled={!inputValue.trim() || isLoading}
                     size="sm"
-                    className="px-3"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl shadow-sm"
                   >
-                    <Send className="h-4 w-4" />
+                    <Send className="h-4 w-4 text-white" />
                   </Button>
-                      </div>
+                </div>
+
+
 
 
               </CardContent>

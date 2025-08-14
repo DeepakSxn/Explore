@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Search, LogOut, Clock, Play, CheckCircle, AlertTriangle, Trophy, Zap, Sparkles, Flame, Menu, X, User, List, Home, Info, Phone, BookOpen, Target, TrendingUp } from "lucide-react"
+import { Search, LogOut, Clock, Play, CheckCircle, AlertTriangle, Trophy, Zap, Sparkles, Flame, ArrowLeft, Menu, User, List, Home, Info, Phone, BookOpen, Target, TrendingUp } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/components/ui/use-toast"
@@ -21,6 +21,7 @@ import { useAuth } from "../context/AuthContext"
 import { useGamification } from "../context/GamificationContext"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import GamifiedDashboard from "../components/GamifiedDashboard"
+import InteractiveGuide from "../components/InteractiveGuide"
 
 
 import ChallengeMode from "../components/ChallengeMode"
@@ -758,25 +759,36 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Enhanced Sidebar Toggle Button */}
-      <div className={`fixed top-20 z-50 transition-all duration-300 ease-in-out ${
-        isSidebarOpen ? 'left-64' : 'left-6'
-      }`}>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white border-slate-200 hover:border-slate-300 hover:shadow-xl transition-all duration-200"
-        >
-          {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-        </Button>
-      </div>
+      {/* Sidebar Expand Button (shows when minimized) */}
+      {!isSidebarOpen && (
+        <div className="fixed top-20 left-6 z-50 transition-all duration-300 ease-in-out">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsSidebarOpen(true)}
+            className="bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white border-slate-200 hover:border-slate-300 hover:shadow-xl transition-all duration-200"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
 
       {/* Enhanced Sidebar */}
       {isSidebarOpen && (
         <aside className="fixed top-16 left-0 z-40 h-[calc(100vh-4rem)] w-64 bg-gradient-to-b from-green-600 to-green-700 shadow-xl transition-all duration-300 ease-in-out">
           <div className="flex h-full w-full flex-col">
             <div className="flex flex-col gap-1 p-4">
+              <div className="flex justify-end mb-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="text-white hover:bg-white/10"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </div>
               <div className="mb-4 px-2">
                
                 
@@ -786,7 +798,6 @@ export default function Dashboard() {
               <Button 
                 variant="ghost" 
                 size="lg" 
-                onClick={() => setShowGamifiedDashboard(!showGamifiedDashboard)}
                 className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg"
               >
                 <div className="p-2 bg-white/10 rounded-lg">
@@ -1105,6 +1116,9 @@ export default function Dashboard() {
           © {new Date().getFullYear()} EOXS. All rights reserved. |
         </div>
       </footer>
+
+      {/* AI Interactive Guide */}
+      <InteractiveGuide />
     </div>
   )
 }
