@@ -2245,7 +2245,7 @@ export default function VideoPlayerPage() {
       <header className="border-b sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/">
-          <img src="/light.webp" alt="EOXS Logo" className="h-8 w-auto" />
+          <img src="/Black logo.png" alt="EOXS Logo" className="h-8 w-auto" />
         </Link>
           <div className="flex items-center gap-4">
 

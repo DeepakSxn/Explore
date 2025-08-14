@@ -249,7 +249,7 @@ export default function SignUp() {
         <div className="container flex h-20 items-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="flex items-center">
             <Link href="/" className="flex items-center group">
-              <img src="/light.webp" alt="EOXS Logo" className="h-8 w-auto transition-transform group-hover:scale-105" />
+              <img src="/Black logo.png" alt="EOXS Logo" className="h-8 w-auto transition-transform group-hover:scale-105" />
             </Link>
           </div>
           <nav className="ml-auto flex gap-8 items-center">

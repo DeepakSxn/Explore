@@ -26,7 +26,7 @@ export function Logo({ width = 120, height = 40, className }: LogoProps) {
         />
       ) : (
         <Image
-          src="/light.webp"
+          src="/Black logo.png"
           alt="EOXS Logo"
           width={width}
           height={height}

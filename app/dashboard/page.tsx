@@ -727,7 +727,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto px-6">
           <div className="flex items-center gap-6">
             <img 
-              src="/light.webp" 
+              src="/Black logo.png" 
               alt="EOXS Logo" 
               className="h-10 w-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105" 
               onClick={() => router.push("/")}
