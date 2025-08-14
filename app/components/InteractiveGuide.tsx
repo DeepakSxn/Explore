@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useGamification } from "../context/GamificationContext"
 import { useAuth } from "../context/AuthContext"
+import { db } from "@/firebase"
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore"
 
 interface ChatMessage {
   id: string
@@ -128,15 +130,31 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
         sessionStorage.setItem("sparky_thread_id", data.threadId)
       }
 
+      const newMessageId = (Date.now() + 1).toString()
+      const sanitizeAiContent = (raw: string): string => {
+        const lines = (raw || "").split(/\r?\n/)
+        const cleaned = lines.filter((line) => {
+          const t = line.trim()
+          if (/^This is the reference of the video:/i.test(t)) return false
+          if (/^[a-zA-Z0-9]{20,}\.?$/.test(t)) return false
+          return true
+        })
+        return cleaned.join("\n").trim()
+      }
       const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: newMessageId,
         type: 'ai',
-        content: data.reply || "No response from AI",
+        content: sanitizeAiContent(data.reply || "No response from AI"),
         timestamp: new Date(),
         videoReferences: extractVideoReferences(data.reply || "")
       }
 
       setMessages(prev => [...prev, aiMessage])
+
+      // Resolve human-friendly titles for referenced videos asynchronously
+      if (aiMessage.videoReferences && aiMessage.videoReferences.length > 0) {
+        resolveVideoReferencesForMessage(newMessageId, aiMessage.videoReferences)
+      }
     } catch (error) {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -151,7 +169,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
     }
   }
 
-  // Extract video references from AI responses - Improved approach
+  // Extract video references from AI responses - find probable IDs
   const extractVideoReferences = (content: string): VideoReference[] => {
     const videoRefs: VideoReference[] = []
     
@@ -165,9 +183,9 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
         if (match.length >= 20 && /^[a-zA-Z0-9]+$/.test(match)) {
           videoRefs.push({
             videoId: match,
-            title: `Video ${match.substring(0, 8)}...`,
+            title: undefined,
             thumbnail: `/placeholder.svg?height=120&width=200`,
-            duration: "5 min"
+            duration: ""
           })
         }
       })
@@ -211,20 +229,55 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
     }
   }
 
-  // Fetch video details from database (optional enhancement)
+  // Fetch video details from Firestore by document id or by Cloudinary publicId
   const fetchVideoDetails = async (videoId: string): Promise<VideoReference | null> => {
     try {
-      // This could be enhanced to fetch from your Firebase database
-      // For now, return the basic structure
-      return {
-        videoId,
-        title: `Video ${videoId.substring(0, 8)}...`,
-        thumbnail: `/placeholder.svg?height=120&width=200`,
-        duration: "5 min"
+      // 1) Try as Firestore document id
+      const byDocRef = doc(db, "videos", videoId)
+      const byDocSnap = await getDoc(byDocRef)
+      if (byDocSnap.exists()) {
+        const data: any = byDocSnap.data()
+        return {
+          videoId,
+          title: data.title || undefined,
+          thumbnail: data.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.publicId}.jpg` : data.thumbnailUrl || `/placeholder.svg?height=120&width=200`,
+          duration: data.duration || ""
+        }
       }
+
+      // 2) Fallback: search by publicId
+      const videosCol = collection(db, "videos")
+      const qByPublicId = query(videosCol, where("publicId", "==", videoId))
+      const qSnap = await getDocs(qByPublicId)
+      if (!qSnap.empty) {
+        const d = qSnap.docs[0].data() as any
+        return {
+          videoId,
+          title: d.title || undefined,
+          thumbnail: d.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.publicId}.jpg` : d.thumbnailUrl || `/placeholder.svg?height=120&width=200`,
+          duration: d.duration || ""
+        }
+      }
+
+      return null
     } catch (error) {
       console.error("Error fetching video details:", error)
       return null
+    }
+  }
+
+  // Resolve and update a specific message's video references with real titles
+  const resolveVideoReferencesForMessage = async (messageId: string, refs: VideoReference[]) => {
+    try {
+      const updatedRefs = await Promise.all(
+        refs.map(async (ref) => {
+          const details = await fetchVideoDetails(ref.videoId)
+          return details ? { ...ref, ...details } : ref
+        })
+      )
+      setMessages(prev => prev.map(m => (m.id === messageId ? { ...m, videoReferences: updatedRefs } : m)))
+    } catch (e) {
+      console.error("Failed to resolve video titles:", e)
     }
   }
 
@@ -360,9 +413,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                                       <p className="text-sm font-medium text-gray-800 truncate">
                                         {video.title}
                                       </p>
-                                      <p className="text-xs text-gray-500">
-                                        ID: {video.videoId.substring(0, 12)}...
-                                      </p>
+                                      {/* Intentionally hide raw IDs; show nothing or duration */}
                                       <p className="text-xs text-blue-600 font-medium">
                                         Click to watch →
                                       </p>
