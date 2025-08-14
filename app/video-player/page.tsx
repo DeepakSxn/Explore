@@ -166,10 +166,14 @@ const VIDEO_ORDER: Record<string, string[]> = {
 export default function VideoPlayerPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const videoId = searchParams.get("videoId")
-  const playlistId = searchParams.get("playlistId")
+  // Normalize query params to avoid values like "null" or "undefined"
+  const rawVideoId = searchParams.get("videoId") || searchParams.get("videold")
+  const videoId = rawVideoId && rawVideoId !== "null" && rawVideoId !== "undefined" && rawVideoId.trim() !== "" ? rawVideoId : null
+  const rawPlaylistId = searchParams.get("playlistId")
+  const playlistId = rawPlaylistId && rawPlaylistId !== "null" && rawPlaylistId !== "undefined" && rawPlaylistId.trim() !== "" ? rawPlaylistId : null
   const resume = searchParams.get("resume")
   const position = searchParams.get("position")
+  const autoplay = searchParams.get("autoplay")
 
   const { userData } = useAuth()
   const { completeVideo } = useGamification()
@@ -348,6 +352,9 @@ export default function VideoPlayerPage() {
         } else if (playlistId) {
           // If we have both videoId and playlistId, fetch the playlist
           fetchPlaylist(playlistId, videoId)
+        } else if (videoId) {
+          // If only videoId is present, fetch that single video
+          await fetchVideoById(videoId)
         }
       } else {
         // Redirect to login if not authenticated
@@ -607,6 +614,40 @@ export default function VideoPlayerPage() {
     }
   }, [currentVideo /* , showQuiz, currentQuiz */]);
 
+  // Autoplay handler when opened with ?autoplay=true
+  useEffect(() => {
+    if (autoplay === "true" && resume !== "true" && currentVideo) {
+      const attemptPlay = () => {
+        if (!videoRef.current) return
+        videoRef.current.play()
+          .then(() => {
+            setIsPlaying(true)
+          })
+          .catch(() => {
+            if (!videoRef.current) return
+            const previousMuted = videoRef.current.muted
+            videoRef.current.muted = true
+            videoRef.current.play()
+              .then(() => {
+                setIsPlaying(true)
+              })
+              .catch(() => {
+                // restore previous mute state if still blocked
+                if (videoRef.current) videoRef.current.muted = previousMuted
+              })
+          })
+      }
+
+      if (videoRef.current && videoRef.current.readyState >= 2) {
+        attemptPlay()
+      } else if (videoRef.current) {
+        const onCanPlay = () => attemptPlay()
+        videoRef.current.addEventListener("canplay", onCanPlay, { once: true } as any)
+        return () => videoRef.current?.removeEventListener("canplay", onCanPlay)
+      }
+    }
+  }, [autoplay, resume, currentVideo])
+
   // Add this new function to fetch videos directly from Firestore
   const fetchCategoryVideos = async (category: string): Promise<Video[]> => {
     if (!user) return []
@@ -761,6 +802,67 @@ export default function VideoPlayerPage() {
     } catch (error) {
       console.error(`Error fetching ${category} videos:`, error)
       return []
+    }
+  }
+
+  // Fetch a single video by its document ID and initialize a minimal playlist
+  const fetchVideoById = async (id: string) => {
+    try {
+      setLoading(true)
+      // 1) Try treating the id as a Firestore document id
+      const videoDocRef = doc(db, "videos", id)
+      const videoSnap = await getDoc(videoDocRef)
+
+      // Helper to initialize state from a Firestore document
+      const initializeFromData = (docId: string, data: any) => {
+        const video: Video = {
+          id: docId,
+          title: data.title || "Untitled",
+          duration: data.duration || "0 minutes",
+          thumbnail: data.publicId
+            ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.publicId}.jpg`
+            : "/placeholder.svg?height=180&width=320",
+          description: data.description || "",
+          category: data.category || "",
+          videoUrl: data.videoUrl || "",
+          publicId: data.publicId || "",
+          tags: data.tags || []
+        }
+
+        const singlePlaylist: Playlist = {
+          id: `single-${docId}`,
+          createdAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
+          videos: [video]
+        }
+
+        videoChangeRef.current = true
+        setPlaylist(singlePlaylist)
+        setCurrentVideoIndex(0)
+        setCurrentVideo(video)
+      }
+
+      if (videoSnap.exists()) {
+        initializeFromData(id, videoSnap.data())
+      } else {
+        // 2) Fallback: treat the id as a Cloudinary publicId
+        const videosCollectionRef = collection(db, "videos")
+        const q = query(videosCollectionRef, where("publicId", "==", id))
+        const querySnap = await getDocs(q)
+
+        if (!querySnap.empty) {
+          const matchedDoc = querySnap.docs[0]
+          initializeFromData(matchedDoc.id, matchedDoc.data())
+        } else {
+          setPlaylist(null)
+          setCurrentVideo(null)
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch video by id:", error)
+      setPlaylist(null)
+      setCurrentVideo(null)
+    } finally {
+      setLoading(false)
     }
   }
 

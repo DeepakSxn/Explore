@@ -778,21 +778,23 @@ export default function Dashboard() {
       {isSidebarOpen && (
         <aside className="fixed top-16 left-0 z-40 h-[calc(100vh-4rem)] w-64 bg-gradient-to-b from-green-600 to-green-700 shadow-xl transition-all duration-300 ease-in-out">
           <div className="flex h-full w-full flex-col">
-            <div className="flex flex-col gap-1 p-4">
-              <div className="flex justify-end mb-2">
+            <div className="flex flex-col gap-0.5 p-4">
+              <div className="flex justify-end mb-1">
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   onClick={() => setIsSidebarOpen(false)}
                   className="text-white hover:bg-white/10"
                 >
-                  <ArrowLeft className="h-4 w-4" />
+                  <div className="p-2 bg-white/10 rounded-lg">
+                    <ArrowLeft className="h-4 w-4 text-white" />
+                  </div>
                 </Button>
               </div>
-              <div className="mb-4 px-2">
+           
                
                 
-              </div>
+              
               
               {/* Classic View Toggle Button - Now First */}
               <Button 

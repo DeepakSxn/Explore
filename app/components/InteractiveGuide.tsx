@@ -198,30 +198,16 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
     })
   }
 
-  // Handle video opening with multiple fallbacks
+  // Handle video opening: open in a new tab and request autoplay
   const openVideo = (videoId: string) => {
     console.log("Attempting to open video:", videoId)
-    
-    // Method 1: Try direct navigation
+    const url = `/video-player?videoId=${videoId}&autoplay=true`
     try {
-      const videoUrl = `/video-player?videoId=${videoId}`
-      console.log("Navigating to:", videoUrl)
-      window.location.href = videoUrl
+      window.open(url, '_blank', 'noopener,noreferrer')
     } catch (error) {
-      console.error("Direct navigation failed:", error)
-      
-      // Method 2: Try new tab
-      try {
-        window.open(`/video-player?videoId=${videoId}`, '_blank')
-      } catch (error2) {
-        console.error("New tab failed:", error2)
-        
-        // Method 3: Try router push (if available)
-        if (typeof window !== 'undefined' && window.history) {
-          window.history.pushState({}, '', `/video-player?videoId=${videoId}`)
-          window.location.reload()
-        }
-      }
+      console.error("Opening new tab failed:", error)
+      // Fallback to same-tab navigation if popup blocked
+      window.location.href = url
     }
   }
 
