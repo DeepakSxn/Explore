@@ -796,17 +796,18 @@ export default function Dashboard() {
                 
               
               
-              {/* My Dashboard Link */}
-              <Link href="/dashboard" passHref legacyBehavior>
-                <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
-                  <a className="flex items-center gap-3 text-white">
-                    <div className="p-2 bg-white/10 rounded-lg">
-                      <BookOpen className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="ml-3 text-white">My Dashboard</span>
-                  </a>
-                </Button>
-              </Link>
+              {/* My Dashboard Action - show gamified dashboard */}
+              <Button 
+                variant="ghost" 
+                size="lg" 
+                onClick={() => setShowGamifiedDashboard(true)}
+                className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg"
+              >
+                <div className="p-2 bg-white/10 rounded-lg">
+                  <BookOpen className="w-4 h-4 text-white" />
+                </div>
+                <span className="ml-3 text-white">My Dashboard</span>
+              </Button>
               
               <Link href="/profile" passHref legacyBehavior>
                 <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
