@@ -796,10 +796,11 @@ export default function Dashboard() {
                 
               
               
-              {/* Classic View Toggle Button - Now First */}
+              {/* My Dashboard Action - show gamified dashboard */}
               <Button 
                 variant="ghost" 
                 size="lg" 
+                onClick={() => setShowGamifiedDashboard(true)}
                 className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg"
               >
                 <div className="p-2 bg-white/10 rounded-lg">
