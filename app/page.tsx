@@ -204,7 +204,7 @@ export default function Home() {
         <section className="w-full py-20 bg-gradient-to-r from-green-600 to-green-700 relative overflow-hidden">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="container px-4 md:px-6 max-w-7xl mx-auto relative z-10">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
               <div className="text-white group">
                 <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">100+</div>
                 <div className="text-green-100 text-lg">Features demos</div>
@@ -213,6 +213,11 @@ export default function Home() {
               <div className="text-white group">
                 <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">24/7</div>
                 <div className="text-green-100 text-lg">Accessibility</div>
+              </div>
+
+              <div className="text-white group">
+                <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">3.5x</div>
+                <div className="text-green-100 text-lg">Faster response rate</div>
               </div>
             </div>
           </div>
