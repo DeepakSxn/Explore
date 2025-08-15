@@ -52,6 +52,18 @@
   background-color: hsl(var(--accent) / 0.8);
 }
 
+/* Ensure gradient text displays properly with full character visibility */
+.gradient-text-animate {
+  line-height: 1.1;
+  padding: 0.5rem 0;
+  display: block;
+}
+
+/* Override the general text color rule for gradient text */
+h1.bg-clip-text {
+  color: transparent !important;
+}
+
 h1,
 h2,
 h3,

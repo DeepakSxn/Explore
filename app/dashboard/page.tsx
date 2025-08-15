@@ -1116,7 +1116,7 @@ export default function Dashboard() {
       {/* Enhanced Footer */}
       <footer className="border-t border-slate-200 bg-white/80 backdrop-blur-sm py-4 mt-12">
         <div className="container text-center text-xs text-slate-500">
-          © {new Date().getFullYear()} EOXS. All rights reserved. |
+          © {new Date().getFullYear()} EOXS. All rights reserved.
         </div>
       </footer>
 

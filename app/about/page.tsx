@@ -9,31 +9,31 @@ export default function EOXSplorePage() {
   const router = useRouter();
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 relative overflow-hidden">
-      {/* Advanced mesh gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-green-100/40 via-blue-50/30 to-purple-100/40"></div>
+      {/* Advanced mesh gradient background - Fixed positioning for scroll */}
+      <div className="fixed inset-0 bg-gradient-to-br from-green-200/60 via-blue-100/50 to-purple-200/60"></div>
       
-      {/* Animated mesh overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.1),transparent_50%)] animate-pulse-scale"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.1),transparent_50%)] animate-pulse-scale animation-delay-2000"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(168,85,247,0.1),transparent_50%)] animate-pulse-scale animation-delay-4000"></div>
+      {/* Animated mesh overlay - Fixed positioning for scroll */}
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.25),transparent_50%)] animate-pulse-scale"></div>
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.25),transparent_50%)] animate-pulse-scale animation-delay-2000"></div>
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(168,85,247,0.25),transparent_50%)] animate-pulse-scale animation-delay-4000"></div>
 
-      {/* Enhanced Particle effects */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Enhanced Particle effects - Fixed positioning for scroll */}
+      <div className="fixed inset-0 pointer-events-none">
         {[...Array(35)].map((_, i) => (
           <div
             key={i}
             className={`absolute rounded-full ${
-              i % 4 === 0 ? 'bg-green-400 animate-pulse' : 
-              i % 4 === 1 ? 'bg-blue-400 animate-bounce-slow' : 
-              i % 4 === 2 ? 'bg-purple-400 animate-pulse-scale' :
-              'bg-pink-400 animate-float'
+              i % 4 === 0 ? 'bg-green-500 animate-pulse' : 
+              i % 4 === 1 ? 'bg-blue-500 animate-bounce-slow' : 
+              i % 4 === 2 ? 'bg-purple-500 animate-pulse-scale' :
+              'bg-pink-500 animate-float'
             }`}
             style={{
               width: `${Math.random() * 6 + 1}px`,
               height: `${Math.random() * 6 + 1}px`,
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-              opacity: Math.random() * 0.4 + 0.1,
+              opacity: Math.random() * 0.6 + 0.3,
               animationDelay: `${Math.random() * 4}s`,
               animationDuration: `${4 + Math.random() * 6}s`
             }}
@@ -41,37 +41,37 @@ export default function EOXSplorePage() {
         ))}
       </div>
 
-      {/* Floating geometric shapes with glow */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-16 left-16 w-40 h-40 border border-green-300/40 rounded-full animate-spin-slow shadow-[0_0_20px_rgba(34,197,94,0.3)]"></div>
-        <div className="absolute top-24 right-24 w-32 h-32 border border-blue-300/40 rotate-45 animate-pulse shadow-[0_0_20px_rgba(59,130,246,0.3)]"></div>
-        <div className="absolute bottom-40 left-1/3 w-28 h-28 border border-purple-300/40 rounded-full animate-bounce-slow shadow-[0_0_20px_rgba(168,85,247,0.3)]"></div>
-        <div className="absolute bottom-24 right-1/4 w-20 h-20 border border-pink-300/40 rotate-12 animate-pulse-scale shadow-[0_0_20px_rgba(236,72,153,0.3)]"></div>
-        <div className="absolute top-1/2 left-1/4 w-24 h-24 border border-green-300/40 rounded-full animate-float shadow-[0_0_20px_rgba(34,197,94,0.3)]"></div>
+      {/* Floating geometric shapes with glow - Fixed positioning for scroll */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-16 left-16 w-40 h-40 border border-green-400/60 rounded-full animate-spin-slow shadow-[0_0_30px_rgba(34,197,94,0.5)]"></div>
+        <div className="absolute top-24 right-24 w-32 h-32 border border-blue-400/60 rotate-45 animate-pulse shadow-[0_0_30px_rgba(59,130,246,0.5)]"></div>
+        <div className="absolute bottom-40 left-1/3 w-28 h-28 border border-purple-400/60 rounded-full animate-bounce-slow shadow-[0_0_30px_rgba(168,85,247,0.5)]"></div>
+        <div className="absolute bottom-24 right-1/4 w-20 h-20 border border-pink-400/60 rotate-12 animate-pulse-scale shadow-[0_0_30px_rgba(236,72,153,0.5)]"></div>
+        <div className="absolute top-1/2 left-1/4 w-24 h-24 border border-green-400/60 rounded-full animate-float shadow-[0_0_30px_rgba(34,197,94,0.5)]"></div>
       </div>
 
-      {/* Enhanced gradient blobs with better colors */}
-      <div className="absolute top-16 left-16 w-[500px] h-[500px] bg-gradient-to-br from-green-200/30 via-emerald-200/20 to-teal-200/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-      <div className="absolute bottom-16 right-16 w-[500px] h-[500px] bg-gradient-to-br from-blue-200/30 via-indigo-200/20 to-purple-200/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-gradient-to-br from-purple-200/25 via-pink-200/20 to-rose-200/25 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+      {/* Enhanced gradient blobs with better colors - Fixed positioning for scroll */}
+      <div className="fixed top-16 left-16 w-[500px] h-[500px] bg-gradient-to-br from-green-300/50 via-emerald-300/40 to-teal-300/50 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+      <div className="fixed bottom-16 right-16 w-[500px] h-[500px] bg-gradient-to-br from-blue-300/50 via-indigo-300/40 to-purple-300/50 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-gradient-to-br from-purple-300/45 via-pink-300/40 to-rose-300/45 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
 
-      {/* Light rays effect */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-green-300/20 to-transparent animate-pulse"></div>
-        <div className="absolute top-0 left-1/2 w-px h-full bg-gradient-to-b from-transparent via-blue-300/20 to-transparent animate-pulse animation-delay-2000"></div>
-        <div className="absolute top-0 left-3/4 w-px h-full bg-gradient-to-b from-transparent via-purple-300/20 to-transparent animate-pulse animation-delay-4000"></div>
+      {/* Light rays effect - Fixed positioning for scroll */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-green-400/40 to-transparent animate-pulse"></div>
+        <div className="absolute top-0 left-1/2 w-px h-full bg-gradient-to-b from-transparent via-blue-400/40 to-transparent animate-pulse animation-delay-2000"></div>
+        <div className="absolute top-0 left-3/4 w-px h-full bg-gradient-to-b from-transparent via-purple-400/40 to-transparent animate-pulse animation-delay-4000"></div>
       </div>
 
-      {/* Floating orbs with glow */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-32 left-1/4 w-4 h-4 bg-green-400 rounded-full animate-float shadow-[0_0_20px_rgba(34,197,94,0.6)]"></div>
-        <div className="absolute top-48 right-1/3 w-3 h-3 bg-blue-400 rounded-full animate-float animation-delay-2000 shadow-[0_0_15px_rgba(59,130,246,0.6)]"></div>
-        <div className="absolute bottom-32 left-1/3 w-5 h-5 bg-purple-400 rounded-full animate-float animation-delay-4000 shadow-[0_0_25px_rgba(168,85,247,0.6)]"></div>
-        <div className="absolute bottom-48 right-1/4 w-2 h-2 bg-pink-400 rounded-full animate-float animation-delay-1000 shadow-[0_0_10px_rgba(236,72,153,0.6)]"></div>
+      {/* Floating orbs with glow - Fixed positioning for scroll */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-32 left-1/4 w-4 h-4 bg-green-500 rounded-full animate-float shadow-[0_0_25px_rgba(34,197,94,0.8)]"></div>
+        <div className="absolute top-48 right-1/3 w-3 h-3 bg-blue-500 rounded-full animate-float animation-delay-2000 shadow-[0_0_20px_rgba(59,130,246,0.8)]"></div>
+        <div className="absolute bottom-32 left-1/3 w-5 h-5 bg-purple-500 rounded-full animate-float animation-delay-4000 shadow-[0_0_30px_rgba(168,85,247,0.8)]"></div>
+        <div className="absolute bottom-48 right-1/4 w-2 h-2 bg-pink-500 rounded-full animate-float animation-delay-1000 shadow-[0_0_15px_rgba(236,72,153,0.8)]"></div>
       </div>
 
-      {/* Animated gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent animate-pulse-scale opacity-40"></div>
+      {/* Animated gradient overlay - Fixed positioning for scroll */}
+      <div className="fixed inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent animate-pulse-scale opacity-60"></div>
 
       {/* Navbar */}
       <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
@@ -119,7 +119,7 @@ export default function EOXSplorePage() {
           </button>
         </div>
         {/* Hero Section */}
-        <section className="py-16 md:py-24 bg-white/80 backdrop-blur-sm">
+        <section className="py-16 md:py-24 bg-white/10 backdrop-blur-sm">
           <div className="container mx-auto px-4 text-center">
             {/* Embedded YouTube Video */}
             <div className="flex justify-center items-center mb-8 gap-4">
@@ -143,7 +143,7 @@ export default function EOXSplorePage() {
         </section>
 
         {/* What is EOXSplore Section */}
-        <section className="py-16 bg-green-100/80 backdrop-blur-sm">
+        <section className="py-16 bg-green-100/20 backdrop-blur-sm">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto">
               <h2 className="text-3xl font-bold mb-6">What is EOXSplore?</h2>
@@ -158,7 +158,7 @@ export default function EOXSplorePage() {
         </section>
 
         {/* Why EOXSplore Section */}
-        <section className="py-16 bg-white/80 backdrop-blur-sm">
+        <section className="py-16 bg-white/10 backdrop-blur-sm">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto">
               <h2 className="text-3xl font-bold mb-6">Why was EOXSplore Created?</h2>
@@ -173,13 +173,13 @@ export default function EOXSplorePage() {
         </section>
 
         {/* Features Section */}
-        <section className="py-16 bg-green-100/80 backdrop-blur-sm">
+        <section className="py-16 bg-green-100/20 backdrop-blur-sm">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold mb-12 text-center">Key Features</h2>
 
             <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
               {/* Feature 1 */}
-              <div className="bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-sm">
+              <div className="bg-white/30 backdrop-blur-sm p-8 rounded-lg shadow-sm">
                 <h3 className="text-2xl font-bold mb-4">Self-Service Exploration</h3>
                 <p className="text-gray-700">
                   Navigate through our software features at your own pace, focusing on the capabilities that matter most
@@ -188,7 +188,7 @@ export default function EOXSplorePage() {
               </div>
 
               {/* Feature 2 */}
-              <div className="bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-sm">
+              <div className="bg-white/30 backdrop-blur-sm p-8 rounded-lg shadow-sm">
                 <h3 className="text-2xl font-bold mb-4">24/7 Availability</h3>
                 <p className="text-gray-700">
                   Access demos anytime, anywhere, eliminating the need to schedule and wait for traditional live
@@ -200,12 +200,12 @@ export default function EOXSplorePage() {
         </section>
 
         {/* Feature Icons Section */}
-        <section className="py-16 bg-white/80 backdrop-blur-sm">
+        <section className="py-16 bg-white/10 backdrop-blur-sm">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold mb-12 text-center">Platform Capabilities</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {/* No Scheduling */}
-              <div className="bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-sm border border-gray-200">
+              <div className="bg-white/30 backdrop-blur-sm p-8 rounded-lg shadow-sm border border-gray-200">
                 <div className="flex items-start gap-4">
                   <div className="bg-white p-2">
                     <div className="text-green-600 border-2 border-green-600 rounded p-2 w-12 h-12 flex items-center justify-center">
@@ -219,7 +219,7 @@ export default function EOXSplorePage() {
                 </div>
               </div>
               {/* AI Personalized */}
-              <div className="bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-sm border border-gray-200">
+              <div className="bg-white/30 backdrop-blur-sm p-8 rounded-lg shadow-sm border border-gray-200">
                 <div className="flex items-start gap-4">
                   <div className="bg-white p-2">
                     <div className="text-green-600 bg-green-600 rounded-full p-2 w-12 h-12 flex items-center justify-center">
@@ -233,7 +233,7 @@ export default function EOXSplorePage() {
                 </div>
               </div>
               {/* No Clutter */}
-              <div className="bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-sm border border-gray-200">
+              <div className="bg-white/30 backdrop-blur-sm p-8 rounded-lg shadow-sm border border-gray-200">
                 <div className="flex items-start gap-4">
                   <div className="bg-white p-2">
                     <div className="text-green-600 p-2">
@@ -247,7 +247,7 @@ export default function EOXSplorePage() {
                 </div>
               </div>
               {/* 24/7 Availability */}
-              <div className="bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-sm border border-gray-200">
+              <div className="bg-white/30 backdrop-blur-sm p-8 rounded-lg shadow-sm border border-gray-200">
                 <div className="flex items-start gap-4">
                   <div className="bg-white p-2">
                     <div className="text-green-600 border-2 border-green-600 rounded-full p-2 w-12 h-12 flex items-center justify-center">
@@ -266,7 +266,7 @@ export default function EOXSplorePage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-100/80 backdrop-blur-sm py-8 relative z-10">
+      <footer className="bg-gray-100/20 backdrop-blur-sm py-8 relative z-10">
         <div className="container mx-auto px-4 text-center text-sm text-gray-600">
           <div className="flex justify-center space-x-8 mb-4">
             <Link href="#" className="hover:text-green-600">
