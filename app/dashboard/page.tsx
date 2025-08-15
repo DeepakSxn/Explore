@@ -725,7 +725,7 @@ export default function Dashboard() {
       {/* Enhanced Header */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/60 z-50 shadow-sm">
         <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto px-6">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 mt-3">
             <img 
               src="/Black logo.png" 
               alt="EOXS Logo" 
@@ -737,7 +737,7 @@ export default function Dashboard() {
               
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mt-2">
             {showGamifiedDashboard && userProgress && (
               <>
                 <div className="hidden lg:flex items-center gap-3">
@@ -791,11 +791,7 @@ export default function Dashboard() {
                   </div>
                 </Button>
               </div>
-           
-               
-                
-              
-              
+
               {/* My Dashboard Action - show gamified dashboard */}
               <Button 
                 variant="ghost" 
@@ -806,7 +802,7 @@ export default function Dashboard() {
                 <div className="p-2 bg-white/10 rounded-lg">
                   <BookOpen className="w-4 h-4 text-white" />
                 </div>
-                <span className="ml-3 text-white">My Dashboard</span>
+               <span className="ml-1 text-white">My Dashboard</span>
               </Button>
               
               <Link href="/profile" passHref legacyBehavior>

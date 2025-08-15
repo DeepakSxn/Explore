@@ -83,11 +83,26 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
 
   // Persist a thread id so every message stays in context per session
   const [threadId, setThreadId] = useState<string | null>(null)
+  const [messageCount, setMessageCount] = useState(0)
 
   useEffect(() => {
     const saved = sessionStorage.getItem("sparky_thread_id")
+    const savedCount = sessionStorage.getItem("sparky_message_count")
     if (saved) setThreadId(saved)
+    if (savedCount) setMessageCount(parseInt(savedCount))
   }, [])
+
+  // Clear thread when user logs out
+  useEffect(() => {
+    if (!userData) {
+      // User has logged out, clear thread data
+      setThreadId(null)
+      setMessageCount(0)
+      sessionStorage.removeItem("sparky_thread_id")
+      sessionStorage.removeItem("sparky_message_count")
+      console.log("User logged out, cleared thread data")
+    }
+  }, [userData])
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return
@@ -104,14 +119,30 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
     console.log("Setting loading to true")
     setIsLoading(true)
 
+    // Check if we need to create a new thread (after 20 messages)
+    const newMessageCount = messageCount + 1
+    setMessageCount(newMessageCount)
+    sessionStorage.setItem("sparky_message_count", newMessageCount.toString())
+    
+    let currentThreadId = threadId
+    if (newMessageCount >= 20) {
+      // Reset thread and message count
+      currentThreadId = null
+      setThreadId(null)
+      setMessageCount(0)
+      sessionStorage.removeItem("sparky_thread_id")
+      sessionStorage.setItem("sparky_message_count", "0")
+      console.log("Creating new thread after 20 messages")
+    }
+
     try {
-      console.log("Sending message to API:", userMessage.content, "Thread ID:", threadId)
+      console.log("Sending message to API:", userMessage.content, "Thread ID:", currentThreadId)
       
       // Call our serverless endpoint which talks to OpenAI Assistants
       const res = await fetch("/api/ai-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage.content, threadId }),
+        body: JSON.stringify({ message: userMessage.content, threadId: currentThreadId }),
       })
       
       console.log("API Response status:", res.status)
@@ -125,7 +156,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
       const data = await res.json()
       console.log("API Response data:", data)
       
-      if (data.threadId && data.threadId !== threadId) {
+      if (data.threadId && data.threadId !== currentThreadId) {
         setThreadId(data.threadId)
         sessionStorage.setItem("sparky_thread_id", data.threadId)
       }
@@ -219,7 +250,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
   // Handle video opening: open in a new tab and request autoplay
   const openVideo = (videoId: string) => {
     console.log("Attempting to open video:", videoId)
-    const url = `/video-player?videoId=${videoId}&autoplay=true`
+    const url = `/video-player-clean?videoId=${videoId}&autoplay=true`
     try {
       window.open(url, '_blank', 'noopener,noreferrer')
     } catch (error) {
