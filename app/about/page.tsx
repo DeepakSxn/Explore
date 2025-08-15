@@ -5,81 +5,84 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 
-export default function EOXSplorePage() {
+export default function DemoXplorePage() {
   const router = useRouter();
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 relative overflow-hidden">
-      {/* Advanced mesh gradient background - Fixed positioning for scroll */}
-      <div className="fixed inset-0 bg-gradient-to-br from-green-200/60 via-blue-100/50 to-purple-200/60"></div>
+      {/* Enhanced animated mesh gradient background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-green-100/30 via-blue-50/20 to-purple-100/30 animate-pulse"></div>
       
-      {/* Animated mesh overlay - Fixed positioning for scroll */}
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.25),transparent_50%)] animate-pulse-scale"></div>
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.25),transparent_50%)] animate-pulse-scale animation-delay-2000"></div>
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(168,85,247,0.25),transparent_50%)] animate-pulse-scale animation-delay-4000"></div>
+      {/* Animated mesh overlay with smooth transitions */}
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.08),transparent_50%)] animate-pulse-scale"></div>
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.08),transparent_50%)] animate-pulse-scale animation-delay-2000"></div>
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(168,85,247,0.08),transparent_50%)] animate-pulse-scale animation-delay-4000"></div>
 
-      {/* Enhanced Particle effects - Fixed positioning for scroll */}
+      {/* Enhanced floating particles with smooth animations */}
       <div className="fixed inset-0 pointer-events-none">
-        {[...Array(35)].map((_, i) => (
+        {[...Array(20)].map((_, i) => (
           <div
             key={i}
-            className={`absolute rounded-full ${
-              i % 4 === 0 ? 'bg-green-500 animate-pulse' : 
-              i % 4 === 1 ? 'bg-blue-500 animate-bounce-slow' : 
-              i % 4 === 2 ? 'bg-purple-500 animate-pulse-scale' :
-              'bg-pink-500 animate-float'
+            className={`absolute rounded-full animate-float ${
+              i % 4 === 0 ? 'bg-green-400/20' : 
+              i % 4 === 1 ? 'bg-blue-400/20' : 
+              i % 4 === 2 ? 'bg-purple-400/20' :
+              'bg-pink-400/20'
             }`}
             style={{
-              width: `${Math.random() * 6 + 1}px`,
-              height: `${Math.random() * 6 + 1}px`,
+              width: `${Math.random() * 4 + 2}px`,
+              height: `${Math.random() * 4 + 2}px`,
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-              opacity: Math.random() * 0.6 + 0.3,
+              opacity: Math.random() * 0.3 + 0.1,
               animationDelay: `${Math.random() * 4}s`,
-              animationDuration: `${4 + Math.random() * 6}s`
+              animationDuration: `${6 + Math.random() * 4}s`
             }}
           />
         ))}
       </div>
 
-      {/* Floating geometric shapes with glow - Fixed positioning for scroll */}
+      {/* Floating geometric shapes with enhanced animations */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-16 left-16 w-40 h-40 border border-green-400/60 rounded-full animate-spin-slow shadow-[0_0_30px_rgba(34,197,94,0.5)]"></div>
-        <div className="absolute top-24 right-24 w-32 h-32 border border-blue-400/60 rotate-45 animate-pulse shadow-[0_0_30px_rgba(59,130,246,0.5)]"></div>
-        <div className="absolute bottom-40 left-1/3 w-28 h-28 border border-purple-400/60 rounded-full animate-bounce-slow shadow-[0_0_30px_rgba(168,85,247,0.5)]"></div>
-        <div className="absolute bottom-24 right-1/4 w-20 h-20 border border-pink-400/60 rotate-12 animate-pulse-scale shadow-[0_0_30px_rgba(236,72,153,0.5)]"></div>
-        <div className="absolute top-1/2 left-1/4 w-24 h-24 border border-green-400/60 rounded-full animate-float shadow-[0_0_30px_rgba(34,197,94,0.5)]"></div>
+        <div className="absolute top-16 left-16 w-32 h-32 border border-green-300/30 rounded-full animate-spin-slow shadow-[0_0_20px_rgba(34,197,94,0.2)]"></div>
+        <div className="absolute top-24 right-24 w-24 h-24 border border-blue-300/30 rotate-45 animate-pulse shadow-[0_0_20px_rgba(59,130,246,0.2)]"></div>
+        <div className="absolute bottom-40 left-1/3 w-20 h-20 border border-purple-300/30 rounded-full animate-bounce-slow shadow-[0_0_20px_rgba(168,85,247,0.2)]"></div>
+        <div className="absolute bottom-24 right-1/4 w-16 h-16 border border-pink-300/30 rotate-12 animate-pulse-scale shadow-[0_0_20px_rgba(236,72,153,0.2)]"></div>
+        <div className="absolute top-1/2 left-1/4 w-20 h-20 border border-green-300/30 rounded-full animate-float shadow-[0_0_20px_rgba(34,197,94,0.2)]"></div>
       </div>
 
-      {/* Enhanced gradient blobs with better colors - Fixed positioning for scroll */}
-      <div className="fixed top-16 left-16 w-[500px] h-[500px] bg-gradient-to-br from-green-300/50 via-emerald-300/40 to-teal-300/50 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-      <div className="fixed bottom-16 right-16 w-[500px] h-[500px] bg-gradient-to-br from-blue-300/50 via-indigo-300/40 to-purple-300/50 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-gradient-to-br from-purple-300/45 via-pink-300/40 to-rose-300/45 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+      {/* Enhanced gradient blobs with smooth animations */}
+      <div className="fixed top-16 left-16 w-[400px] h-[400px] bg-gradient-to-br from-green-200/20 via-emerald-200/15 to-teal-200/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+      <div className="fixed bottom-16 right-16 w-[400px] h-[400px] bg-gradient-to-br from-blue-200/20 via-indigo-200/15 to-purple-200/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-gradient-to-br from-purple-200/15 via-pink-200/15 to-rose-200/15 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
 
-      {/* Light rays effect - Fixed positioning for scroll */}
+      {/* Subtle light rays effect */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-green-400/40 to-transparent animate-pulse"></div>
-        <div className="absolute top-0 left-1/2 w-px h-full bg-gradient-to-b from-transparent via-blue-400/40 to-transparent animate-pulse animation-delay-2000"></div>
-        <div className="absolute top-0 left-3/4 w-px h-full bg-gradient-to-b from-transparent via-purple-400/40 to-transparent animate-pulse animation-delay-4000"></div>
+        <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-green-300/15 to-transparent animate-pulse"></div>
+        <div className="absolute top-0 left-1/2 w-px h-full bg-gradient-to-b from-transparent via-blue-300/15 to-transparent animate-pulse animation-delay-2000"></div>
+        <div className="absolute top-0 left-3/4 w-px h-full bg-gradient-to-b from-transparent via-purple-300/15 to-transparent animate-pulse animation-delay-4000"></div>
       </div>
 
-      {/* Floating orbs with glow - Fixed positioning for scroll */}
+      {/* Floating orbs with enhanced glow */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-32 left-1/4 w-4 h-4 bg-green-500 rounded-full animate-float shadow-[0_0_25px_rgba(34,197,94,0.8)]"></div>
-        <div className="absolute top-48 right-1/3 w-3 h-3 bg-blue-500 rounded-full animate-float animation-delay-2000 shadow-[0_0_20px_rgba(59,130,246,0.8)]"></div>
-        <div className="absolute bottom-32 left-1/3 w-5 h-5 bg-purple-500 rounded-full animate-float animation-delay-4000 shadow-[0_0_30px_rgba(168,85,247,0.8)]"></div>
-        <div className="absolute bottom-48 right-1/4 w-2 h-2 bg-pink-500 rounded-full animate-float animation-delay-1000 shadow-[0_0_15px_rgba(236,72,153,0.8)]"></div>
+        <div className="absolute top-32 left-1/4 w-3 h-3 bg-green-400/30 rounded-full animate-float shadow-[0_0_15px_rgba(34,197,94,0.4)]"></div>
+        <div className="absolute top-48 right-1/3 w-2 h-2 bg-blue-400/30 rounded-full animate-float animation-delay-2000 shadow-[0_0_12px_rgba(59,130,246,0.4)]"></div>
+        <div className="absolute bottom-32 left-1/3 w-4 h-4 bg-purple-400/30 rounded-full animate-float animation-delay-4000 shadow-[0_0_18px_rgba(168,85,247,0.4)]"></div>
+        <div className="absolute bottom-48 right-1/4 w-1.5 h-1.5 bg-pink-400/30 rounded-full animate-float animation-delay-1000 shadow-[0_0_10px_rgba(236,72,153,0.4)]"></div>
       </div>
 
-      {/* Animated gradient overlay - Fixed positioning for scroll */}
-      <div className="fixed inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent animate-pulse-scale opacity-60"></div>
+      {/* Enhanced animated gradient overlay */}
+      <div className="fixed inset-0 bg-gradient-to-br from-transparent via-white/3 to-transparent animate-pulse-scale opacity-30"></div>
 
       {/* Navbar */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
-            <img src="/Black logo.png" alt="EOXS Logo" className="h-8 w-auto" />
+            <img src="/Black logo.png" height={120} width={80} alt="EOXS Logo" />
           </div>
           <nav className="hidden md:flex space-x-8">
+            <Link href="https://eoxs.com" className="text-black hover:text-green-600 font-medium">
+              Home
+            </Link>
             <Link href="https://eoxs.com/contact" className="text-black hover:text-green-600 font-medium">
               Contact
             </Link>
@@ -108,10 +111,10 @@ export default function EOXSplorePage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow relative z-10">
+      <main className="flex-grow">
         <div className="container mx-auto px-4 pt-6">
           <button
-            className="flex items-center gap-2 text-sm px-3 py-1 rounded border border-gray-300 bg-white/90 backdrop-blur-sm hover:bg-gray-50 mb-6 shadow-sm"
+            className="flex items-center gap-2 text-sm px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 mb-6 shadow-sm"
             onClick={() => router.push("/dashboard")}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -119,7 +122,7 @@ export default function EOXSplorePage() {
           </button>
         </div>
         {/* Hero Section */}
-        <section className="py-16 md:py-24 bg-white/10 backdrop-blur-sm">
+        <section className="py-16 md:py-24 bg-white">
           <div className="container mx-auto px-4 text-center">
             {/* Embedded YouTube Video */}
             <div className="flex justify-center items-center mb-8 gap-4">
@@ -127,7 +130,7 @@ export default function EOXSplorePage() {
                 <div className="relative" style={{ paddingBottom: '56.25%', height: 0 }}>
                   <iframe
                     src="https://www.youtube.com/embed/Rk-GmLzqa3A"
-                    title="EOXSplore Guide"
+                    title="Eoxsplore Guide"
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
@@ -136,19 +139,19 @@ export default function EOXSplorePage() {
                 </div>
               </div>
             </div>
-            <div className="flex justify-center items-center mb-8 gap-4">
-              <img src="/lVJ7PU01.svg" alt="EOXSplore Logo" height={360} width={200} />
+            <div className="flex justify-center items-center  gap-4">
+              <img src="lVJ7PU01.svg" alt="DemoXplore Logo" height={600} width={400} />
             </div>
           </div>
         </section>
 
-        {/* What is EOXSplore Section */}
-        <section className="py-16 bg-green-100/20 backdrop-blur-sm">
+        {/* What is DemoXplore Section */}
+        <section className="py-16 bg-green-100">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto">
               <h2 className="text-3xl font-bold mb-6">What is EOXSplore?</h2>
               <p className="text-lg mb-6">
-                EOXSplore is an innovative platform designed by EOXS to offer steel industry professionals a seamless,
+                 EOXSplore is an innovative platform designed by EOXS to offer steel industry professionals a seamless,
                 self-service experience to explore EOXS's software features. We understand that the traditional live
                 demo process can be time-consuming and sometimes not tailored to specific needs. That's why EOXSplore
                 empowers users to discover features at their own pace, whenever it suits them.
@@ -157,8 +160,8 @@ export default function EOXSplorePage() {
           </div>
         </section>
 
-        {/* Why EOXSplore Section */}
-        <section className="py-16 bg-white/10 backdrop-blur-sm">
+        {/* Why DemoXplore Section */}
+        <section className="py-16 bg-white">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto">
               <h2 className="text-3xl font-bold mb-6">Why was EOXSplore Created?</h2>
@@ -173,90 +176,119 @@ export default function EOXSplorePage() {
         </section>
 
         {/* Features Section */}
-        <section className="py-16 bg-green-100/20 backdrop-blur-sm">
+        <section className="py-16 bg-white/20 backdrop-blur-sm">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold mb-12 text-center">Key Features</h2>
+            <h2 className="text-4xl font-bold mb-12 text-center text-gray-900 relative">
+              <span className="relative z-10">Key Features</span>
+              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-green-400 to-blue-500 rounded-full"></div>
+            </h2>
 
-            <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
               {/* Feature 1 */}
-              <div className="bg-white/30 backdrop-blur-sm p-8 rounded-lg shadow-sm">
-                <h3 className="text-2xl font-bold mb-4">Self-Service Exploration</h3>
-                <p className="text-gray-700">
-                  Navigate through our software features at your own pace, focusing on the capabilities that matter most
-                  to your steel business operations.
-                </p>
+              <div className="group bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-green-200 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1">
+                <div className="flex items-start gap-4">
+                  <div className="bg-gradient-to-br from-green-100 to-green-200 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-green-700 transition-colors duration-300">Self-Service Exploration</h3>
+                    <p className="text-gray-700 leading-relaxed">
+                      Navigate through our software features at your own pace, focusing on the capabilities that matter most
+                      to your steel business operations.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Feature 2 */}
-              <div className="bg-white/30 backdrop-blur-sm p-8 rounded-lg shadow-sm">
-                <h3 className="text-2xl font-bold mb-4">24/7 Availability</h3>
-                <p className="text-gray-700">
-                  Access demos anytime, anywhere, eliminating the need to schedule and wait for traditional live
-                  demonstrations.
-                </p>
+              <div className="group bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-blue-200 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1">
+                <div className="flex items-start gap-4">
+                  <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-blue-700 transition-colors duration-300">24/7 Availability</h3>
+                    <p className="text-gray-700 leading-relaxed">
+                      Access demos anytime, anywhere, eliminating the need to schedule and wait for traditional live
+                      demonstrations.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
         {/* Feature Icons Section */}
-        <section className="py-16 bg-white/10 backdrop-blur-sm">
+        <section className="py-16 bg-white/20 backdrop-blur-sm">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold mb-12 text-center">Platform Capabilities</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <h2 className="text-4xl font-bold mb-12 text-center text-gray-900 relative">
+              <span className="relative z-10">Platform Capabilities</span>
+              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full"></div>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
               {/* No Scheduling */}
-              <div className="bg-white/30 backdrop-blur-sm p-8 rounded-lg shadow-sm border border-gray-200">
+              <div className="group bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-green-200 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1">
                 <div className="flex items-start gap-4">
-                  <div className="bg-white p-2">
-                    <div className="text-green-600 border-2 border-green-600 rounded p-2 w-12 h-12 flex items-center justify-center">
-                      <svg xmlns='http://www.w3.org/2000/svg' className='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'><rect x='3' y='4' width='18' height='18' rx='2' strokeWidth='2' stroke='currentColor' fill='none'/><path d='M16 2v4M8 2v4M3 10h18'/></svg>
-                    </div>
+                  <div className="bg-gradient-to-br from-green-100 to-green-200 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" stroke="currentColor" fill="none"/>
+                      <path d="M16 2v4M8 2v4M3 10h18"/>
+                    </svg>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold mb-2">No Scheduling</h3>
-                    <p className="text-gray-700"> demos without booking a time</p>
+                    <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-green-700 transition-colors duration-300">No Scheduling</h3>
+                    <p className="text-gray-700 leading-relaxed">Watch demos without booking a time</p>
                   </div>
                 </div>
               </div>
+              
               {/* AI Personalized */}
-              <div className="bg-white/30 backdrop-blur-sm p-8 rounded-lg shadow-sm border border-gray-200">
+              <div className="group bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-blue-200 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1">
                 <div className="flex items-start gap-4">
-                  <div className="bg-white p-2">
-                    <div className="text-green-600 bg-green-600 rounded-full p-2 w-12 h-12 flex items-center justify-center">
-                      <svg xmlns='http://www.w3.org/2000/svg' className='h-6 w-6 text-white' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path d='M12 2a10 10 0 100 20 10 10 0 000-20zm0 0v4m0 8v4m4-4h4m-8 0H4' strokeWidth='2' stroke='white' fill='none'/></svg>
-                    </div>
+                  <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 0v4m0 8v4m4-4h4m-8 0H4" strokeWidth="2" stroke="currentColor" fill="none"/>
+                    </svg>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold mb-2">AI Personalized</h3>
-                    <p className="text-gray-700">Content tailored to your interests</p>
+                    <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-blue-700 transition-colors duration-300">AI Personalized</h3>
+                    <p className="text-gray-700 leading-relaxed">Content tailored to your interests</p>
                   </div>
                 </div>
               </div>
+              
               {/* No Clutter */}
-              <div className="bg-white/30 backdrop-blur-sm p-8 rounded-lg shadow-sm border border-gray-200">
+              <div className="group bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-purple-200 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1">
                 <div className="flex items-start gap-4">
-                  <div className="bg-white p-2">
-                    <div className="text-green-600 p-2">
-                      <svg xmlns='http://www.w3.org/2000/svg' className='h-10 w-10 text-green-600' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path d='M3 6h18M3 12h18M3 18h18' strokeWidth='2' stroke='currentColor' fill='none'/></svg>
-                    </div>
+                  <div className="bg-gradient-to-br from-purple-100 to-purple-200 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path d="M3 6h18M3 12h18M3 18h18" strokeWidth="2" stroke="currentColor" fill="none"/>
+                    </svg>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold mb-2">No Clutter</h3>
-                    <p className="text-gray-700">Focused demos without distractions</p>
+                    <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-purple-700 transition-colors duration-300">No Clutter</h3>
+                    <p className="text-gray-700 leading-relaxed">Focused demos without distractions</p>
                   </div>
                 </div>
               </div>
+              
               {/* 24/7 Availability */}
-              <div className="bg-white/30 backdrop-blur-sm p-8 rounded-lg shadow-sm border border-gray-200">
+              <div className="group bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-pink-200 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1">
                 <div className="flex items-start gap-4">
-                  <div className="bg-white p-2">
-                    <div className="text-green-600 border-2 border-green-600 rounded-full p-2 w-12 h-12 flex items-center justify-center">
-                      <svg xmlns='http://www.w3.org/2000/svg' className='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'><circle cx='12' cy='12' r='10' strokeWidth='2' stroke='currentColor' fill='none'/><path d='M12 6v6l4 2' strokeWidth='2' stroke='currentColor' fill='none'/></svg>
-                    </div>
+                  <div className="bg-gradient-to-br from-pink-100 to-pink-200 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <svg className="h-6 w-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" strokeWidth="2" stroke="currentColor" fill="none"/>
+                      <path d="M12 6v6l4 2" strokeWidth="2" stroke="currentColor" fill="none"/>
+                    </svg>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold mb-2">24/7 Availability</h3>
-                    <p className="text-gray-700">Access demos anytime, day or night</p>
+                    <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-pink-700 transition-colors duration-300">24/7 Availability</h3>
+                    <p className="text-gray-700 leading-relaxed">Access demos anytime, day or night</p>
                   </div>
                 </div>
               </div>
@@ -266,7 +298,7 @@ export default function EOXSplorePage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-100/20 backdrop-blur-sm py-8 relative z-10">
+      <footer className="bg-gray-100 py-8">
         <div className="container mx-auto px-4 text-center text-sm text-gray-600">
           <div className="flex justify-center space-x-8 mb-4">
             <Link href="#" className="hover:text-green-600">
