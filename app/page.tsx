@@ -121,7 +121,7 @@ export default function Home() {
                   
                   
                 </div>
-                <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-gray-900 via-green-800 to-green-600 bg-clip-text text-transparent gradient-text-animate">
+                <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-gray-900 via-green-800 to-green-600 bg-clip-text text-transparent gradient-text-animate font-['Inter']">
                   Explore Software Features
                 </h1>
                 <p className="text-xl md:text-2xl text-gray-600 max-w-4xl leading-relaxed">

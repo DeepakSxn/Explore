@@ -1,11 +1,14 @@
 import type React from "react"
 import type { Metadata } from "next"
+import { Inter } from "next/font/google"
 import "./globals.css"
 import "./styles/auth-background.css"
 import { ThemeProvider } from "./theme-provider"
 import { AuthProvider } from "./context/AuthContext"
 import { GamificationProvider } from "./context/GamificationContext"
 import SuspensionWrapper from "./components/SuspensionWrapper"
+
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "EOXS Video Management Tool",
@@ -20,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
+      <body className={inter.className}>
         <ThemeProvider defaultTheme="system">
           <AuthProvider>
             <GamificationProvider>
