@@ -397,7 +397,7 @@ export default function GamifiedDashboard() {
                     <Play className="h-4 w-4" />
                   </div>
                   <p className="text-2xl font-bold text-white">{userProgress.totalVideosWatched}</p>
-                  <p className="text-xs text-green-100">Videos Watched</p>
+                  <p className="text-xs text-white">Videos Watched</p>
                 </CardContent>
               </Card>
 
@@ -407,7 +407,7 @@ export default function GamifiedDashboard() {
                     <Flame className="h-4 w-4" />
                   </div>
                   <p className="text-2xl font-bold text-white">{userProgress.currentStreak}</p>
-                  <p className="text-xs text-orange-100">Day Streak</p>
+                  <p className="text-xs text-white">Day Streak</p>
                 </CardContent>
               </Card>
 
@@ -417,7 +417,7 @@ export default function GamifiedDashboard() {
                     <Award className="h-4 w-4" />
                   </div>
                   <p className="text-2xl font-bold text-white">{userProgress.badges.length}</p>
-                  <p className="text-xs text-purple-100">Badges Earned</p>
+                  <p className="text-xs text-white">Badges Earned</p>
                 </CardContent>
               </Card>
 
@@ -427,7 +427,7 @@ export default function GamifiedDashboard() {
                     <Zap className="h-4 w-4" />
                   </div>
                   <p className="text-2xl font-bold text-white">{userProgress.totalXP}</p>
-                  <p className="text-xs text-pink-100">Total XP</p>
+                  <p className="text-xs text-white">Total XP</p>
                 </CardContent>
               </Card>
             </div>

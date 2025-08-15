@@ -776,7 +776,7 @@ export default function Dashboard() {
 
       {/* Enhanced Sidebar */}
       {isSidebarOpen && (
-        <aside className="fixed top-16 left-0 z-40 h-[calc(100vh-4rem)] w-64 bg-gradient-to-b from-green-600 to-green-700 shadow-xl transition-all duration-300 ease-in-out">
+        <aside className="fixed top-16 left-0 z-40 h-[calc(100vh-4rem)] w-64 bg-gradient-to-b from-green-600 via-green-600 to-green-800 shadow-xl transition-all duration-300 ease-in-out">
           <div className="flex h-full w-full flex-col">
             <div className="flex flex-col gap-0.5 p-4">
               <div className="flex justify-end mb-1">
@@ -802,7 +802,7 @@ export default function Dashboard() {
                 <div className="p-2 bg-white/10 rounded-lg">
                   <BookOpen className="w-4 h-4 text-white" />
                 </div>
-               <span className="ml-1 text-white">My Dashboard</span>
+                <span className="ml-1 text-white">My Dashboard</span>
               </Button>
               
               <Link href="/profile" passHref legacyBehavior>
