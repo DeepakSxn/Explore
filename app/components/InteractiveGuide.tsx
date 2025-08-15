@@ -55,7 +55,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
     const welcomeMessage: ChatMessage = {
       id: 'welcome',
       type: 'ai',
-      content: `Hi ${userData?.name || 'there'}! I'm EOXSplore, your AI learning assistant. I can help you with:\n\n• Learning questions about EOXS\n• Study tips and strategies\n• Course navigation help\n• General questions about the platform\n\nWhen I reference specific videos, I'll show them as clickable links below my responses. For example, if I mention video tqurzenwnlhmobbu23uz, you'll see it displayed below.\n\nHow can I assist you today?`,
+      content: `Hi ${userData?.name || 'there'}! I'm EOXSplore, your AI learning assistant. I can help you with:\n\n• Learning questions about EOXS\n• Study tips and strategies\n• Course navigation help\n• General questions about the platform\n\nWhen I reference specific videos, I'll show them as clickable links below my responses.\n\nHow can I assist you today?`,
       timestamp: new Date(),
       videoReferences: [
         {
@@ -163,14 +163,74 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
 
       const newMessageId = (Date.now() + 1).toString()
       const sanitizeAiContent = (raw: string): string => {
-        const lines = (raw || "").split(/\r?\n/)
+        if (!raw) return ""
+        
+        // Remove technical reference lines
+        const lines = raw.split(/\r?\n/)
         const cleaned = lines.filter((line) => {
           const t = line.trim()
+          
+          // Remove video reference headers
           if (/^This is the reference of the video:/i.test(t)) return false
+          if (/^Video reference:/i.test(t)) return false
+          if (/^Reference:/i.test(t)) return false
+          
+          // Remove standalone IDs (20+ alphanumeric characters)
           if (/^[a-zA-Z0-9]{20,}\.?$/.test(t)) return false
+          
+          // Remove topic ID patterns
+          if (/^Topic ID:/i.test(t)) return false
+          if (/^Topic: [a-zA-Z0-9]{20,}/i.test(t)) return false
+          if (/^Related topic video ID:/i.test(t)) return false
+          if (/^Related topic:/i.test(t)) return false
+          
+          // Remove video ID patterns
+          if (/^Video ID:/i.test(t)) return false
+          if (/^Video: [a-zA-Z0-9]{20,}/i.test(t)) return false
+          if (/^Related video ID:/i.test(t)) return false
+          
+          // Remove technical metadata lines
+          if (/^ID:/i.test(t)) return false
+          if (/^Reference ID:/i.test(t)) return false
+          
+          // Remove lines with long IDs in parentheses
+          if (/\([a-zA-Z0-9]{20,}\)/i.test(t)) return false
+          
+          // Remove PDF reference patterns
+          if (/\[[0-9]+:[0-9]+\+?[^\]]*\.pdf\]/i.test(t)) return false
+          if (/\[[0-9]+:[0-9]+[^\]]*\.pdf\]/i.test(t)) return false
+          if (/\[[0-9]+:[0-9]+\+[^\]]*\]/i.test(t)) return false
+          
+          // Remove empty lines that might be left after filtering
+          if (t === "") return false
+          
           return true
         })
-        return cleaned.join("\n").trim()
+        
+        // Clean up the content further
+        let result = cleaned.join("\n").trim()
+        
+        // Remove any remaining technical patterns within text
+        result = result.replace(/Topic ID: [a-zA-Z0-9]{20,}/gi, "")
+        result = result.replace(/Video ID: [a-zA-Z0-9]{20,}/gi, "")
+        result = result.replace(/Reference ID: [a-zA-Z0-9]{20,}/gi, "")
+        result = result.replace(/ID: [a-zA-Z0-9]{20,}/gi, "")
+        result = result.replace(/Related topic video ID: [a-zA-Z0-9]{20,}/gi, "")
+        result = result.replace(/Related topic: [a-zA-Z0-9]{20,}/gi, "")
+        result = result.replace(/Related video ID: [a-zA-Z0-9]{20,}/gi, "")
+        
+        // Remove parenthetical explanations with long IDs
+        result = result.replace(/\([^)]*[a-zA-Z0-9]{20,}[^)]*\)/g, "")
+        
+        // Remove PDF reference patterns within text
+        result = result.replace(/\[[0-9]+:[0-9]+\+?[^\]]*\.pdf\]/gi, "")
+        result = result.replace(/\[[0-9]+:[0-9]+[^\]]*\.pdf\]/gi, "")
+        result = result.replace(/\[[0-9]+:[0-9]+\+[^\]]*\]/gi, "")
+        
+        // Clean up multiple consecutive newlines
+        result = result.replace(/\n\s*\n\s*\n/g, "\n\n")
+        
+        return result
       }
       const aiMessage: ChatMessage = {
         id: newMessageId,
@@ -205,19 +265,31 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
     const videoRefs: VideoReference[] = []
     
     // Look for video IDs in the format: tqurzenwnlhmobbu23uz
+    // But be more selective - only extract if they appear in a context that suggests they're video references
     const videoIdRegex = /([a-zA-Z0-9]{20,})/g
     const matches = content.match(videoIdRegex)
     
     if (matches) {
       matches.forEach(match => {
         // Check if it looks like a video ID (20+ characters, alphanumeric)
+        // And make sure it's not part of a technical reference line that should be filtered
         if (match.length >= 20 && /^[a-zA-Z0-9]+$/.test(match)) {
-          videoRefs.push({
-            videoId: match,
-            title: undefined,
-            thumbnail: `/placeholder.svg?height=120&width=200`,
-            duration: ""
-          })
+          // Check if this ID appears in a context that suggests it's a video reference
+          const contextBefore = content.substring(Math.max(0, content.indexOf(match) - 50), content.indexOf(match))
+          const contextAfter = content.substring(content.indexOf(match) + match.length, content.indexOf(match) + match.length + 50)
+          
+          // Only include if it's not in a technical reference context
+          const isTechnicalContext = /(video|topic|reference)\s*(id|reference)?\s*:?\s*$/i.test(contextBefore) ||
+                                   /^[:\s]*$/i.test(contextAfter)
+          
+          if (!isTechnicalContext) {
+            videoRefs.push({
+              videoId: match,
+              title: undefined,
+              thumbnail: `/placeholder.svg?height=120&width=200`,
+              duration: ""
+            })
+          }
         }
       })
     }
@@ -442,9 +514,8 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <p className="text-sm font-medium text-gray-800 truncate">
-                                        {video.title}
+                                        {video.title || "Video Content"}
                                       </p>
-                                      {/* Intentionally hide raw IDs; show nothing or duration */}
                                       <p className="text-xs text-blue-600 font-medium">
                                         Click to watch →
                                       </p>
