@@ -419,40 +419,24 @@ export default function CleanVideoPlayer() {
   }
 
      return (
-     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white light">
-             {/* Header */}
-       <header className="bg-white border-b border-gray-200">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-4">
-                         <Button
-               variant="ghost"
-               size="sm"
-               onClick={() => window.close()}
-               className="text-gray-600 hover:text-gray-900"
-             >
-               <ArrowLeft className="h-5 w-5" />
-             </Button>
-             <div>
-               <h1 className="text-lg font-semibold text-gray-900 truncate max-w-md">
-                 {currentVideo.title}
-               </h1>
-              {currentVideo.category && (
-                <Badge variant="secondary" className="mt-1">
-                  {currentVideo.category}
-                </Badge>
-              )}
-            </div>
-          </div>
-                     <div className="flex items-center gap-2">
-             {/* Theme toggle hidden for clean video player */}
-           </div>
-        </div>
-      </header>
+     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white light flex items-center justify-center relative">
+      {/* Back to Dashboard Button */}
+      <div className="absolute top-6 left-6 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => router.push("/dashboard")}
+          className="bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white border-slate-200 hover:border-slate-300 hover:shadow-xl transition-all duration-200"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Button>
+      </div>
 
       {/* Main Content */}
-      <div className="flex">
+      <div className="w-full">
         {/* Video Player Section */}
-        <div className="flex-1 p-6">
+        <div className="p-6">
           <div 
             ref={playerContainerRef}
             className="relative w-full max-w-4xl mx-auto"
@@ -602,18 +586,17 @@ export default function CleanVideoPlayer() {
 
           {/* Video Info and Actions */}
           <div className="mt-6 max-w-4xl mx-auto">
-            <div className="flex items-center justify-between mb-4">
-                             <div>
-                 <h2 className="text-xl font-semibold text-gray-900">
-                   {currentVideo.title}
-                 </h2>
-                 {currentVideo.description && (
-                   <p className="text-gray-600 mt-2">
-                     {currentVideo.description}
-                   </p>
-                 )}
-               </div>
-          
+            <div className="text-center mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {currentVideo.title}
+                </h2>
+                {currentVideo.description && (
+                  <p className="text-gray-600 mt-2">
+                    {currentVideo.description}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
