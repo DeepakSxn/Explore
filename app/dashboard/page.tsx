@@ -725,19 +725,19 @@ export default function Dashboard() {
       {/* Enhanced Header */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/60 z-50 shadow-sm">
         <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto px-6">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 mt-3">
             <img 
               src="/Black logo.png" 
               alt="EOXS Logo" 
               className="h-10 w-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105" 
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push("/")}
             />
             <div className="hidden md:block">
              
               
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mt-2">
             {showGamifiedDashboard && userProgress && (
               <>
                 <div className="hidden lg:flex items-center gap-3">
