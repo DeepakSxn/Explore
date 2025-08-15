@@ -138,21 +138,21 @@ export default function ProfilePage() {
                     {getLevelIcon(userProgress.currentLevel)}
                   </div>
                   <div>
-                    <h2 className="text-3xl font-bold">{getLevelTitle(userProgress.currentLevel)}</h2>
-                    <p className="text-blue-100">Level {userProgress.currentLevel}</p>
+                    <h2 className="text-3xl font-bold text-white">{getLevelTitle(userProgress.currentLevel)}</h2>
+                    <p className="text-white">Level {userProgress.currentLevel}</p>
                   </div>
             </div>
                 
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span>Progress to Level {userProgress.currentLevel + 1}</span>
-                    <span>{Math.round((userProgress.totalXP % 100) / 100 * 100)}%</span>
+                    <span className="text-white">Progress to Level {userProgress.currentLevel + 1}</span>
+                    <span className="text-white">{Math.round((userProgress.totalXP % 100) / 100 * 100)}%</span>
                   </div>
                   <Progress 
                     value={(userProgress.totalXP % 100) / 100 * 100} 
                     className="h-3 bg-white/20"
                   />
-                  <p className="text-xs text-blue-100">
+                  <p className="text-xs text-white">
                     {100 - (userProgress.totalXP % 100)} XP needed for next level
                   </p>
                 </div>
@@ -166,8 +166,8 @@ export default function ProfilePage() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <BookOpen className="h-4 w-4" />
                   </div>
-                  <p className="text-2xl font-bold">{userProgress.totalVideosWatched}</p>
-                  <p className="text-xs text-green-100">Videos Watched</p>
+                  <p className="text-2xl font-bold text-white">{userProgress.totalVideosWatched}</p>
+                  <p className="text-xs text-white">Videos Watched</p>
                 </CardContent>
               </Card>
 
@@ -176,8 +176,8 @@ export default function ProfilePage() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Flame className="h-4 w-4" />
                   </div>
-                  <p className="text-2xl font-bold">{userProgress.currentStreak}</p>
-                  <p className="text-xs text-orange-100">Day Streak</p>
+                  <p className="text-2xl font-bold text-white">{userProgress.currentStreak}</p>
+                  <p className="text-xs text-white">Day Streak</p>
                 </CardContent>
               </Card>
 
@@ -186,8 +186,8 @@ export default function ProfilePage() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Award className="h-4 w-4" />
                     </div>
-                  <p className="text-2xl font-bold">{userProgress.badges.length}</p>
-                  <p className="text-xs text-purple-100">Badges Earned</p>
+                  <p className="text-2xl font-bold text-white">{userProgress.badges.length}</p>
+                  <p className="text-xs text-white">Badges Earned</p>
                 </CardContent>
               </Card>
 
@@ -196,8 +196,8 @@ export default function ProfilePage() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Star className="h-4 w-4" />
                   </div>
-                  <p className="text-2xl font-bold">{userProgress.achievements.length}</p>
-                  <p className="text-xs text-pink-100">Achievements</p>
+                  <p className="text-2xl font-bold text-white">{userProgress.achievements.length}</p>
+                  <p className="text-xs text-white">Achievements</p>
                 </CardContent>
               </Card>
             </div>
