@@ -115,10 +115,10 @@ export default function DemoXplorePage() {
         <div className="container mx-auto px-4 pt-6">
           <button
             className="flex items-center gap-2 text-sm px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 mb-6 shadow-sm"
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/login")}
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
+            Back
           </button>
         </div>
         {/* Hero Section */}
