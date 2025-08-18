@@ -993,29 +993,11 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="p-6">
-                    {/* Enhanced Global Select All */}
+                    {/* Module-level selection only */}
                     <div className="flex items-center mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                      <Checkbox
-                        ref={globalCheckboxRef}
-                        checked={
-                          modules.length > 0 &&
-                          modules
-                            .flatMap((module) => module.videos.map((v) => v.id))
-                            .every((id) => selectedVideos.includes(id))
-                        }
-                        onCheckedChange={() => {
-                          const allVideoIds = modules.flatMap((module) => module.videos.map((v) => v.id))
-                          if (selectedVideos.length === allVideoIds.length) {
-                            setSelectedVideos([])
-                          } else {
-                            setSelectedVideos(allVideoIds)
-                          }
-                        }}
-                        className="mr-3"
-                      />
-                      <span className="text-sm font-medium text-slate-700">Select All Videos</span>
+                      <span className="text-sm font-medium text-slate-700">Select whole modules using the checkboxes on each module</span>
                       <Badge variant="outline" className="ml-auto bg-blue-50 text-blue-700 border-blue-200">
-                        {selectedVideos.length} selected
+                        {selectedVideos.length} videos in selected modules
                       </Badge>
                     </div>
 
@@ -1069,7 +1051,7 @@ export default function Dashboard() {
                                 <thead className="bg-slate-50 border-t border-slate-200">
                                   <tr>
                                     <th className="w-6 px-6 py-3 text-left">
-                                      <span className="sr-only">Select</span>
+                                      <span className="sr-only">Selection disabled</span>
                                     </th>
                                     <th className="px-6 py-3 text-left font-semibold text-slate-700">Feature</th>
                                     <th className="px-6 py-3 text-left font-semibold text-slate-700 w-32">Time Required</th>
@@ -1080,10 +1062,7 @@ export default function Dashboard() {
                                   {module.videos.map((video) => (
                                     <tr key={video.id} className="hover:bg-slate-50/50 transition-colors">
                                       <td className="px-6 py-4">
-                                        <Checkbox
-                                          checked={selectedVideos.includes(video.id)}
-                                          onCheckedChange={() => handleVideoSelection(video.id)}
-                                        />
+                                        <div className="w-2.5 h-2.5 rounded-full bg-slate-300 opacity-60" />
                                       </td>
                                       <td className="px-6 py-4">
                                         <div className="font-medium text-slate-900">{video.title}</div>

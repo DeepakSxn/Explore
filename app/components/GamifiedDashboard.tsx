@@ -198,6 +198,38 @@ export default function GamifiedDashboard() {
     }
   }
 
+  // Open the module directly in the video player by creating a temporary playlist
+  const startModuleFromCategory = (category: string) => {
+    try {
+      const moduleVideos = allVideos.filter((v) => v.category === category)
+      if (moduleVideos.length === 0) return
+
+      const sortedByProgress = [...moduleVideos].sort(
+        (a, b) => (videoProgress[b.id] || 0) - (videoProgress[a.id] || 0),
+      )
+      const chosenVideo = (videoProgress[sortedByProgress[0]?.id] || 0) > 0 ? sortedByProgress[0] : moduleVideos[0]
+
+      const updatedPlaylist = {
+        id: "custom-playlist",
+        videos: moduleVideos,
+        createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 },
+      }
+      localStorage.setItem("currentPlaylist", JSON.stringify(updatedPlaylist))
+
+      const activePlaylist = {
+        id: "custom-playlist",
+        title: `${category} Playlist`,
+        lastAccessed: new Date().toISOString(),
+        completionPercentage: 0,
+      }
+      localStorage.setItem("activePlaylist", JSON.stringify(activePlaylist))
+
+      router.push(`/video-player?videoId=${chosenVideo.id}&playlistId=custom-playlist`)
+    } catch (error) {
+      console.error("Error starting module from category:", error)
+    }
+  }
+
   const handleContinueLearning = async () => {
     // Check if user is authenticated
     if (!auth.currentUser) {
@@ -538,7 +570,7 @@ export default function GamifiedDashboard() {
                               animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
                               className="p-3 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
-                              onClick={() => router.push(`/dashboard?module=${category}`)}
+                              onClick={() => startModuleFromCategory(category)}
                     >
                               <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
