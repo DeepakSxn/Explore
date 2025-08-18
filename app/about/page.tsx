@@ -8,14 +8,14 @@ import { useRouter } from "next/navigation"
 export default function DemoXplorePage() {
   const router = useRouter();
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 relative overflow-hidden">
+    <div className="flex flex-col min-h-screen bg-white relative overflow-hidden">
       {/* Enhanced animated mesh gradient background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-green-100/30 via-blue-50/20 to-purple-100/30 animate-pulse"></div>
+      <div className="fixed inset-0 bg-gradient-to-br from-green-100/30 via-blue-50/20 to-purple-100/30 animate-pulse pointer-events-none"></div>
       
       {/* Animated mesh overlay with smooth transitions */}
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.08),transparent_50%)] animate-pulse-scale"></div>
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.08),transparent_50%)] animate-pulse-scale animation-delay-2000"></div>
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(168,85,247,0.08),transparent_50%)] animate-pulse-scale animation-delay-4000"></div>
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.08),transparent_50%)] animate-pulse-scale pointer-events-none"></div>
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.08),transparent_50%)] animate-pulse-scale animation-delay-2000 pointer-events-none"></div>
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(168,85,247,0.08),transparent_50%)] animate-pulse-scale animation-delay-4000 pointer-events-none"></div>
 
       {/* Enhanced floating particles with smooth animations */}
       <div className="fixed inset-0 pointer-events-none">
@@ -29,13 +29,13 @@ export default function DemoXplorePage() {
               'bg-pink-400/20'
             }`}
             style={{
-              width: ${Math.random() * 4 + 2}px,
-              height: ${Math.random() * 4 + 2}px,
-              left: ${Math.random() * 100}%,
-              top: ${Math.random() * 100}%,
+              width: `${Math.random() * 4 + 2}px`,
+              height: `${Math.random() * 4 + 2}px`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
               opacity: Math.random() * 0.3 + 0.1,
-              animationDelay: ${Math.random() * 4}s,
-              animationDuration: ${6 + Math.random() * 4}s
+              animationDelay: `${Math.random() * 4}s`,
+              animationDuration: `${6 + Math.random() * 4}s`
             }}
           />
         ))}
@@ -71,7 +71,7 @@ export default function DemoXplorePage() {
       </div>
 
       {/* Enhanced animated gradient overlay */}
-      <div className="fixed inset-0 bg-gradient-to-br from-transparent via-white/3 to-transparent animate-pulse-scale opacity-30"></div>
+      <div className="fixed inset-0 bg-gradient-to-br from-transparent via-white/3 to-transparent animate-pulse-scale opacity-30 pointer-events-none"></div>
 
       {/* Navbar */}
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
@@ -114,11 +114,11 @@ export default function DemoXplorePage() {
       <main className="flex-grow">
         <div className="container mx-auto px-4 pt-6">
           <button
-            className="flex items-center gap-2 text-sm px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 mb-6 shadow-sm"
+            className="relative z-20 flex items-center gap-2 text-sm px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 mb-6 shadow-sm"
             onClick={() => router.push("/dashboard")}
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
+            Back
           </button>
         </div>
         {/* Hero Section */}
@@ -175,7 +175,7 @@ export default function DemoXplorePage() {
           </div>
         </section>
 
-
+        
 
         {/* Feature Icons Section */}
         <section className="py-16 bg-white/20 backdrop-blur-sm">
