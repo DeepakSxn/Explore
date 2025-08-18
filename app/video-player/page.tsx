@@ -206,6 +206,9 @@ export default function VideoPlayerPage() {
   const [submittingVideoFeedback, setSubmittingVideoFeedback] = useState(false)
   const [videoFeedbacks, setVideoFeedbacks] = useState<any[]>([])
   const [showVideoFeedbacks, setShowVideoFeedbacks] = useState(false)
+  
+  // Add state to track if current video has been completed (for scrubbing restrictions)
+  const [isVideoCompleted, setIsVideoCompleted] = useState(false)
 
   // Add playbackRate state and handlers
   const [playbackRate, setPlaybackRate] = useState(1)
@@ -283,9 +286,45 @@ export default function VideoPlayerPage() {
   // 5-second forward handler
   const handleForward5Seconds = () => {
     if (videoRef.current) {
+      // Only allow forward scrubbing if video has been completed
+      if (!isVideoCompleted) {
+        toast({
+          title: "Scrubbing Restricted",
+          description: "You must complete watching this video before you can skip forward.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const newTime = videoRef.current.currentTime + 5;
       videoRef.current.currentTime = Math.min(newTime, videoRef.current.duration);
     }
+  };
+
+  // Progress bar click handler with scrubbing restrictions
+  const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!videoRef.current) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickPercentage = clickX / rect.width;
+    const newTime = clickPercentage * videoRef.current.duration;
+    
+    // Check if user is trying to skip forward
+    if (newTime > videoRef.current.currentTime) {
+      // Only allow forward seeking if video has been completed
+      if (!isVideoCompleted) {
+        toast({
+          title: "Forward Seeking Restricted",
+          description: "You must complete watching this video before you can skip forward.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
+    // Allow backward seeking (rewinding) at any time
+    videoRef.current.currentTime = newTime;
   };
 
   // Keyboard shortcuts for video controls
@@ -423,6 +462,8 @@ export default function VideoPlayerPage() {
 
   useEffect(() => {
     if (currentVideo && currentVideo.id) {
+      // Reset completion status for new video
+      setIsVideoCompleted(false);
       checkAndSetVideoWatched(currentVideo.id)
     }
   }, [currentVideo])
@@ -938,6 +979,8 @@ export default function VideoPlayerPage() {
   }
 
   // Add this function to reorder videos according to the expected module sequence
+  // IMPORTANT: This function ONLY reorders videos that are in the current playlist
+  // It does NOT add videos from previous selections or unfinished modules
   const reorderVideosByModuleSequence = async (videos: Video[]): Promise<Video[]> => {
     if (!videos || !Array.isArray(videos) || videos.length === 0) return videos
 
@@ -977,30 +1020,13 @@ export default function VideoPlayerPage() {
     for (const moduleName of moduleOrder) {
       let categoryVideos = videosByCategory[moduleName] || []
       
-      // If Sales or QA videos are missing, try to fetch them from database
+      // NOTE: Only fetch Sales/QA videos if they're missing AND they exist in the current playlist
+      // This prevents adding videos from previous selections
       if ((moduleName === "Sales" || moduleName === "QA") && categoryVideos.length === 0) {
-        console.log(`No ${moduleName} videos in playlist, fetching from database...`)
-        const fetchedVideos = await fetchCategoryVideos(moduleName)
-        if (fetchedVideos.length > 0) {
-          categoryVideos = fetchedVideos
-          console.log(`Fetched ${fetchedVideos.length} ${moduleName} videos from database:`, fetchedVideos.map(v => v.title))
-        } else {
-          // Create placeholder videos if none found in database
-          console.log(`No ${moduleName} videos found in database, creating placeholder videos...`)
-          const expectedTitles = VIDEO_ORDER[moduleName] || []
-          categoryVideos = expectedTitles.map((title, index) => ({
-            id: `${moduleName.toLowerCase()}-placeholder-${index}`,
-            title: title,
-            duration: "5 minutes",
-            thumbnail: "/placeholder.svg?height=180&width=320",
-            description: `Placeholder video for ${title}`,
-            category: moduleName,
-            videoUrl: "",
-            publicId: "",
-            tags: []
-          })) as Video[]
-          console.log(`Created ${categoryVideos.length} placeholder ${moduleName} videos`)
-        }
+        console.log(`⚠️ ${moduleName} videos missing from playlist - this is normal if user didn't select them`)
+        console.log(`✅ NOT fetching additional videos to avoid showing previous selections`)
+        // Skip adding this module if it's not in the current playlist
+        continue
       }
       
       if (categoryVideos.length > 0) {
@@ -1010,15 +1036,11 @@ export default function VideoPlayerPage() {
       }
     }
 
-    // Add any remaining videos that weren't in the module order
-    const remainingVideos = videos.filter(video => {
-      const category = video.category || "Uncategorized"
-      return !moduleOrder.includes(category)
-    })
-
-    if (remainingVideos.length > 0) {
-      orderedVideos.push(...remainingVideos)
-    }
+    // IMPORTANT: Do NOT add remaining videos from previous selections
+    // Only include videos that are explicitly in the current playlist
+    // This prevents showing unfinished modules from previous selections
+    console.log("✅ Only showing videos from current playlist selection")
+    console.log("❌ NOT adding remaining videos from previous selections")
 
     console.log("Reordered videos:", orderedVideos.map(v => `${v.category}: ${v.title}`))
     return orderedVideos
@@ -1026,6 +1048,11 @@ export default function VideoPlayerPage() {
 
   const organizeIntoModules = async (videos: Video[]) => {
     if (!videos || !Array.isArray(videos) || videos.length === 0) return
+
+    // IMPORTANT: This function ONLY shows:
+    // 1. Compulsory modules (Company Introduction, Miscellaneous, AI tools)
+    // 2. User-selected modules from the current playlist
+    // 3. NO previous unfinished modules or other categories
 
     // Create modules array
     const moduleArray: Module[] = []
@@ -1051,22 +1078,38 @@ export default function VideoPlayerPage() {
     console.log("AI tools videos:", videosByCategory["AI tools"] || [])
     console.log("Total videos in playlist:", videos.length)
 
-    // Extract selected modules from the playlist data (excluding Sales and QA as they're handled separately)
-    const selectedModules = new Set<string>()
-    videos.forEach(video => {
-      if (video.category && 
-          video.category !== "Company Introduction" && 
-          video.category !== "Miscellaneous" && 
-          video.category !== "AI tools" &&
-          video.category !== "Sales" &&
-          video.category !== "QA") {
-        selectedModules.add(video.category)
+    // IMPORTANT: We need to get the ACTUAL user-selected modules from localStorage
+    // NOT from the playlist data which may contain previous selections
+    let actualSelectedModules: Set<string> = new Set()
+    
+    try {
+      // Get the user's current selection from localStorage
+      const storedSelection = localStorage.getItem("selectedVideos")
+      if (storedSelection) {
+        const selectedVideoIds = JSON.parse(storedSelection) as string[]
+        
+        // Find the categories of the videos the user actually selected
+        selectedVideoIds.forEach(videoId => {
+          const video = videos.find(v => v.id === videoId)
+          if (video && video.category && 
+              video.category !== "Company Introduction" && 
+              video.category !== "Miscellaneous" && 
+              video.category !== "AI tools" &&
+              video.category !== "Sales" &&
+              video.category !== "QA") {
+            actualSelectedModules.add(video.category)
+          }
+        })
       }
-    })
+    } catch (error) {
+      console.error("Error reading user selection from localStorage:", error)
+    }
+    
+    console.log("🎯 ACTUAL user-selected modules:", Array.from(actualSelectedModules));
+    console.log("⚠️  Modules found in playlist (may include previous selections):", 
+      Array.from(new Set(videos.map(v => v.category).filter(Boolean))));
 
-    console.log("Selected modules from playlist:", Array.from(selectedModules))
-
-    // 1. Always add Company Introduction module first
+    // 1. ALWAYS add Company Introduction module first (COMPULSORY)
     if (videosByCategory["Company Introduction"] && videosByCategory["Company Introduction"].length > 0) {
       moduleArray.push({
         name: "Company Introduction",
@@ -1074,6 +1117,7 @@ export default function VideoPlayerPage() {
         videos: videosByCategory["Company Introduction"],
       })
       addedCategories.add("Company Introduction")
+      console.log("Added compulsory Company Introduction module")
     }
 
     // 2. Add Sales module (only if videos exist in the playlist)
@@ -1108,8 +1152,8 @@ export default function VideoPlayerPage() {
       addedCategories.add("QA")
     }
 
-    // 4. Add selected profession modules (extracted from playlist data) - excluding Sales and QA
-    selectedModules.forEach((profession) => {
+    // 4. Add ONLY the modules the user actually selected (from localStorage)
+    actualSelectedModules.forEach((profession) => {
       if (videosByCategory[profession] && 
           profession !== "Sales" && 
           profession !== "QA" && 
@@ -1120,29 +1164,15 @@ export default function VideoPlayerPage() {
           videos: videosByCategory[profession],
         })
         addedCategories.add(profession)
-        console.log("Added profession module:", profession)
+        console.log("✅ Added user-selected module:", profession)
       }
     })
 
-    // 5. Add other categories as modules (except Company Introduction, Miscellaneous, AI tools, Sales, and QA)
-    Object.entries(videosByCategory).forEach(([category, categoryVideos]) => {
-      if (category !== "Company Introduction" && 
-          category !== "Miscellaneous" && 
-          category !== "AI tools" && 
-          category !== "Sales" && 
-          category !== "QA" && 
-          !selectedModules.has(category) &&
-          !addedCategories.has(category)) {
-        moduleArray.push({
-          name: category,
-          category,
-          videos: categoryVideos,
-        })
-        addedCategories.add(category)
-      }
-    })
+    // 5. ONLY add user-selected modules - NO other categories from previous selections
+    // This ensures only the modules the user actually selected are shown
+    // along with the compulsory modules (Company Introduction, Miscellaneous, AI tools)
 
-    // 6. Always add Miscellaneous module before AI tools
+    // 6. ALWAYS add Miscellaneous module before AI tools (COMPULSORY)
     if (!addedCategories.has("Miscellaneous")) {
       moduleArray.push({
         name: "Miscellaneous",
@@ -1150,9 +1180,10 @@ export default function VideoPlayerPage() {
         videos: videosByCategory["Miscellaneous"] || [],
       })
       addedCategories.add("Miscellaneous")
+      console.log("Added compulsory Miscellaneous module")
     }
 
-    // 7. Always add AI tools module last - check for various AI-related categories
+    // 7. ALWAYS add AI tools module last (COMPULSORY)
     const aiToolsVideos = videosByCategory["AI tools"] || 
                          videosByCategory["AI Tools"] || 
                          videosByCategory["ai tools"] ||
@@ -1160,7 +1191,6 @@ export default function VideoPlayerPage() {
                          videosByCategory["artificial intelligence"] ||
                          []
     
-    // Always add AI tools module for testing, even if empty
     if (!addedCategories.has("AI tools")) {
       moduleArray.push({
         name: "AI tools",
@@ -1168,20 +1198,28 @@ export default function VideoPlayerPage() {
         videos: aiToolsVideos,
       })
       addedCategories.add("AI tools")
+      console.log("Added compulsory AI tools module")
     }
     
     if (aiToolsVideos.length > 0) {
       console.log("AI tools module created with", aiToolsVideos.length, "videos")
     } else {
-      console.log("AI tools module created with 0 videos (for testing)")
+      console.log("AI tools module created with 0 videos (compulsory module)")
     }
 
     setModules(moduleArray)
 
     // Debug: Log all modules being created
     console.log("=== MODULES BEING CREATED ===")
+    console.log("📋 ONLY showing: Compulsory modules + User-selected modules")
+    console.log("❌ NOT showing: Previous unfinished modules or other categories")
+    console.log("🎯 User actually selected these modules:", Array.from(actualSelectedModules))
     moduleArray.forEach((module, index) => {
-      console.log(`${index + 1}. ${module.name} (${module.category}) - ${module.videos.length} videos`)
+      const isCompulsory = module.category === "Company Introduction" || 
+                           module.category === "Miscellaneous" || 
+                           module.category === "AI tools"
+      const moduleType = isCompulsory ? "COMPULSORY" : "USER-SELECTED"
+      console.log(`${index + 1}. ${module.name} (${module.category}) - ${module.videos.length} videos [${moduleType}]`)
     })
     console.log("=== END MODULES ===")
 
@@ -1429,6 +1467,9 @@ export default function VideoPlayerPage() {
       // Mark current video as watched
       const updatedWatchEvents = { ...videoWatchEvents };
       updatedWatchEvents[currentVideo.id] = true;
+      
+      // Mark video as completed for scrubbing restrictions
+      setIsVideoCompleted(true);
   
       // Unlock the next video if it exists and is currently locked
       if (currentVideoIndex + 1 < playlist.videos.length) {
@@ -1538,6 +1579,9 @@ export default function VideoPlayerPage() {
         }
 
         setVideoWatchEvents(updatedWatchEvents)
+        
+        // Mark video as completed for scrubbing restrictions
+        setIsVideoCompleted(true);
 
         // Don't log rewatch event here - it will be logged on play if needed
       }
@@ -2335,17 +2379,93 @@ export default function VideoPlayerPage() {
                     controlsList="nodownload"
                   />
 
+                  {/* Centered Playback Controls - Only Visible on Hover */}
+                  <div className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-all duration-300 ${isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}>
+                    {/* Subtle background overlay for better visibility */}
+                    {isHovered && (
+                      <div className="absolute inset-0 bg-black/20 pointer-events-none transition-opacity duration-300" />
+                    )}
+                                          <div className="flex items-center gap-16 pointer-events-auto relative z-10">
+                      {/* Rewind 5 Seconds Button */}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        className="text-white hover:bg-white/20 p-3 rounded-full cursor-pointer bg-black/40 backdrop-blur-sm transition-all duration-200 hover:scale-110"
+                        onClick={handleRewind5Seconds}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            handleRewind5Seconds();
+                          }
+                        }}
+                      >
+                        <img src="/rewind-double-arrow.png" alt="Rewind 5s" width="24" height="24" style={{ display: 'inline', verticalAlign: 'middle' }} />
+                        <span className="ml-1 text-sm text-white font-medium">5s</span>
+                      </div>
+
+                      {/* Play/Pause Button */}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        className="text-white hover:bg-white/20 p-4 rounded-full cursor-pointer bg-black/40 backdrop-blur-sm transition-all duration-200 hover:scale-110"
+                        onClick={isPlaying ? handleVideoPause : handleVideoPlay}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            isPlaying ? handleVideoPause() : handleVideoPlay();
+                          }
+                        }}
+                      >
+                        {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
+                      </div>
+
+                      {/* Forward 5 Seconds Button */}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        className={`p-3 rounded-full cursor-pointer bg-black/40 backdrop-blur-sm transition-all duration-200 hover:scale-110 ${
+                          isVideoCompleted 
+                            ? "text-white hover:bg-white/20 hover:scale-110" 
+                            : "text-white/50 cursor-not-allowed"
+                        }`}
+                        onClick={isVideoCompleted ? handleForward5Seconds : undefined}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ' && isVideoCompleted) {
+                            handleForward5Seconds();
+                          }
+                        }}
+                        title={isVideoCompleted ? "Forward 5 seconds" : "Complete the video to enable forward seeking"}
+                      >
+                        <img src="/rewind-double-arrow.png" alt="Forward 5s" width="24" height="24" style={{ display: 'inline', verticalAlign: 'middle', transform: 'scaleX(-1)' }} />
+                        <span className="ml-1 text-sm text-white font-medium">5s</span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Custom Controls */}
                   <div
-                    className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${isPlaying && !isHovered ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"}`}
+                    className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${!isHovered ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"}`}
                   >
+                    {/* Scrubbing Status Indicator */}
+                    {!isVideoCompleted && (
+                      <div className="text-xs text-white/70 mb-2 text-center">
+                        ⚠️ Forward seeking disabled until video completion
+                      </div>
+                    )}
+                    
                     {/* Progress Bar */}
-                    <div className="w-full h-1 bg-white/30 mb-4 rounded-full overflow-hidden">
+                    <div 
+                      className="w-full h-1 bg-white/30 mb-4 rounded-full overflow-hidden cursor-pointer relative"
+                      onClick={handleProgressBarClick}
+                      title={isVideoCompleted ? "Click to seek to position" : "Complete the video to enable seeking"}
+                    >
                       <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
+                      {!isVideoCompleted && (
+                        <div className="absolute inset-0 bg-black/20 rounded-full" />
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
+
                         {/* Play/Pause Button */}
                         <div
                           role="button"
@@ -2359,88 +2479,6 @@ export default function VideoPlayerPage() {
                           }}
                         >
                           {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-                        </div>
-
-                        {/* Rewind Button */}
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          className="text-white hover:bg-white/20 p-2 rounded cursor-pointer"
-                          onClick={handleRewind5Seconds}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              handleRewind5Seconds();
-                            }
-                          }}
-                        >
-                          <img src="/rewind-double-arrow.png" alt="Rewind 5s" width="22" height="22" style={{ display: 'inline', verticalAlign: 'middle' }} />
-                          <span className="ml-0.3 text-xs text-white">5s</span>
-                        </div>
-
-                        {/* Forward 5 Seconds Button */}
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          className="text-white hover:bg-white/20 p-2 rounded cursor-pointer"
-                          onClick={handleForward5Seconds}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              handleForward5Seconds();
-                            }
-                          }}
-                        >
-                          <img src="/rewind-double-arrow.png" alt="Forward 5s" width="22" height="22" style={{ display: 'inline', verticalAlign: 'middle', transform: 'scaleX(-1)' }} />
-                          <span className="ml-0.3 text-xs text-white">5s</span>
-                        </div>
-
-                        {/* Previous Video Button */}
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          className={`text-white hover:bg-white/20 p-2 rounded cursor-pointer ${currentVideoIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          onClick={currentVideoIndex === 0 ? undefined : playPreviousVideo}
-                          onKeyDown={(e) => {
-                            if ((e.key === 'Enter' || e.key === ' ') && currentVideoIndex !== 0) {
-                              playPreviousVideo();
-                            }
-                          }}
-                        >
-                          <SkipBack className="h-5 w-5" />
-                        </div>
-
-                        {/* Next Video Button */}
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          className={`text-white hover:bg-white/20 p-2 rounded cursor-pointer ${
-                            !playlist?.videos ||
-                            !Array.isArray(playlist.videos) ||
-                            currentVideoIndex >= playlist.videos.length - 1 ||
-                            (!isVideoPlayable(currentVideoIndex + 1) && videoWatchEvents[currentVideo.id] !== true)
-                              ? 'opacity-50 cursor-not-allowed'
-                              : ''
-                          }`}
-                          onClick={
-                            playlist?.videos &&
-                            Array.isArray(playlist.videos) &&
-                            currentVideoIndex < playlist.videos.length - 1 &&
-                            (isVideoPlayable(currentVideoIndex + 1) || videoWatchEvents[currentVideo.id] === true)
-                              ? playNextVideo
-                              : undefined
-                          }
-                          onKeyDown={(e) => {
-                            if (
-                              (e.key === 'Enter' || e.key === ' ') &&
-                              playlist?.videos &&
-                              Array.isArray(playlist.videos) &&
-                              currentVideoIndex < playlist.videos.length - 1 &&
-                              (isVideoPlayable(currentVideoIndex + 1) || videoWatchEvents[currentVideo.id] === true)
-                            ) {
-                              playNextVideo();
-                            }
-                          }}
-                        >
-                          <SkipForward className="h-5 w-5" />
                         </div>
 
                         {/* Volume Control */}
@@ -2483,13 +2521,22 @@ export default function VideoPlayerPage() {
                           )}
                         </div>
 
+
+
+                        {/* Time Display */}
+                        <span className="text-white text-sm">
+                          {formatTime(currentTime)} / {formatTime(duration)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
                         {/* Playback Speed Dropdown */}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <div
                               role="button"
                               tabIndex={0}
-                              className="text-white hover:bg-white/20 text-xs px-2 py-1 rounded cursor-pointer"
+                              className="text-white hover:bg-white/20 text-sm px-3 py-2 rounded cursor-pointer"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
                                   setSpeedMenuOpen((v) => !v);
@@ -2499,7 +2546,7 @@ export default function VideoPlayerPage() {
                               {playbackRate}x
                             </div>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-16">
+                          <DropdownMenuContent align="end" className="w-16">
                             {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
                               <DropdownMenuItem
                                 key={rate}
@@ -2511,28 +2558,6 @@ export default function VideoPlayerPage() {
                             ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
-
-                        {/* Time Display */}
-                        <span className="text-white text-sm">
-                          {formatTime(currentTime)} / {formatTime(duration)}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {/* Video Info Button */}
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          className="text-white hover:bg-white/20 p-2 rounded cursor-pointer"
-                          onClick={() => setVideoInfoOpen(true)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              setVideoInfoOpen(true);
-                            }
-                          }}
-                        >
-                          <Info className="h-5 w-5" />
-                        </div>
 
                         {/* Fullscreen Button */}
                         <div
@@ -2555,13 +2580,94 @@ export default function VideoPlayerPage() {
               </CardContent>
             </Card>
 
-            {/* Rating and Feedback Buttons */}
-            <div className="flex items-center justify-center gap-4 mt-4 mb-6">
-              <Button variant="outline" onClick={() => setVideoFeedbackOpen(true)} className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                Rate & Review This Video
-              </Button>
+            {/* Video Navigation and Rating Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 mb-4">
+              {/* Previous Video Button */}
+              <div className="flex-1 flex justify-start">
+                {currentVideoIndex > 0 ? (
+                  <Button 
+                    variant="outline" 
+                    onClick={playPreviousVideo}
+                    className="flex items-center gap-2 hover:bg-muted transition-colors"
+                  >
+                    <SkipBack className="h-4 w-4" />
+                    <div className="text-left">
+                      <div className="text-sm font-medium">Previous Video</div>
+                      <div className="text-xs text-muted-foreground truncate max-w-[120px]">
+                        {playlist?.videos[currentVideoIndex - 1]?.title}
+                      </div>
+                    </div>
+                  </Button>
+                ) : (
+                  <div className="text-sm text-muted-foreground opacity-50">
+                    First Video
+                  </div>
+                )}
+              </div>
+
+              {/* Center: Rate & Review Button */}
+              <div className="flex-1 flex justify-center">
+                <Button variant="outline" onClick={() => setVideoFeedbackOpen(true)} className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Rate & Review This Video
+                </Button>
+              </div>
+
+              {/* Next Video Button */}
+              <div className="flex-1 flex justify-end">
+                {playlist?.videos && 
+                 Array.isArray(playlist.videos) && 
+                 currentVideoIndex < playlist.videos.length - 1 ? (
+                  <Button 
+                    variant="outline" 
+                    onClick={playNextVideo}
+                    className="flex items-center gap-2 hover:bg-muted transition-colors"
+                  >
+                    <div className="text-right">
+                      <div className="text-sm font-medium">Next Video</div>
+                      <div className="text-xs text-muted-foreground truncate max-w-[120px]">
+                        {playlist?.videos[currentVideoIndex + 1]?.title}
+                      </div>
+                    </div>
+                    <SkipForward className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <div className="text-sm text-muted-foreground opacity-50">
+                    Last Video
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* Video Description Container */}
+            {currentVideo.description && currentVideo.description.trim() !== "" && (
+              <div className="mb-6">
+                <Card className="border-l-4 border-l-primary/60 bg-gradient-to-r from-primary/5 to-transparent">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Info className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-foreground mb-2">About This Video</h3>
+                        <p className="text-muted-foreground leading-relaxed text-base">
+                          {currentVideo.description}
+                        </p>
+                        {currentVideo.tags && currentVideo.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {currentVideo.tags.map((tag, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Video Feedbacks Section */}
             {showVideoFeedbacks && (
@@ -2619,92 +2725,92 @@ export default function VideoPlayerPage() {
                     defaultValue={activeModuleIndex !== null ? `module-${activeModuleIndex}` : undefined}
                     className="w-full"
                   >
-                    {modules.map((module, moduleIndex) => (
+                                        {modules.map((module, moduleIndex) => (
                       <AccordionItem key={moduleIndex} value={`module-${moduleIndex}`}>
-                        <AccordionTrigger className="hover:no-underline">
-                          <div className="flex items-center justify-between w-full">
-                            <span className="font-medium">{module.name}</span>
-                            <Badge variant="outline" className="ml-2">
-                              {module.videos.length} videos
-                            </Badge>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="space-y-2 pl-2">
-                            {module.videos.map((video, videoIndex) => {
-                              const playlistIndex = playlist.videos.findIndex((v) => v.id === video.id)
-                              const isCurrentVideo = currentVideo.id === video.id
-                              const isWatched = videoWatchEvents[video.id] === true
-                              const isPlayable = playlistIndex !== -1 ? isVideoPlayable(playlistIndex) : false
+                              <AccordionTrigger className="hover:no-underline">
+                                                              <div className="flex items-center justify-between w-full">
+                                <span className="font-medium">{module.name}</span>
+                                <Badge variant="outline" className="ml-2">
+                                  {module.videos.length} videos
+                                </Badge>
+                              </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="space-y-2 pl-2">
+                                  {module.videos.map((video, videoIndex) => {
+                                    const playlistIndex = playlist.videos.findIndex((v) => v.id === video.id)
+                                    const isCurrentVideo = currentVideo.id === video.id
+                                    const isWatched = videoWatchEvents[video.id] === true
+                                    const isPlayable = playlistIndex !== -1 ? isVideoPlayable(playlistIndex) : false
 
-                              return (
-                                <div
-                                  key={video.id}
-                                  className={`flex items-center gap-3 p-2 rounded-md transition-colors ${
-                                    isCurrentVideo
-                                      ? "bg-primary/10 border border-primary/30"
-                                      : isPlayable
-                                        ? "hover:bg-muted cursor-pointer"
-                                        : "opacity-50 cursor-not-allowed"
-                                  }`}
-                                  onClick={() => {
-                                    if (isPlayable && !isCurrentVideo) {
-                                      playVideoFromModule(moduleIndex, videoIndex)
-                                    }
-                                  }}
-                                >
-                                  <div className="relative w-20 h-12 flex-shrink-0 bg-muted rounded overflow-hidden">
-                                    {video.thumbnail ? (
-                                      <Image
-                                        src={video.thumbnail || "/placeholder.svg?height=40&width=40"}
-                                        width={40}
-                                        height={40}
-                                        alt={video.title}
-                                        className="object-cover w-full h-full"
-                                        onError={() => {
-                                          // If image fails to load, replace with placeholder
-                                          const imgElement = document.getElementById(
-                                            `thumb-${video.id}`,
-                                          ) as HTMLImageElement
-                                          if (imgElement) {
-                                            imgElement.src = "/placeholder.svg?height=40&width=40"
+                                    return (
+                                      <div
+                                        key={video.id}
+                                        className={`flex items-center gap-3 p-2 rounded-md transition-colors ${
+                                          isCurrentVideo
+                                            ? "bg-primary/10 border border-primary/30"
+                                            : isPlayable
+                                              ? "hover:bg-muted cursor-pointer"
+                                              : "opacity-50 cursor-not-allowed"
+                                        }`}
+                                        onClick={() => {
+                                          if (isPlayable && !isCurrentVideo) {
+                                            playVideoFromModule(moduleIndex, videoIndex)
                                           }
                                         }}
-                                        id={`thumb-${video.id}`}
-                                      />
-                                    ) : (
-                                      <div className="flex items-center justify-center h-full">
-                                        <Play className="h-5 w-5 text-muted-foreground" />
-                                      </div>
-                                    )}
-                                    {isWatched && (
-                                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                        <CheckCircle className="h-4 w-4 text-green-500" />
-                                      </div>
-                                    )}
-                                    {!isPlayable && (
-                                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                        <Lock className="h-4 w-4 text-muted-foreground" />
-                                      </div>
-                                    )}
-                                  </div>
+                                      >
+                                        <div className="relative w-20 h-12 flex-shrink-0 bg-muted rounded overflow-hidden">
+                                          {video.thumbnail ? (
+                                            <Image
+                                              src={video.thumbnail || "/placeholder.svg?height=40&width=40"}
+                                              width={40}
+                                              height={40}
+                                              alt={video.title}
+                                              className="object-cover w-full h-full"
+                                              onError={() => {
+                                                // If image fails to load, replace with placeholder
+                                                const imgElement = document.getElementById(
+                                                  `thumb-${video.id}`,
+                                                ) as HTMLImageElement
+                                                if (imgElement) {
+                                                  imgElement.src = "/placeholder.svg?height=40&width=40"
+                                                }
+                                              }}
+                                              id={`thumb-${video.id}`}
+                                            />
+                                          ) : (
+                                            <div className="flex items-center justify-center h-full">
+                                              <Play className="h-5 w-5 text-muted-foreground" />
+                                            </div>
+                                          )}
+                                          {isWatched && (
+                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                              <CheckCircle className="h-4 w-4 text-green-500" />
+                                            </div>
+                                          )}
+                                          {!isPlayable && (
+                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                              <Lock className="h-4 w-4 text-muted-foreground" />
+                                            </div>
+                                          )}
+                                        </div>
 
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-sm truncate">{video.title}</p>
-                                    <p className="text-xs text-muted-foreground">{video.duration}</p>
-                                  </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-medium text-sm truncate">{video.title}</p>
+                                          <p className="text-xs text-muted-foreground">{video.duration}</p>
+                                        </div>
 
-                                  {isCurrentVideo && (
-                                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                                      <Play className="h-3 w-3 text-primary-foreground" fill="currentColor" />
-                                    </div>
-                                  )}
+                                        {isCurrentVideo && (
+                                          <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                                            <Play className="h-3 w-3 text-primary-foreground" fill="currentColor" />
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
                                 </div>
-                              )
-                            })}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
+                              </AccordionContent>
+                            </AccordionItem>
                     ))}
                   </Accordion>
                 </div>
