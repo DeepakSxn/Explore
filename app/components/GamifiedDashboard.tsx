@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import { 
   Trophy, 
   Star, 
-  Zap, 
   Target, 
   BookOpen, 
   Play, 
@@ -380,7 +379,7 @@ export default function GamifiedDashboard() {
                   </div>
                   <Progress 
                     value={getLevelProgress()} 
-                    className="h-2 bg-white/20"
+                    className="h-2 bg-white/20 [&>div]:bg-white"
                   />
                   <p className="text-xs text-white">
                     {getXPToNextLevel()} XP needed for next level
@@ -423,8 +422,8 @@ export default function GamifiedDashboard() {
 
               <Card className="bg-gradient-to-br from-pink-500 to-pink-600 text-white border-0">
                 <CardContent className="p-4 text-center">
-                  <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
-                    <Zap className="h-4 w-4" />
+                  <div className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                    <span className="text-[10px] font-bold text-white">XP</span>
                   </div>
                   <p className="text-2xl font-bold text-white">{userProgress.totalXP}</p>
                   <p className="text-xs text-white">Total XP</p>
@@ -584,35 +583,7 @@ export default function GamifiedDashboard() {
               </CardContent>
             </Card>
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex flex-col gap-2"
-                    onClick={handleContinueLearning}
-                  >
-                    <Play className="h-6 w-6" />
-                    <span>Continue Learning</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex flex-col gap-2"
-                    onClick={() => setShowChallengeMode(true)}
-                  >
-                    <Zap className="h-6 w-6" />
-                    <span>Challenges</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            
 
             {/* Streak Motivation */}
             {userProgress.currentStreak > 0 && (

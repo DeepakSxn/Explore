@@ -148,6 +148,7 @@ export default function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   const [showChallengeMode, setShowChallengeMode] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -721,16 +722,22 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50">
+    <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 ${isRefreshing ? 'page-fade-out' : ''}`}>
       {/* Enhanced Header */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/60 z-50 shadow-sm">
+        {/* Animated top loading bar */}
+        {isRefreshing && (
+          <div className="absolute top-0 left-0 right-0 top-loading-bar">
+            <div className="progress"></div>
+          </div>
+        )}
         <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto px-6">
           <div className="flex items-center gap-6 mt-3">
             <img 
               src="/Black logo.png" 
               alt="EOXS Logo" 
               className="h-10 w-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105" 
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push("/")}
             />
             <div className="hidden md:block">
              
@@ -800,13 +807,22 @@ export default function Dashboard() {
               <Button 
                 variant="ghost" 
                 size="lg" 
-                onClick={() => setShowGamifiedDashboard(true)}
+                onClick={() => {
+                  setShowGamifiedDashboard(true)
+                  setIsRefreshing(true)
+                  setTimeout(() => {
+                    window.location.reload()
+                  }, 300)
+                }}
                 className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg"
               >
                 <div className="p-2 bg-white/10 rounded-lg">
                   <BookOpen className="w-4 h-4 text-white" />
                 </div>
                 <span className="ml-1 text-white">My Dashboard</span>
+                {isRefreshing && (
+                  <span className="ml-2 h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
               </Button>
               
               <Link href="/profile" passHref legacyBehavior>
@@ -907,7 +923,13 @@ export default function Dashboard() {
       {/* Enhanced Main Content */}
       <main className={`pt-16 min-h-screen transition-all duration-300 ease-in-out ${
         isSidebarOpen ? 'md:ml-64' : 'md:ml-0'
-      }`}>
+      } ${isRefreshing ? 'relative' : ''}`}>
+        {/* Shimmer sweep overlay across content */}
+        {isRefreshing && (
+          <div className="sweep-overlay absolute inset-0 overflow-hidden">
+            <div className="sweep-light"></div>
+          </div>
+        )}
         {/* Show Gamified Dashboard or Classic Dashboard */}
         {showGamifiedDashboard ? (
           <GamifiedDashboard />

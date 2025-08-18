@@ -29,13 +29,13 @@ export default function DemoXplorePage() {
               'bg-pink-400/20'
             }`}
             style={{
-              width: `${Math.random() * 4 + 2}px`,
-              height: `${Math.random() * 4 + 2}px`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              width: ${Math.random() * 4 + 2}px,
+              height: ${Math.random() * 4 + 2}px,
+              left: ${Math.random() * 100}%,
+              top: ${Math.random() * 100}%,
               opacity: Math.random() * 0.3 + 0.1,
-              animationDelay: `${Math.random() * 4}s`,
-              animationDuration: `${6 + Math.random() * 4}s`
+              animationDelay: ${Math.random() * 4}s,
+              animationDuration: ${6 + Math.random() * 4}s
             }}
           />
         ))}
@@ -115,10 +115,10 @@ export default function DemoXplorePage() {
         <div className="container mx-auto px-4 pt-6">
           <button
             className="flex items-center gap-2 text-sm px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 mb-6 shadow-sm"
-            onClick={() => router.push("/login")}
+            onClick={() => router.push("/dashboard")}
           >
             <ArrowLeft className="h-4 w-4" />
-            Back
+            Back to Dashboard
           </button>
         </div>
         {/* Hero Section */}
@@ -166,7 +166,7 @@ export default function DemoXplorePage() {
             <div className="max-w-3xl mx-auto">
               <h2 className="text-3xl font-bold mb-6">Why was EOXSplore Created?</h2>
               <p className="text-lg mb-6">
-                We created EOXSplore to solve a common challenge faced by prospects and businesses alike — the need for
+                We created EOXSplore to solve a common challenge faced by prospects and businesses alike - the need for
                 quick, personalized software demos without scheduling constraints. Steel industry professionals can now
                 explore our solutions on their own terms, focusing on the features that matter most to their specific
                 operations.
@@ -175,53 +175,7 @@ export default function DemoXplorePage() {
           </div>
         </section>
 
-        {/* Features Section */}
-        <section className="py-16 bg-white/20 backdrop-blur-sm">
-          <div className="container mx-auto px-4">
-            <h2 className="text-4xl font-bold mb-12 text-center text-gray-900 relative">
-              <span className="relative z-10">Key Features</span>
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-green-400 to-blue-500 rounded-full"></div>
-            </h2>
 
-            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              {/* Feature 1 */}
-              <div className="group bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-green-200 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1">
-                <div className="flex items-start gap-4">
-                  <div className="bg-gradient-to-br from-green-100 to-green-200 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                    <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-green-700 transition-colors duration-300">Self-Service Exploration</h3>
-                    <p className="text-gray-700 leading-relaxed">
-                      Navigate through our software features at your own pace, focusing on the capabilities that matter most
-                      to your steel business operations.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Feature 2 */}
-              <div className="group bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border-2 border-transparent hover:border-blue-200 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1">
-                <div className="flex items-start gap-4">
-                  <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                    <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-blue-700 transition-colors duration-300">24/7 Availability</h3>
-                    <p className="text-gray-700 leading-relaxed">
-                      Access demos anytime, anywhere, eliminating the need to schedule and wait for traditional live
-                      demonstrations.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Feature Icons Section */}
         <section className="py-16 bg-white/20 backdrop-blur-sm">

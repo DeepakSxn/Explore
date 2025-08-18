@@ -434,7 +434,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
       >
         <Button
           onClick={handleExpand}
-          className="h-16 w-16 rounded-full shadow-2xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-200 hover:scale-105"
+          className="h-16 w-16 rounded-full shadow-2xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transition-all duration-200 hover:scale-105"
           variant="default"
         >
           <MessageCircle className="h-7 w-7 text-white" />
@@ -457,7 +457,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-700 rounded-xl flex items-center justify-center shadow-lg">
+                    <div className="w-10 h-10 bg-gradient-to-r from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
                       <Sparkles className="h-5 w-5 text-white" />
                     </div>
                     <div>
@@ -485,7 +485,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                       className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       {message.type === 'ai' && (
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
                           <Bot className="h-4 w-4 text-white" />
                         </div>
                       )}
@@ -493,7 +493,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                       <div className={`max-w-[85%] ${message.type === 'user' ? 'order-first' : ''}`}>
                         <div className={`rounded-2xl px-4 py-3 text-sm shadow-sm ${
                           message.type === 'user' 
-                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
+                            ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' 
                             : 'bg-white border border-gray-100 text-gray-800 shadow-sm'
                         }`}>
                           <div className="whitespace-pre-line leading-relaxed">{message.content}</div>
@@ -509,18 +509,18 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                                     className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors border border-gray-200"
                                     onClick={() => openVideo(video.videoId)}
                                   >
-                                    <div className="w-16 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                    <div className="w-16 h-12 bg-gradient-to-br from-green-100 to-green-100 rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
                                       <span className="text-2xl">🎥</span>
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <p className="text-sm font-medium text-gray-800 truncate">
                                         {video.title || "Video Content"}
                                       </p>
-                                      <p className="text-xs text-blue-600 font-medium">
+                                      <p className="text-xs text-green-600 font-medium">
                                         Click to watch →
                                       </p>
                                     </div>
-                                    <div className="text-blue-500">
+                                    <div className="text-green-500">
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                       </svg>
@@ -552,12 +552,12 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                       animate={{ opacity: 1 }}
                       className="flex gap-3 justify-start"
                     >
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
+                      <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-sm">
                         <Bot className="h-4 w-4 text-white" />
                       </div>
                       <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3 shadow-sm">
                         <div className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                          <Loader2 className="h-4 w-4 animate-spin text-green-500" />
                           <span className="text-sm text-gray-600">EOXSplore is thinking...</span>
                         </div>
                       </div>
@@ -575,14 +575,14 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Ask me anything about EOXS..."
-                    className="flex-1 text-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                    className="flex-1 text-sm border-gray-200 focus:border-green-500 focus:ring-green-500 rounded-xl"
                     disabled={isLoading}
                   />
                   <Button
                     onClick={handleSendMessage}
                     disabled={!inputValue.trim() || isLoading}
                     size="sm"
-                    className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl shadow-sm"
+                    className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl shadow-sm"
                   >
                     <Send className="h-4 w-4 text-white" />
                   </Button>

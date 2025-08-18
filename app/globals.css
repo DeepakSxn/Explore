@@ -324,3 +324,64 @@ html {
 .stagger-3 { animation-delay: 0.3s; }
 .stagger-4 { animation-delay: 0.4s; }
 .stagger-5 { animation-delay: 0.5s; }
+
+/* Top loading bar animation */
+@keyframes topBarProgress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.top-loading-bar {
+  height: 3px;
+}
+
+.top-loading-bar .progress {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #22c55e, #16a34a, #22c55e);
+  animation: topBarProgress 0.7s ease-out forwards;
+}
+
+/* Shimmer sweep overlay */
+@keyframes sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+.sweep-overlay {
+  pointer-events: none;
+}
+
+.sweep-overlay .sweep-light {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 35%;
+  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.6), rgba(255,255,255,0));
+  transform: translateX(-100%);
+  animation: sweep 0.65s ease-out forwards;
+}
+
+/* Page fade-out before refresh */
+@keyframes pageFadeOut {
+  0% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0.35;
+    transform: scale(0.995);
+  }
+}
+
+.page-fade-out {
+  animation: pageFadeOut 0.25s ease-out forwards;
+}
