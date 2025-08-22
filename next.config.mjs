@@ -32,7 +32,7 @@ const nextConfig = {
     webpackBuildWorker: false,
     parallelServerBuildTraces: false,
     parallelServerCompiles: false,
-    optimizeCss: true, // Optimize CSS
+    // optimizeCss: true, // Disabled due to critters module issue
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'], // Optimize large packages
   },
   // Mobile performance optimizations
@@ -53,13 +53,6 @@ const nextConfig = {
           },
         },
       }
-    }
-    
-    // Reduce bundle size for mobile
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      // Use lighter alternatives for mobile
-      'framer-motion': dev ? 'framer-motion' : 'framer-motion/dist/framer-motion-lite',
     }
     
     return config

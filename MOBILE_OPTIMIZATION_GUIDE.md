@@ -42,9 +42,11 @@ webpack: (config, { dev, isServer }) => {
     }
   }
   
-  // Use lighter alternatives for mobile
+  // Reduce bundle size for mobile
   config.resolve.alias = {
-    'framer-motion': dev ? 'framer-motion' : 'framer-motion/dist/framer-motion-lite',
+    ...config.resolve.alias,
+    // Use lighter alternatives for mobile
+    // Note: framer-motion-lite is not available in current versions
   }
 }
 ```

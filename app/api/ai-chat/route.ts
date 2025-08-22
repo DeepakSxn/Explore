@@ -9,7 +9,8 @@ console.log("API Key exists:", !!apiKey)
 console.log("Assistant ID exists:", !!assistantId)
 console.log("Assistant ID:", assistantId)
 
-const client = new OpenAI({ apiKey })
+// Only create client if API key exists
+const client = apiKey ? new OpenAI({ apiKey }) : null
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
     console.log("API Key exists:", !!apiKey)
     console.log("Assistant ID exists:", !!assistantId)
     
-    if (!apiKey || !assistantId) {
+    if (!apiKey || !assistantId || !client) {
       console.error("Missing API key or assistant ID")
       return NextResponse.json({ error: "Server is not configured (missing OPENAI_API_KEY or OPENAI_ASSISTANT_ID)." }, { status: 500 })
     }
