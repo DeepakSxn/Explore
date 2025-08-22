@@ -48,7 +48,7 @@ interface Module {
 }
 
 const VIDEO_ORDER: Record<string, string[]> = {
-  Sales: [
+  "Sales Module ": [
     "Sales Module Overview",
     "Sales Order for Coils",
     "Sales Order for Plates",
@@ -57,6 +57,9 @@ const VIDEO_ORDER: Record<string, string[]> = {
     "Sales Orders for Bars",
     "Handling Backorder and Partial Delivery",
     "How does Buyout work in the system",
+  ],
+  "QA Module": [
+    "Mill Certs",
   ],
   Processing: [
     "Processing Module Overview",
@@ -115,11 +118,10 @@ const VIDEO_ORDER: Record<string, string[]> = {
     "Email",
     "Credit Management",
   ],
-  "QA": ["Mill Certs"],
 }
 
 const MODULE_ORDER = [
-  "Sales",
+  "Sales Module ",
   "Processing",
   "Inventory Management",
   "Purchase",
@@ -130,7 +132,7 @@ const MODULE_ORDER = [
   "Advanced Analytics & Reporting",
   "Master Data Management",
   "Contact Management",
-  "QA",
+  "QA Module",
 ]
 
 export default function Dashboard() {
@@ -243,6 +245,26 @@ export default function Dashboard() {
 
     setFilteredVideos(filteredForDisplay)
   }, [searchQuery, videos, selectedCompany])
+
+  // Handle view parameter from URL (for switching to classic dashboard)
+  useEffect(() => {
+    const viewParam = searchParams.get('view')
+    if (viewParam === 'classic') {
+      console.log("Switching to classic dashboard view")
+      setShowGamifiedDashboard(false)
+      // Clear the view parameter from URL
+      const newUrl = new URL(window.location.href)
+      newUrl.searchParams.delete('view')
+      window.history.replaceState({}, '', newUrl.toString())
+    }
+  }, [searchParams])
+
+  // Debug: Log current dashboard state
+  useEffect(() => {
+    console.log("🔍 Dashboard - showGamifiedDashboard:", showGamifiedDashboard)
+    console.log("🔍 Dashboard - modules count:", modules.length)
+    console.log("🔍 Dashboard - selectedVideos count:", selectedVideos.length)
+  }, [showGamifiedDashboard, modules.length, selectedVideos.length])
 
   // Handle module parameter from URL
   useEffect(() => {
@@ -518,6 +540,18 @@ export default function Dashboard() {
     })
   }
 
+  // Debug: Log module selection changes
+  useEffect(() => {
+    if (selectedVideos.length > 0) {
+      const selectedVideoObjects = videos.filter((video) => selectedVideos.includes(video.id))
+      const selectedCategories = [...new Set(selectedVideoObjects.map(v => v.category))]
+      console.log("🔍 Dashboard - Module selection changed:")
+      console.log("  - Selected video IDs:", selectedVideos)
+      console.log("  - Selected categories:", selectedCategories)
+      console.log("  - Selected videos:", selectedVideoObjects.map(v => ({ id: v.id, title: v.title, category: v.category })))
+    }
+  }, [selectedVideos, videos])
+
   const handleWatchSelected = async () => {
     if (selectedVideos.length === 0) {
       toast({
@@ -535,6 +569,19 @@ export default function Dashboard() {
       const miscVideos = videos.filter((video) => video.category === "Miscellaneous")
       const AiTool = videos.filter((video) => video.category === "AI tools")
 
+      // Debug: Check if selectedVideoObjects is empty
+      console.log("🔍 Dashboard - Debug selectedVideoObjects:")
+      console.log("  - selectedVideos array:", selectedVideos)
+      console.log("  - videos array length:", videos.length)
+      console.log("  - selectedVideoObjects length:", selectedVideoObjects.length)
+      console.log("  - selectedVideoObjects:", selectedVideoObjects.map(v => ({ id: v.id, title: v.title, category: v.category })))
+      
+      // Check if any videos are missing from selectedVideoObjects
+      const missingVideos = selectedVideos.filter(id => !videos.some(v => v.id === id))
+      if (missingVideos.length > 0) {
+        console.log("⚠️ Missing videos from selectedVideoObjects:", missingVideos)
+      }
+
       // Query Firestore for all completed videos by this user
       const watchHistoryQuery = query(
         collection(db, "videoWatchEvents"),
@@ -544,19 +591,12 @@ export default function Dashboard() {
       const watchHistorySnapshot = await getDocs(watchHistoryQuery)
       const watchedVideoIds = new Set(watchHistorySnapshot.docs.map((doc) => doc.data().videoId))
 
-      // Check if there's an existing playlist in localStorage
-      const existingPlaylistStr = localStorage.getItem("currentPlaylist")
-      const existingPlaylist = existingPlaylistStr ? JSON.parse(existingPlaylistStr) : null
-
-      // Combine all video IDs (existing + new selection)
-      const combinedVideoIds = new Set<string>()
-      if (existingPlaylist) {
-        existingPlaylist.videos.forEach((v: Video) => combinedVideoIds.add(v.id))
-      }
-      selectedVideoObjects.forEach((v) => combinedVideoIds.add(v.id))
-      generalVideos.forEach((v) => combinedVideoIds.add(v.id))
-      miscVideos.forEach((v) => combinedVideoIds.add(v.id))
-      AiTool.forEach((v) => combinedVideoIds.add(v.id))
+             // Create a fresh playlist with only the current selection (no previous videos)
+       const combinedVideoIds = new Set<string>()
+       selectedVideoObjects.forEach((v) => combinedVideoIds.add(v.id))
+       generalVideos.forEach((v) => combinedVideoIds.add(v.id))
+       miscVideos.forEach((v) => combinedVideoIds.add(v.id))
+       AiTool.forEach((v) => combinedVideoIds.add(v.id))
 
       // Helper to get canonical order of all videos
       const getOrderedVideos = () => {
@@ -611,13 +651,36 @@ export default function Dashboard() {
         firstVideoToPlay = firstUnwatchedVideo ? firstUnwatchedVideo.id : allPlaylistVideos[0].id
       }
 
-      // Update the playlist in localStorage
-      const updatedPlaylist = {
-        id: "custom-playlist",
-        videos: allPlaylistVideos,
-        createdAt: existingPlaylist?.createdAt || { seconds: Date.now() / 1000, nanoseconds: 0 },
-      }
+             // Create a fresh playlist in localStorage
+       const updatedPlaylist = {
+         id: "custom-playlist",
+         videos: allPlaylistVideos,
+         createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 },
+       }
       localStorage.setItem("currentPlaylist", JSON.stringify(updatedPlaylist))
+
+      // Store selected videos (only the user-selected videos, not compulsory ones)
+      // Also store the categories of selected videos for better matching in video player
+      const selectedCategories = [...new Set(selectedVideoObjects.map(v => v.category))]
+      
+      console.log("🔍 Dashboard - selectedVideos:", selectedVideos)
+      console.log("🔍 Dashboard - selectedCategories:", selectedCategories)
+      console.log("🔍 Dashboard - selectedVideoObjects:", selectedVideoObjects.map(v => ({ id: v.id, title: v.title, category: v.category })))
+      
+      // Debug: Check all unique categories in the database
+      const allCategoriesInDB = [...new Set(videos.map(v => v.category))]
+      console.log("🔍 All categories in database:", allCategoriesInDB)
+      console.log("🔍 Sales-related categories in DB:", allCategoriesInDB.filter(cat => cat.toLowerCase().includes('sales')))
+      console.log("🔍 QA-related categories in DB:", allCategoriesInDB.filter(cat => cat.toLowerCase().includes('qa')))
+      
+      localStorage.setItem("selectedVideos", JSON.stringify(selectedVideos))
+      localStorage.setItem("selectedCategories", JSON.stringify(selectedCategories))
+
+      // Verify localStorage was set correctly
+      const verifySelectedVideos = localStorage.getItem("selectedVideos")
+      const verifySelectedCategories = localStorage.getItem("selectedCategories")
+      console.log("🔍 Verification - selectedVideos in localStorage:", verifySelectedVideos)
+      console.log("🔍 Verification - selectedCategories in localStorage:", verifySelectedCategories)
 
       // Update active playlist
       const activePlaylist = {

@@ -201,32 +201,93 @@ export default function GamifiedDashboard() {
   // Open the module directly in the video player by creating a temporary playlist
   const startModuleFromCategory = (category: string) => {
     try {
+      console.log(`🎯 Starting module from category: "${category}"`)
+      
+      // Get all videos for the selected category
       const moduleVideos = allVideos.filter((v) => v.category === category)
-      if (moduleVideos.length === 0) return
+      console.log(`📹 Found ${moduleVideos.length} videos for category "${category}":`, moduleVideos.map(v => v.title))
+      
+      if (moduleVideos.length === 0) {
+        console.log(`❌ No videos found for category "${category}"`)
+        toast({
+          title: "No Videos Found",
+          description: `No videos found for the ${category} module. Please try another module.`,
+          variant: "destructive"
+        })
+        return
+      }
 
-      const sortedByProgress = [...moduleVideos].sort(
-        (a, b) => (videoProgress[b.id] || 0) - (videoProgress[a.id] || 0),
+      // Get compulsory videos (Company Introduction, Miscellaneous, AI tools)
+      const companyIntroVideos = allVideos.filter((v) => v.category === "Company Introduction")
+      const miscellaneousVideos = allVideos.filter((v) => v.category === "Miscellaneous")
+      const aiToolsVideos = allVideos.filter((v) => 
+        v.category === "AI tools" || 
+        v.category === "AI Tools" || 
+        v.category === "ai tools" ||
+        v.category === "Artificial Intelligence" ||
+        v.category === "artificial intelligence"
       )
-      const chosenVideo = (videoProgress[sortedByProgress[0]?.id] || 0) > 0 ? sortedByProgress[0] : moduleVideos[0]
 
+      console.log(`📹 Compulsory videos found:`)
+      console.log(`   - Company Introduction: ${companyIntroVideos.length} videos`)
+      console.log(`   - Miscellaneous: ${miscellaneousVideos.length} videos`)
+      console.log(`   - AI tools: ${aiToolsVideos.length} videos`)
+
+      // Combine all videos in the proper order: Company Intro + Selected Module + Miscellaneous + AI Tools
+      const allPlaylistVideos = [
+        ...companyIntroVideos,
+        ...moduleVideos,
+        ...miscellaneousVideos,
+        ...aiToolsVideos
+      ]
+
+      console.log(`📋 Total playlist videos: ${allPlaylistVideos.length}`)
+      console.log(`📋 Playlist structure:`, allPlaylistVideos.map(v => `${v.category}: ${v.title}`))
+
+      // Find the first video of the selected module to start with
+      const firstModuleVideo = moduleVideos[0]
+      if (!firstModuleVideo) {
+        console.log(`❌ No first video found for module "${category}"`)
+        return
+      }
+
+      console.log(`🎬 Starting with video: "${firstModuleVideo.title}" (ID: ${firstModuleVideo.id})`)
+
+      // Create the playlist with all videos
       const updatedPlaylist = {
         id: "custom-playlist",
-        videos: moduleVideos,
+        videos: allPlaylistVideos,
         createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 },
       }
       localStorage.setItem("currentPlaylist", JSON.stringify(updatedPlaylist))
 
+      // Store the user's selection to show only the selected module + compulsory modules
+      const selectedVideoIds = moduleVideos.map(v => v.id)
+      localStorage.setItem("selectedVideos", JSON.stringify(selectedVideoIds))
+
+      console.log(`💾 Stored selected video IDs:`, selectedVideoIds)
+      console.log(`💾 Selected videos details:`, moduleVideos.map(v => ({ id: v.id, title: v.title, category: v.category })))
+      console.log(`💾 Category being stored: "${category}"`)
+
       const activePlaylist = {
         id: "custom-playlist",
-        title: `${category} Playlist`,
+        title: `${category} Module`,
         lastAccessed: new Date().toISOString(),
         completionPercentage: 0,
       }
       localStorage.setItem("activePlaylist", JSON.stringify(activePlaylist))
 
-      router.push(`/video-player?videoId=${chosenVideo.id}&playlistId=custom-playlist`)
+      // Navigate to video player starting with the first video of the selected module
+      const videoPlayerUrl = `/video-player?videoId=${firstModuleVideo.id}&playlistId=custom-playlist`
+      console.log(`🚀 Navigating to: ${videoPlayerUrl}`)
+      router.push(videoPlayerUrl)
     } catch (error) {
       console.error("Error starting module from category:", error)
+      toast({
+        title: "Error",
+        description: "Failed to start the module. Please try again.",
+        variant: "destructive"
+      })
     }
   }
 
@@ -530,23 +591,19 @@ export default function GamifiedDashboard() {
                         // Calculate module progress based on videos watched
                         const moduleProgress: {[key: string]: {progress: number, videoCount: number, watchedCount: number, totalVideos: number}} = {}
                         
-                        // First, count total videos per module from all videos in the system
+                        // Define compulsory modules to exclude
+                        const compulsoryModules = ["Company Introduction", "Miscellaneous", "AI tools", "AI Tools", "ai tools", "Artificial Intelligence", "artificial intelligence"]
+                        
+                        // Calculate progress for all videos across all modules
                         allVideos.forEach(video => {
                           if (!moduleProgress[video.category]) {
                             moduleProgress[video.category] = {progress: 0, videoCount: 0, watchedCount: 0, totalVideos: 0}
                           }
                           moduleProgress[video.category].totalVideos++
-                        })
-                        
-                        // Then, calculate watched videos based on user's actual progress
-                        topVideos.forEach(video => {
-                          if (moduleProgress[video.category]) {
-                            moduleProgress[video.category].videoCount++
-                            
-                            // Count videos that have been watched (any progress > 0)
-                            if ((videoProgress[video.id] || 0) > 0) {
-                              moduleProgress[video.category].watchedCount++
-                            }
+                          
+                          // Count videos that have been watched (any progress > 0)
+                          if ((videoProgress[video.id] || 0) > 0) {
+                            moduleProgress[video.category].watchedCount++
                           }
                         })
                         
@@ -557,8 +614,9 @@ export default function GamifiedDashboard() {
                           module.progress = module.totalVideos > 0 ? (module.watchedCount / module.totalVideos) * 100 : 0
                         })
                         
-                        // Get top 3 modules by videos watched (most active modules)
+                        // Get top 3 modules by videos watched (most active modules), excluding compulsory modules
                         const topModules = Object.entries(moduleProgress)
+                          .filter(([category]) => !compulsoryModules.includes(category)) // Exclude compulsory modules
                           .sort(([,a], [,b]) => b.watchedCount - a.watchedCount) // Sort by videos watched
                           .slice(0, 3)
                         
