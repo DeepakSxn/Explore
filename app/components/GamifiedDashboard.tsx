@@ -273,14 +273,14 @@ export default function GamifiedDashboard() {
       const events = watchHistorySnapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id
-      })).sort((a, b) => {
+      } as any)).sort((a: any, b: any) => {
         // Handle different timestamp formats
         const aTime = a.lastWatchedAt?.seconds || a.lastWatchedAt || a.watchedAt?.seconds || a.watchedAt || 0;
         const bTime = b.lastWatchedAt?.seconds || b.lastWatchedAt || b.watchedAt?.seconds || b.watchedAt || 0;
         return bTime - aTime;
       });
 
-      const lastWatchedEvent = events[0];
+      const lastWatchedEvent = events[0] as any;
       const lastVideoId = lastWatchedEvent.videoId;
       const lastPosition = lastWatchedEvent.lastPosition || 0;
 

@@ -106,9 +106,9 @@ export default function Home() {
               <div className={`transform transition-all duration-700 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
                 <div className="relative group">
                   <img 
-                    src="Main-EOXS-landing.jpg" 
+                    src="EOXSplore.svg" 
                     alt="EOXSplore" 
-                    className="h-80 w-auto drop-shadow-2xl hover:scale-105 transition-transform duration-300"
+                    className="h-50 md:h-55 w-auto drop-shadow-2xl hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute -inset-4 bg-gradient-to-r from-green-400/20 to-blue-400/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
@@ -121,7 +121,7 @@ export default function Home() {
                   
                   
                 </div>
-                <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-gray-900 via-green-800 to-green-600 bg-clip-text text-transparent gradient-text-animate font-['Inter'] leading-[1.1] py-4">
+                <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-gray-900 via-green-800 to-green-600 bg-clip-text text-transparent gradient-text-animate font-['Inter'] leading-[1.1] py-4">
                   Explore Software Features
                 </h1>
                 <p className="text-xl md:text-2xl text-gray-600 max-w-4xl leading-relaxed">
@@ -134,7 +134,7 @@ export default function Home() {
               <div className={`flex justify-center transform transition-all duration-700 delay-400 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
                 <Link href={'login'}>
                   <Button size="lg" className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-12 py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden">
-                    <span className="relative z-10 flex items-center">
+                    <span className="relative z-10 flex items-center text-white">
                       Get Started
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </span>
@@ -234,7 +234,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href={'login'}>
                   <Button size="lg" className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-12 py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group">
-                    Get Started 
+                    <span className="text-white">Get Started</span>
                     <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
