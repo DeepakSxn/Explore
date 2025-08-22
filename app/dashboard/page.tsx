@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Search, LogOut, Clock, Play, CheckCircle, AlertTriangle, Trophy, Zap, Sparkles, Flame, ArrowLeft, Menu, User, List, Home, Info, Phone, BookOpen, Target, TrendingUp } from "lucide-react"
+import { Search, LogOut, Clock, Play, CheckCircle, AlertTriangle, Trophy, Zap, Sparkles, Flame, ArrowLeft, Menu, User, List, Home, Info, Phone, BookOpen, Target, TrendingUp, X } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/components/ui/use-toast"
@@ -22,6 +22,7 @@ import { useGamification } from "../context/GamificationContext"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import GamifiedDashboard from "../components/GamifiedDashboard"
 import InteractiveGuide from "../components/InteractiveGuide"
+import XPRewardPopup from "../components/XPRewardPopup"
 
 
 import ChallengeMode from "../components/ChallengeMode"
@@ -147,10 +148,22 @@ export default function Dashboard() {
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null)
   const [showGamifiedDashboard, setShowGamifiedDashboard] = useState(true)
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  // Mobile-responsive sidebar state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Start closed by default
+  const [isMobile, setIsMobile] = useState(false)
 
   const [showChallengeMode, setShowChallengeMode] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+
+  // XP Reward Popup states
+  const [showXPReward, setShowXPReward] = useState(false)
+  const [xpRewardData, setXpRewardData] = useState<{
+    xpAmount: number
+    reason: string
+    type: 'video' | 'module' | 'achievement' | 'streak'
+    videoTitle?: string
+    moduleName?: string
+  } | null>(null)
 
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -159,6 +172,29 @@ export default function Dashboard() {
 
   const globalCheckboxRef = useRef<HTMLButtonElement>(null)
   const moduleCheckboxRefs = useRef<(HTMLButtonElement | null)[]>([])
+
+  // Detect mobile device and set sidebar state accordingly
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      
+      // On mobile, keep sidebar closed by default
+      // On desktop, open sidebar by default
+      if (mobile) {
+        setIsSidebarOpen(false)
+      } else {
+        setIsSidebarOpen(true)
+      }
+    }
+
+    // Check on mount
+    checkMobile()
+
+    // Listen for window resize
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     // Check if user is authenticated
@@ -796,6 +832,16 @@ export default function Dashboard() {
         )}
         <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto px-6">
           <div className="flex items-center gap-6 mt-3">
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="md:hidden bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white border-slate-200 hover:border-slate-300 hover:shadow-xl transition-all duration-200"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+            
             <img 
               src="/Black logo.png" 
               alt="EOXS Logo" 
@@ -829,8 +875,8 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Sidebar Expand Button (shows when minimized) */}
-      {!isSidebarOpen && (
+      {/* Desktop Sidebar Expand Button (shows when minimized on desktop only) */}
+      {!isSidebarOpen && !isMobile && (
         <div className="fixed top-20 left-6 z-50 transition-all duration-300 ease-in-out">
           <Button
             variant="outline"
@@ -843,10 +889,21 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Mobile Overlay (darkens background when sidebar is open on mobile) */}
+      {isSidebarOpen && isMobile && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 transition-opacity duration-300"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
       {/* Enhanced Sidebar */}
       {isSidebarOpen && (
-        <aside className="fixed top-16 left-0 z-40 h-[calc(100vh-4rem)] w-64 bg-gradient-to-b from-green-600 via-green-600 to-green-800 shadow-xl transition-all duration-300 ease-in-out">
+        <aside className={`fixed top-16 z-40 h-[calc(100vh-4rem)] bg-gradient-to-b from-green-600 via-green-600 to-green-800 shadow-xl transition-all duration-300 ease-in-out ${
+          isMobile 
+            ? 'left-0 w-64 transform translate-x-0' 
+            : 'left-0 w-64'
+        }`}>
           <div className="flex h-full w-full flex-col">
             <div className="flex flex-col gap-0.5 p-4">
               <div className="flex justify-end mb-1">
@@ -857,7 +914,7 @@ export default function Dashboard() {
                   className="text-white hover:bg-white/10"
                 >
                   <div className="p-2 bg-white/10 rounded-lg">
-                    <ArrowLeft className="h-4 w-4 text-white" />
+                    <X className="h-4 w-4 text-white" />
                   </div>
                 </Button>
               </div>
@@ -890,7 +947,10 @@ export default function Dashboard() {
               
               <Link href="/profile" passHref legacyBehavior>
                 <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
-                  <a className="flex items-center gap-3 text-white">
+                  <a 
+                    className="flex items-center gap-3 text-white"
+                    onClick={() => isMobile && setIsSidebarOpen(false)}
+                  >
                     <div className="p-2 bg-white/10 rounded-lg">
                       <User className="w-4 h-4 text-white" />
                     </div>
@@ -901,7 +961,10 @@ export default function Dashboard() {
               
               <Link href="/playlist" passHref legacyBehavior>
                 <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
-                  <a className="flex items-center gap-3 text-white">
+                  <a 
+                    className="flex items-center gap-3 text-white"
+                    onClick={() => isMobile && setIsSidebarOpen(false)}
+                  >
                     <div className="p-2 bg-white/10 rounded-lg">
                       <List className="w-4 h-4 text-white" />
                     </div>
@@ -912,7 +975,10 @@ export default function Dashboard() {
               
               <Link href="/leaderboard" passHref legacyBehavior>
                 <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
-                  <a className="flex items-center gap-3 text-white">
+                  <a 
+                    className="flex items-center gap-3 text-white"
+                    onClick={() => isMobile && setIsSidebarOpen(false)}
+                  >
                     <div className="p-2 bg-white/10 rounded-lg">
                       <Trophy className="w-4 h-4 text-white" />
                     </div>
@@ -923,7 +989,10 @@ export default function Dashboard() {
               
               <Link href="/about" passHref legacyBehavior>
                 <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
-                  <a className="flex items-center gap-3 text-white">
+                  <a 
+                    className="flex items-center gap-3 text-white"
+                    onClick={() => isMobile && setIsSidebarOpen(false)}
+                  >
                     <div className="p-2 bg-white/10 rounded-lg">
                       <Info className="w-4 h-4 text-white" />
                     </div>
@@ -934,7 +1003,10 @@ export default function Dashboard() {
               
               <Link href="https://eoxs.com" target="_blank" passHref legacyBehavior>
                 <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
-                  <a className="flex items-center gap-3 text-white">
+                  <a 
+                    className="flex items-center gap-3 text-white"
+                    onClick={() => isMobile && setIsSidebarOpen(false)}
+                  >
                     <div className="p-2 bg-white/10 rounded-lg">
                       <Home className="w-4 h-4 text-white" />
                     </div>
@@ -945,7 +1017,10 @@ export default function Dashboard() {
               
               <Link href="https://eoxs.com/contact" target="_blank" passHref legacyBehavior>
                 <Button asChild variant="ghost" size="lg" className="justify-start w-full text-white hover:bg-green-500/80 hover:text-white transition-all duration-200 rounded-lg">
-                  <a className="flex items-center gap-3 text-white">
+                  <a 
+                    className="flex items-center gap-3 text-white"
+                    onClick={() => isMobile && setIsSidebarOpen(false)}
+                  >
                     <div className="p-2 bg-white/10 rounded-lg">
                       <Phone className="w-4 h-4 text-white" />
                     </div>
@@ -985,7 +1060,7 @@ export default function Dashboard() {
       
       {/* Enhanced Main Content */}
       <main className={`pt-16 min-h-screen transition-all duration-300 ease-in-out ${
-        isSidebarOpen ? 'md:ml-64' : 'md:ml-0'
+        isSidebarOpen && !isMobile ? 'md:ml-64' : 'ml-0'
       } ${isRefreshing ? 'relative' : ''}`}>
         {/* Shimmer sweep overlay across content */}
         {isRefreshing && (
@@ -1036,8 +1111,10 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Enhanced Content Area */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+
+
+            {/* Enhanced Content Area */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 {loading ? (
                   <div className="p-8">
                     <div className="space-y-4">
@@ -1186,6 +1263,23 @@ export default function Dashboard() {
 
       {/* AI Interactive Guide */}
       <InteractiveGuide />
+
+      {/* XP Reward Popup */}
+      {xpRewardData && (
+        <XPRewardPopup
+          isVisible={showXPReward}
+          onClose={() => {
+            setShowXPReward(false);
+            setXpRewardData(null);
+          }}
+          xpAmount={xpRewardData.xpAmount}
+          reason={xpRewardData.reason}
+          type={xpRewardData.type}
+          videoTitle={xpRewardData.videoTitle}
+          moduleName={xpRewardData.moduleName}
+          showConfetti={true}
+        />
+      )}
     </div>
   )
 }

@@ -20,12 +20,76 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    unoptimized: false, // Enable image optimization
+    formats: ['image/webp', 'image/avif'], // Modern formats for better compression
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840], // Responsive image sizes
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384], // Smaller sizes for mobile
+    minimumCacheTTL: 60, // Cache images for 60 seconds
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   experimental: {
     webpackBuildWorker: false,
     parallelServerBuildTraces: false,
     parallelServerCompiles: false,
+    optimizeCss: true, // Optimize CSS
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'], // Optimize large packages
+  },
+  // Mobile performance optimizations
+  compress: true, // Enable gzip compression
+  poweredByHeader: false, // Remove X-Powered-By header
+  generateEtags: false, // Disable ETags for better caching
+  // Bundle analyzer for optimization
+  webpack: (config, { dev, isServer }) => {
+    // Optimize for mobile
+    if (!dev && !isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+          },
+        },
+      }
+    }
+    
+    // Reduce bundle size for mobile
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      // Use lighter alternatives for mobile
+      'framer-motion': dev ? 'framer-motion' : 'framer-motion/dist/framer-motion-lite',
+    }
+    
+    return config
+  },
+  // Headers for mobile optimization
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+          // Cache static assets for mobile
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ]
   },
 }
 

@@ -40,6 +40,7 @@ import { useAuth } from "../context/AuthContext"
 import { useGamification } from "../context/GamificationContext"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import InteractiveGuide from "../components/InteractiveGuide"
+import XPRewardPopup from "../components/XPRewardPopup"
 // import VideoQuiz from "../components/VideoQuiz"
 
 interface Video {
@@ -176,7 +177,7 @@ export default function VideoPlayerPage() {
   const autoplay = searchParams.get("autoplay")
 
   const { userData } = useAuth()
-  const { completeVideo } = useGamification()
+  const { completeVideo, checkModuleCompletion } = useGamification()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [playlist, setPlaylist] = useState<Playlist | null>(null)
@@ -209,6 +210,16 @@ export default function VideoPlayerPage() {
   
   // Add state to track if current video has been completed (for scrubbing restrictions)
   const [isVideoCompleted, setIsVideoCompleted] = useState(false)
+
+  // XP Reward Popup states
+  const [showXPReward, setShowXPReward] = useState(false)
+  const [xpRewardData, setXpRewardData] = useState<{
+    xpAmount: number
+    reason: string
+    type: 'video' | 'module' | 'achievement' | 'streak'
+    videoTitle?: string
+    moduleName?: string
+  } | null>(null)
 
   // Add playbackRate state and handlers
   const [playbackRate, setPlaybackRate] = useState(1)
@@ -1571,7 +1582,7 @@ export default function VideoPlayerPage() {
     }
   }
 
-  const handleVideoEnded = () => {
+  const handleVideoEnded = async () => {
     if (!currentVideo || !playlist || !playlist.videos || !Array.isArray(playlist.videos)) return;
   
     setIsPlaying(false);
@@ -1609,7 +1620,36 @@ export default function VideoPlayerPage() {
         sessionStorage.setItem(sessionKey, "true");
         
         // Complete video in gamification system
-        completeVideo(currentVideo.id, watchDuration);
+        await completeVideo(currentVideo.id, watchDuration);
+        
+        // Show XP reward for video completion
+        // Clean up the video title by removing "Module" for display
+        const cleanVideoTitle = currentVideo.title.replace(/\s*Module\s*/gi, ' ').trim();
+        
+        setXpRewardData({
+          xpAmount: 50, // From XP_CONFIG.VIDEO_COMPLETION
+          reason: "Video completion",
+          type: 'video',
+          videoTitle: cleanVideoTitle
+        });
+        setShowXPReward(true);
+        
+        // Check for module completion
+        if (currentVideo.category) {
+          const moduleCompletion = await checkModuleCompletion(currentVideo.id, currentVideo.category);
+          if (moduleCompletion.completed && moduleCompletion.moduleName) {
+            // Show module completion reward after a short delay
+            setTimeout(() => {
+              setXpRewardData({
+                xpAmount: 500, // From XP_CONFIG.MODULE_COMPLETION
+                reason: "Module completion",
+                type: 'module',
+                moduleName: moduleCompletion.moduleName
+              });
+              setShowXPReward(true);
+            }, 2000); // Show module reward 2 seconds after video reward
+          }
+        }
         
         // Show quiz after video completion (always)
         // const quiz = generateQuizForVideo(currentVideo);
@@ -3111,6 +3151,23 @@ export default function VideoPlayerPage() {
 
       {/* AI Interactive Guide */}
       <InteractiveGuide />
+
+      {/* XP Reward Popup */}
+      {xpRewardData && (
+        <XPRewardPopup
+          isVisible={showXPReward}
+          onClose={() => {
+            setShowXPReward(false);
+            setXpRewardData(null);
+          }}
+          xpAmount={xpRewardData.xpAmount}
+          reason={xpRewardData.reason}
+          type={xpRewardData.type}
+          videoTitle={xpRewardData.videoTitle}
+          moduleName={xpRewardData.moduleName}
+          showConfetti={true}
+        />
+      )}
     </div>
   )
 }

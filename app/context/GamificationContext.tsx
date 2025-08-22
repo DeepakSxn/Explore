@@ -87,7 +87,7 @@ export const XP_CONFIG = {
   QUIZ_PERFECT: 100,
   QUIZ_PASS: 50,
   DAILY_STREAK: 25,
-  MODULE_COMPLETION: 200,
+  MODULE_COMPLETION: 500, // Increased from 200 to 500 as requested
   FEEDBACK_SUBMISSION: 10,
   FIRST_VIDEO: 100,
   STREAK_MILESTONES: [3, 7, 14, 30, 60, 100],
@@ -195,6 +195,7 @@ interface GamificationContextType {
   submitFeedback: () => Promise<void>
   checkAndAwardBadges: () => Promise<void>
   checkAndAwardAchievements: () => Promise<void>
+  checkModuleCompletion: (videoId: string, videoCategory: string) => Promise<{ completed: boolean; moduleName?: string }>
   getCurrentLevel: () => number
   getXPToNextLevel: () => number
   getLevelProgress: () => number
@@ -621,6 +622,64 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
     return Math.min(100, (xpInCurrentLevel / xpNeededForLevel) * 100)
   }
 
+  const checkModuleCompletion = async (videoId: string, videoCategory: string) => {
+    if (!user || !userProgress) return { completed: false }
+
+    try {
+      // Get all videos in the same category that the user has watched
+      const watchHistoryQuery = query(
+        collection(db, "videoWatchEvents"),
+        where("userId", "==", user.uid),
+        where("completed", "==", true)
+      )
+      
+      const watchHistorySnapshot = await getDocs(watchHistoryQuery)
+      const watchedVideoIds = new Set(watchHistorySnapshot.docs.map(doc => doc.data().videoId))
+      
+      // Get all videos from the same category
+      const videosQuery = query(
+        collection(db, "videos"),
+        where("category", "==", videoCategory)
+      )
+      
+      const videosSnapshot = await getDocs(videosQuery)
+      const categoryVideoIds = videosSnapshot.docs.map(doc => doc.id)
+      
+      // Check if all videos in the category have been watched
+      const allVideosWatched = categoryVideoIds.every(id => watchedVideoIds.has(id))
+      
+      if (allVideosWatched && !userProgress.completedModules.includes(videoCategory)) {
+        // Add module to completed modules
+        const updatedCompletedModules = [...userProgress.completedModules, videoCategory]
+        
+        const updatedProgress = {
+          ...userProgress,
+          completedModules: updatedCompletedModules,
+          updatedAt: serverTimestamp()
+        }
+        
+        // Update Firestore
+        const progressDoc = doc(db, "userProgress", user.uid)
+        await updateDoc(progressDoc, {
+          completedModules: updatedCompletedModules,
+          updatedAt: serverTimestamp()
+        })
+        
+        setUserProgress(updatedProgress)
+        
+        // Award XP for module completion
+        await addXP(XP_CONFIG.MODULE_COMPLETION, `Module completion: ${videoCategory}`)
+        
+        return { completed: true, moduleName: videoCategory }
+      }
+      
+      return { completed: false }
+    } catch (error) {
+      console.error("Error checking module completion:", error)
+      return { completed: false }
+    }
+  }
+
   const refreshProgress = async () => {
     if (user) {
       await initializeUserProgress()
@@ -636,6 +695,7 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
     submitFeedback,
     checkAndAwardBadges,
     checkAndAwardAchievements,
+    checkModuleCompletion,
     getCurrentLevel,
     getXPToNextLevel,
     getLevelProgress,
