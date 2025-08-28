@@ -150,7 +150,7 @@ export default function Home() {
         <section className="w-full py-20 bg-white">
           <div className="container px-4 md:px-6 max-w-7xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              <h2 className="text-4xl md:text-5xl font-light text-gray-900 mb-6">
                 Why choose 
                 <img src="/EOXSplore.svg" alt="EOXSplore" className="inline-block align-middle h-10 md:h-12 w-auto mx-2" />
                 ?

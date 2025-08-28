@@ -474,7 +474,7 @@ export default function GamifiedDashboard() {
                     value={getLevelProgress()} 
                     className="h-2 bg-white/20 [&>div]:bg-white"
                   />
-                  <p className="text-xs text-white">
+                  <p className="text-sm text-white">
                     {getXPToNextLevel()} XP needed for next level
                   </p>
                 </div>

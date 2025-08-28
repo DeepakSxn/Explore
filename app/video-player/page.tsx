@@ -31,6 +31,7 @@ import {
   CheckCircle,
   AlertTriangle,
   X,
+  RefreshCw,
 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -2882,7 +2883,7 @@ export default function VideoPlayerPage() {
               {/* Center: Start from Beginning Button */}
               <div className="flex-1 flex justify-center">
                 <Button variant="ghost" onClick={handleStartFromBeginning} className="flex items-center gap-2 bg-white text-foreground border">
-                  <SkipBack className="h-4 w-4" />
+                  <RefreshCw className="h-4 w-4" />
                   Start from Beginning
                 </Button>
               </div>
@@ -2918,25 +2919,20 @@ export default function VideoPlayerPage() {
               <div className="mb-4 max-w-5xl mx-auto">
                 <Card className="border-l-4 border-l-primary/60 bg-gradient-to-r from-primary/5 to-transparent rounded-lg shadow-sm">
                   <CardContent className="p-6">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Info className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-foreground mb-2">Description</h3>
-                        <p className="text-muted-foreground leading-relaxed text-base">
-                          {currentVideo.description}
-                        </p>
-                        {currentVideo.tags && currentVideo.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            {currentVideo.tags.map((tag, i) => (
-                              <Badge key={i} variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-foreground mb-2">Description</h3>
+                      <p className="text-muted-foreground leading-relaxed text-base">
+                        {currentVideo.description}
+                      </p>
+                      {currentVideo.tags && currentVideo.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {currentVideo.tags.map((tag, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -3154,7 +3150,7 @@ export default function VideoPlayerPage() {
 
                                         <div className="flex-1 min-w-0">
                                   <p className="font-medium text-sm truncate">
-                                    {module.name === "Sales" ? video.title : `S${moduleIndex + 1}.E${videoIndex + 1} ${video.title}`}
+                                    {video.title}
                                   </p>
                                           <p className="text-xs text-muted-foreground">{video.duration}</p>
                                         </div>

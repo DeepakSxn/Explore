@@ -31,6 +31,20 @@ export default function SignUp() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
 
+  // Predefined company names
+  const predefinedCompanies = [
+    "EOXS",
+    "3GM", 
+    "Sabre",
+    "RW Conklin",
+    "Discount Pipe",
+    "Gerdau",
+    "Eastern States Steel (ESS)",
+    "Greer",
+    "PPC",
+    "Titanium Industries"
+  ]
+
   // Update countryCodes array to include flag, country name, and code
   const countryCodes = [
     { code: "+1", label: "United States (+1)" },
@@ -327,16 +341,16 @@ export default function SignUp() {
                   <Building className="h-4 w-4 text-green-600" />
                   Company Name
                 </label>
-                <Input
-                  id="companyName"
-                  type="text"
-                  placeholder="Enter your company name"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="h-12 text-base rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500 transition-all duration-300"
-                />
+                <Select value={companyName} onValueChange={setCompanyName}>
+                  <SelectTrigger className="h-12 text-base rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500 transition-all duration-300 w-full">
+                    <SelectValue placeholder="Select a company" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-200">
+                    {predefinedCompanies.map((company) => (
+                      <SelectItem key={company} value={company} className="hover:bg-gray-50">{company}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

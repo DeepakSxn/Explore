@@ -995,7 +995,9 @@ export default function Dashboard() {
                     <div className="p-2 bg-white/10 rounded-lg">
                       <Trophy className="w-4 h-4 text-white" />
                     </div>
-                    <span className="text-white">Leaderboard</span>
+                    <span className="text-white">
+                      {userData?.companyName ? `${userData.companyName} Leaderboard` : "Leaderboard"}
+                    </span>
                   </a>
                 </Button>
               </Link>
@@ -1092,10 +1094,10 @@ export default function Dashboard() {
                 <div className="relative">
                   <Alert className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 shadow-lg pr-10">
                     <AlertTriangle className="h-4 w-4 text-amber-600" />
-                    <AlertDescription className="text-amber-800 font-medium">
-                      <strong>Account Suspension Warning:</strong> Your account will be suspended in {userData.daysUntilSuspension} day{userData.daysUntilSuspension !== 1 ? 's' : ''}. 
-                      To prevent suspension, please contact <a href="mailto:isha@eoxsteam.com" className="underline font-semibold hover:text-amber-900 transition-colors">isha@eoxsteam.com</a>.
-                    </AlertDescription>
+                  <AlertDescription className="text-amber-800 font-medium">
+                    <strong>Account Suspension Warning:</strong> Your account will be suspended in {userData.daysUntilSuspension} day{userData.daysUntilSuspension !== 1 ? 's' : ''}. 
+                    To prevent suspension, please contact <a href="mailto:isha@eoxsteam.com" className="underline font-semibold hover:text-amber-900 transition-colors">isha@eoxsteam.com</a>.
+                  </AlertDescription>
                     <button
                       type="button"
                       aria-label="Dismiss"
@@ -1109,7 +1111,7 @@ export default function Dashboard() {
                     >
                       <X className="h-4 w-4" />
                     </button>
-                  </Alert>
+                </Alert>
                 </div>
               </div>
             )}
@@ -1222,7 +1224,12 @@ export default function Dashboard() {
                                     <th className="px-6 py-3 text-left font-semibold text-slate-700 w-32 whitespace-nowrap">
                                       Video Length
                                     </th>
-                                    <th className="px-6 py-3 text-left font-semibold text-slate-700 w-24">Status</th>
+                                    <th className="px-6 py-3 text-left font-semibold text-slate-700 w-24">
+                                      <div className="flex items-center">
+                                        <div className="w-2 h-2 mr-2"></div>
+                                        Status
+                                      </div>
+                                    </th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">

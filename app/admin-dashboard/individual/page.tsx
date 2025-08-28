@@ -363,7 +363,7 @@ export default function IndividualAnalyticsPage() {
           // For completed videos, ensure a meaningful watch time is shown (at least 30 seconds)
           let adjustedWatchTime = videoWatchTime;
           if (mostCompleteEvent.completed && videoWatchTime < 30) {
-            console.log(`Video ${videoId} marked as completed but has low watch time (${videoWatchTime}s). Setting to 30s minimum.`);
+  
             adjustedWatchTime = 30; // Minimum 30 seconds for completed videos
           } else if (videoWatchTime === 0 && videoEvents.length > 0) {
             adjustedWatchTime = 1; // Minimum 1 second for videos with events but no recorded duration
@@ -414,7 +414,7 @@ export default function IndividualAnalyticsPage() {
             endTimestamp = 0; // No end time available
           }
           
-          console.log(`Video ${videoId}: Using FIXED timestamps - Start: ${new Date(startTimestamp * 1000).toLocaleString()}, End: ${new Date(endTimestamp * 1000).toLocaleString()}`);
+
           
           // Ensure start and end times are different for better UX
           if (startTimestamp > 0 && endTimestamp > 0) {
@@ -626,6 +626,9 @@ export default function IndividualAnalyticsPage() {
 
   // Update the filtered users and companies logic to correctly match the company ID format
   const uniqueUsers = users.map(u => ({ id: u.id, name: u.name, email: u.email }))
+  
+
+  
   const filteredUsers = users.filter(
     (user) => {
       // Basic search term filter
@@ -634,7 +637,7 @@ export default function IndividualAnalyticsPage() {
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (user.companyName?.toLowerCase() || "").includes(searchTerm.toLowerCase());
       
-      // Company filter - need to normalize company name to match filter format
+      // Company filter - normalize company name to match the format used in CompanyFilterAdmin
       const matchesCompany = !filterCompany || 
         (user.companyName && user.companyName.toLowerCase().replace(/\s+/g, '_') === filterCompany);
       

@@ -100,6 +100,35 @@ export default function Leaderboard() {
 
       console.log("Leaderboard component - Processed data sample:", processedData[0])
 
+      // Filter by company - users only see people from their own company
+      if (userData?.companyName) {
+        console.log("Leaderboard component - Filtering by company:", userData.companyName)
+        console.log("Leaderboard component - Available companies:", [...new Set(processedData.map(entry => entry.company))])
+        processedData = processedData.filter(entry => {
+          // Try exact match first
+          let matches = entry.company === userData.companyName
+          
+          // If no exact match, try partial match for common variations
+          if (!matches && userData.companyName) {
+            const userCompany = userData.companyName.toLowerCase()
+            const entryCompany = entry.company.toLowerCase()
+            
+            // Handle common variations
+            if (userCompany.includes('eoxs') && entryCompany.includes('eoxs')) {
+              matches = true
+            } else if (userCompany.includes('3gm') && entryCompany.includes('3gm')) {
+              matches = true
+            } else if (userCompany.includes('eastern states steel') && entryCompany.includes('eastern states steel')) {
+              matches = true
+            }
+          }
+          
+          console.log(`Leaderboard component - Entry ${entry.name}: company=${entry.company}, userCompany=${userData.companyName || 'undefined'}, matches=${matches}`)
+          return matches
+        })
+        console.log("Leaderboard component - After company filter:", processedData.length, "entries")
+      }
+
       // Apply department filter
       if (departmentFilter !== "all") {
         processedData = processedData.filter(entry => entry.department === departmentFilter)
@@ -113,8 +142,13 @@ export default function Leaderboard() {
         processedData = processedData.slice(0, 15) // Show top 15 for this month
       }
 
-      console.log("Leaderboard component - Final filtered data:", processedData.length, "entries")
-      setFilteredData(processedData)
+      // Recalculate ranks after filtering (so ranks are company-specific)
+      const finalData = processedData
+        .sort((a, b) => b.totalXP - a.totalXP)
+        .map((entry, index) => ({ ...entry, rank: index + 1 }))
+
+      console.log("Leaderboard component - Final filtered data:", finalData.length, "entries")
+      setFilteredData(finalData)
     } else {
       console.log("Leaderboard component - No leaderboard data available")
       setFilteredData([])
@@ -166,21 +200,25 @@ export default function Leaderboard() {
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Trophy className="h-8 w-8 text-yellow-500" />
+              <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold">Leaderboard</h2>
-            <p className="text-muted-foreground">See how you rank against your colleagues</p>
+            <p className="text-sm text-muted-foreground">
+              {userData?.companyName ? `${userData.companyName} Rankings` : "Company Rankings"}
+            </p>
+            {userData?.companyName && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Showing only {userData.companyName} employees
+              </p>
+            )}
           </div>
-        </div>
         <Button
           variant="outline"
           size="sm"
           onClick={refreshLeaderboard}
-          disabled={loading}
+          className="flex items-center gap-2"
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className="h-4 w-4" />
           Refresh
         </Button>
       </div>

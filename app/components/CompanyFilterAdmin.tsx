@@ -91,6 +91,8 @@ export function CompanyFilterAdmin({ onFilterChange, selectedCompany }: CompanyF
           // Sort alphabetically
           companiesList.sort((a, b) => a.name.localeCompare(b.name));
 
+
+
           setCompanies([
             { id: "all", name: "All Companies" },
             ...companiesList
