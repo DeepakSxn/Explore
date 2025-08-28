@@ -46,6 +46,7 @@ interface Video {
   watchTime?: number
   engagement?: number
   tags?: string[]
+  thumbnailUrl?: string
 }
 
 export default function VideosPage() {
@@ -65,6 +66,11 @@ export default function VideosPage() {
   // Confirmation dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [videoToDelete, setVideoToDelete] = useState<Video | null>(null)
+
+  // Thumbnail upload states
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false)
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -152,6 +158,128 @@ export default function VideosPage() {
     }
   }
 
+  const uploadThumbnail = async (file: File): Promise<string> => {
+    try {
+      setIsUploadingThumbnail(true)
+      
+      console.log('Starting thumbnail upload for file:', file.name, 'Size:', file.size)
+      
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('upload_preset', 'eoxsDemoTool') // Use the same preset that works for videos
+      formData.append('cloud_name', 'dnx1sl0nq')
+      
+      // Log the form data for debugging
+      console.log('Form data entries:')
+      for (let [key, value] of formData.entries()) {
+        console.log(key, ':', value)
+      }
+      
+      console.log('Uploading to Cloudinary...')
+      
+      const response = await fetch(`https://api.cloudinary.com/v1_1/dnx1sl0nq/image/upload`, {
+        method: 'POST',
+        body: formData,
+      })
+      
+      console.log('Response status:', response.status)
+      console.log('Response headers:', response.headers)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Cloudinary error response:', errorText)
+        throw new Error(`Cloudinary upload failed: ${response.status} ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      console.log('Cloudinary response data:', data)
+      
+      if (!data.secure_url) {
+        throw new Error('No secure URL returned from Cloudinary')
+      }
+      
+      return data.secure_url
+    } catch (error) {
+      console.error('Detailed error uploading thumbnail:', error)
+      if (error instanceof Error) {
+        throw new Error(`Upload failed: ${error.message}`)
+      } else {
+        throw new Error('Unknown upload error occurred')
+      }
+    } finally {
+      setIsUploadingThumbnail(false)
+    }
+  }
+
+  const handleThumbnailChange = (file: File) => {
+    setThumbnailFile(file)
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setThumbnailPreview(e.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleThumbnailUpload = async () => {
+    if (!thumbnailFile) return
+
+    try {
+      console.log("Starting thumbnail upload process...")
+      const thumbnailUrl = await uploadThumbnail(thumbnailFile)
+      console.log("Uploaded thumbnail URL:", thumbnailUrl)
+      
+      setEditedVideo(prev => ({ ...prev, thumbnailUrl }))
+      setThumbnailPreview(thumbnailUrl)
+      setThumbnailFile(null)
+      
+      toast({
+        title: "Success",
+        description: "Thumbnail uploaded successfully",
+      })
+    } catch (error) {
+      console.error("Error in handleThumbnailUpload:", error)
+      let errorMessage = "Failed to upload thumbnail. Please try again."
+      
+      if (error instanceof Error) {
+        errorMessage = error.message
+      }
+      
+      toast({
+        title: "Upload Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    }
+  }
+
+  const generateThumbnailFromVideo = async () => {
+    if (!selectedVideo?.publicId) {
+      toast({
+        title: "Error",
+        description: "No video public ID found to generate thumbnail from",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Generate thumbnail URL from Cloudinary video public ID
+      const thumbnailUrl = `https://res.cloudinary.com/dnx1sl0nq/video/upload/${selectedVideo.publicId}.jpg`
+      setEditedVideo({ ...editedVideo, thumbnailUrl })
+      setThumbnailPreview(thumbnailUrl)
+      toast({
+        title: "Success",
+        description: "Thumbnail generated from video successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate thumbnail from video",
+        variant: "destructive",
+      })
+    }
+  }
+
   const handleDelete = async (videoId: string) => {
     try {
       await deleteDoc(doc(db, "videos", videoId))
@@ -190,12 +318,18 @@ export default function VideosPage() {
   }
 
   const handleEdit = (video: Video) => {
+    console.log("Editing video:", video) // Debug log
     setSelectedVideo(video)
-    setEditedVideo({
+    const initialData = {
       title: video.title,
       description: video.description || "",
       category: video.category || "",
-    })
+      thumbnailUrl: video.thumbnailUrl || "",
+    }
+    console.log("Setting initial edited video data:", initialData) // Debug log
+    setEditedVideo(initialData)
+    setThumbnailPreview(video.thumbnailUrl || null)
+    setThumbnailFile(null)
     setIsEditOpen(true)
   }
 
@@ -203,12 +337,19 @@ export default function VideosPage() {
     if (!selectedVideo || !editedVideo.title) return
 
     try {
+      console.log("Saving video with data:", editedVideo) // Debug log
+      
       const videoRef = doc(db, "videos", selectedVideo.id)
-      await updateDoc(videoRef, {
+      const updateData = {
         title: editedVideo.title,
         description: editedVideo.description,
         category: editedVideo.category,
-      })
+        thumbnailUrl: editedVideo.thumbnailUrl,
+      }
+      
+      console.log("Update data:", updateData) // Debug log
+      
+      await updateDoc(videoRef, updateData)
 
       // Update local state
       const updatedVideos = videos.map((video) =>
@@ -223,6 +364,9 @@ export default function VideosPage() {
       )
 
       setIsEditOpen(false)
+      setThumbnailFile(null)
+      setThumbnailPreview(null)
+      setEditedVideo({}) // Reset edited video state
       toast({
         title: "Success",
         description: "Video updated successfully",
@@ -272,7 +416,7 @@ export default function VideosPage() {
             <TableRow>
               <TableHead>Title</TableHead>
               <TableHead>Category</TableHead>
-             
+              <TableHead>Thumbnail</TableHead>
               <TableHead>Created At</TableHead>
               <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
@@ -280,13 +424,13 @@ export default function VideosPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={7} className="text-center">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : filteredVideos.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={7} className="text-center">
                   No videos found
                 </TableCell>
               </TableRow>
@@ -295,7 +439,19 @@ export default function VideosPage() {
                 <TableRow key={video.id}>
                   <TableCell className="font-medium">{video.title}</TableCell>
                   <TableCell>{video.category || "Uncategorized"}</TableCell>
-             
+                  <TableCell>
+                    {video.thumbnailUrl ? (
+                      <img 
+                        src={video.thumbnailUrl} 
+                        alt={`${video.title} thumbnail`}
+                        className="w-16 h-12 object-cover rounded border"
+                      />
+                    ) : (
+                      <div className="w-16 h-12 bg-gray-200 rounded border flex items-center justify-center text-xs text-gray-500">
+                        No thumbnail
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {video.createdAt && video.createdAt.seconds
                       ? format(new Date(video.createdAt.seconds * 1000), "PPP")
@@ -346,7 +502,13 @@ export default function VideosPage() {
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+      <Dialog open={isEditOpen} onOpenChange={(open) => {
+        setIsEditOpen(open)
+        if (!open) {
+          setThumbnailFile(null)
+          setThumbnailPreview(null)
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Video</DialogTitle>
@@ -389,9 +551,142 @@ export default function VideosPage() {
                 rows={4}
               />
             </div>
+            
+            {/* Thumbnail Section */}
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="thumbnail">Thumbnail</Label>
+                <p className="text-sm text-gray-600 mt-1">
+                  Upload a custom thumbnail or generate one from the video. 
+                  <br />
+                  <span className="text-xs text-blue-600">
+                    💡 Tip: If thumbnail upload fails, use "Generate from Video" to create a thumbnail from the existing video.
+                  </span>
+                </p>
+              </div>
+              
+
+              
+              {/* Current Thumbnail Preview */}
+              {editedVideo.thumbnailUrl && (
+                <div className="relative">
+                  <img 
+                    src={editedVideo.thumbnailUrl} 
+                    alt="Current thumbnail" 
+                    className="w-full h-32 object-cover rounded-md border"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="absolute top-2 right-2 bg-white/90 hover:bg-white"
+                    onClick={() => {
+                      setThumbnailPreview(null)
+                      setThumbnailFile(null)
+                      setEditedVideo(prev => ({ ...prev, thumbnailUrl: "" }))
+                    }}
+                    title="Remove thumbnail"
+                  >
+                    ×
+                  </Button>
+                </div>
+              )}
+              
+              {/* File Upload Section */}
+              <div className="space-y-3">
+                <Input
+                  id="thumbnail"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      handleThumbnailChange(file)
+                    }
+                  }}
+                  className="cursor-pointer"
+                />
+                
+                {thumbnailFile && (
+                  <div className="space-y-3">
+                    {/* File info display */}
+                    <div className="text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 p-3 rounded">
+                      <div className="font-medium mb-1 text-gray-700 dark:text-gray-300">Selected file:</div>
+                      <div className="truncate font-mono text-gray-900 dark:text-gray-100" title={thumbnailFile.name}>
+                        {thumbnailFile.name}
+                      </div>
+                      <div className="text-gray-600 dark:text-gray-400 mt-1">
+                        Size: {(thumbnailFile.size / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    </div>
+                    
+                    {/* Action buttons */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleThumbnailUpload}
+                        disabled={isUploadingThumbnail}
+                      >
+                        {isUploadingThumbnail ? "Uploading..." : "Upload"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setThumbnailFile(null)
+                          setThumbnailPreview(null)
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                {/* Generate from video button */}
+                {selectedVideo?.publicId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={generateThumbnailFromVideo}
+                    className="w-full"
+                  >
+                    Generate from Video
+                  </Button>
+                )}
+                
+                {/* Clear thumbnail button */}
+                {editedVideo.thumbnailUrl && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditedVideo(prev => ({ ...prev, thumbnailUrl: "" }))
+                      setThumbnailPreview(null)
+                      setThumbnailFile(null)
+                    }}
+                    className="w-full text-red-600 hover:text-red-700"
+                  >
+                    Clear Thumbnail
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setIsEditOpen(false)
+              setThumbnailFile(null)
+              setThumbnailPreview(null)
+            }}>
               Cancel
             </Button>
             <Button onClick={handleSaveEdit}>Save Changes</Button>
