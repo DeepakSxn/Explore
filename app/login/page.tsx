@@ -260,7 +260,7 @@ export default function Login() {
                     </>
                   ) : (
                     <>
-                      <span className="text-white">Sign In</span>
+                      <span className="text-white">Sign in</span>
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform text-white" />
                     </>
                   )}

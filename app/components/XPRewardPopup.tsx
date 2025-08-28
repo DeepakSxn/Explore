@@ -103,7 +103,8 @@ export default function XPRewardPopup({
       case 'video':
         return 'text-green-600'
       case 'module':
-        return 'text-yellow-600'
+        // Use brand color for module completion heading
+        return 'text-[#080838]'
       case 'achievement':
         return 'text-purple-600'
       case 'streak':
@@ -187,6 +188,13 @@ export default function XPRewardPopup({
                 >
                   <X className="h-4 w-4" />
                 </Button>
+
+                {/* Top-left accent icon (use electric/Zap for module completion) */}
+                {type === 'module' && (
+                  <div className="absolute top-2 left-2 text-green-500">
+                    <Zap className="h-5 w-5" />
+                  </div>
+                )}
 
                 {/* Main content */}
                 <div className="text-center">

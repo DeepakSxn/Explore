@@ -316,8 +316,19 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
     if (!user || !userProgress) return
 
     try {
-      // Add XP for video completion
-      await addXP(XP_CONFIG.VIDEO_COMPLETION, `Video completion: ${videoId}`)
+      // Award XP for video completion only once per video per user
+      const existingCompletionQuery = query(
+        collection(db, "videoWatchEvents"),
+        where("userId", "==", user.uid),
+        where("videoId", "==", videoId),
+        where("completed", "==", true)
+      )
+      const existingCompletionSnapshot = await getDocs(existingCompletionQuery)
+      const hasCompletedBefore = !existingCompletionSnapshot.empty
+
+      if (!hasCompletedBefore) {
+        await addXP(XP_CONFIG.VIDEO_COMPLETION, `Video completion: ${videoId}`)
+      }
 
       // Update streak
       await updateStreak()

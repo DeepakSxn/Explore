@@ -14,6 +14,11 @@ export const metadata: Metadata = {
   title: "EOXS Video Management Tool",
   description: "Access customized software demo videos, track engagement, and get valuable insights.",
   generator: "v0.dev",
+  icons: {
+    icon: "/Eoxsplore logo.png",
+    shortcut: "/Eoxsplore logo.png",
+    apple: "/Eoxsplore logo.png",
+  },
 }
 
 export default function RootLayout({
@@ -23,6 +28,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" type="image/png" href="/Eoxsplore logo.png" />
+        <link rel="shortcut icon" type="image/png" href="/Eoxsplore logo.png" />
+        <link rel="apple-touch-icon" href="/Eoxsplore logo.png" />
+      </head>
       <body className={inter.className}>
         <ThemeProvider defaultTheme="system">
           <AuthProvider>

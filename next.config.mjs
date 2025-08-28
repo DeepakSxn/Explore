@@ -34,6 +34,11 @@ const nextConfig = {
     parallelServerCompiles: false,
     // optimizeCss: true, // Disabled due to critters module issue
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'], // Optimize large packages
+    // Disable features that might cause chunk loading issues
+    serverComponentsExternalPackages: [],
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
   },
   // Mobile performance optimizations
   compress: true, // Enable gzip compression
@@ -41,18 +46,34 @@ const nextConfig = {
   generateEtags: false, // Disable ETags for better caching
   // Bundle analyzer for optimization
   webpack: (config, { dev, isServer }) => {
-    // Optimize for mobile
+    // More conservative chunk splitting to prevent ChunkLoadError
     if (!dev && !isServer) {
       config.optimization.splitChunks = {
         chunks: 'all',
+        maxSize: 244000, // Smaller chunks
         cacheGroups: {
           vendor: {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
             chunks: 'all',
+            priority: 10,
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 5,
           },
         },
       }
+    }
+    
+    // Add fallback for better error handling
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
     }
     
     return config
@@ -75,7 +96,26 @@ const nextConfig = {
             key: 'X-XSS-Protection',
             value: '1; mode=block',
           },
-          // Cache static assets for mobile
+        ],
+      },
+      // Cache Next.js built assets aggressively
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding',
+          },
+        ],
+      },
+      // Cache image assets in public folder
+      {
+        source: '/:all*(svg|jpg|jpeg|png|webp|avif|ico)',
+        headers: [
           {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',

@@ -30,6 +30,7 @@ import {
   Lock,
   CheckCircle,
   AlertTriangle,
+  X,
 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -210,6 +211,10 @@ export default function VideoPlayerPage() {
   
   // Add state to track if current video has been completed (for scrubbing restrictions)
   const [isVideoCompleted, setIsVideoCompleted] = useState(false)
+  // Show forward-seek restriction toast only once per video
+  const [forwardRestrictionShown, setForwardRestrictionShown] = useState(false)
+  // Brief on-screen banner for restriction (5s, once per video)
+  const [showForwardRestrictionBanner, setShowForwardRestrictionBanner] = useState(false)
 
   // XP Reward Popup states
   const [showXPReward, setShowXPReward] = useState(false)
@@ -233,6 +238,9 @@ export default function VideoPlayerPage() {
   const playerContainerRef = useRef<HTMLDivElement>(null)
   const videoChangeRef = useRef<boolean>(false)
   const [isHovered, setIsHovered] = useState(false)
+
+  // Suspension warning banner visibility (per-login, dismissible)
+  const [showSuspensionWarning, setShowSuspensionWarning] = useState(true)
 
   // Add these state variables at the top with other state declarations
   const [showResumeDialog, setShowResumeDialog] = useState(false);
@@ -299,11 +307,15 @@ export default function VideoPlayerPage() {
     if (videoRef.current) {
       // Only allow forward scrubbing if video has been completed
       if (!isVideoCompleted) {
-        toast({
-          title: "Scrubbing Restricted",
-          description: "You must complete watching this video before you can skip forward.",
-          variant: "destructive",
-        });
+        if (!forwardRestrictionShown) {
+          toast({
+            title: "Forward seeking disabled",
+            description: "You must complete watching this video before you can skip forward.",
+            variant: "destructive",
+            duration: 5000,
+          });
+          setForwardRestrictionShown(true)
+        }
         return;
       }
       
@@ -325,11 +337,15 @@ export default function VideoPlayerPage() {
     if (newTime > videoRef.current.currentTime) {
       // Only allow forward seeking if video has been completed
       if (!isVideoCompleted) {
-        toast({
-          title: "Forward Seeking Restricted",
-          description: "You must complete watching this video before you can skip forward.",
-          variant: "destructive",
-        });
+        if (!forwardRestrictionShown) {
+          toast({
+            title: "Forward seeking disabled",
+            description: "You must complete watching this video before you can skip forward.",
+            variant: "destructive",
+            duration: 5000,
+          });
+          setForwardRestrictionShown(true)
+        }
         return;
       }
     }
@@ -376,6 +392,11 @@ export default function VideoPlayerPage() {
       if (currentUser) {
         setUser(currentUser)
 
+        // Reset suspension banner dismissal on each login (show again)
+        try {
+          sessionStorage.removeItem(`dismiss_suspension_${currentUser.uid}`)
+        } catch {}
+
         // Debug: Check all categories in database
         await debugCategories()
 
@@ -421,7 +442,16 @@ export default function VideoPlayerPage() {
       // User is suspended, redirect to suspension page
       router.push("/suspended")
     }
-  }, [userData, router])
+    // Initialize warning visibility per login session
+    if (user) {
+      try {
+        const dismissed = sessionStorage.getItem(`dismiss_suspension_${user.uid}`) === 'true'
+        setShowSuspensionWarning(!dismissed)
+      } catch {
+        setShowSuspensionWarning(true)
+      }
+    }
+  }, [userData, router, user])
 
   useEffect(() => {
     if (playlist && user) {
@@ -475,9 +505,21 @@ export default function VideoPlayerPage() {
     if (currentVideo && currentVideo.id) {
       // Reset completion status for new video
       setIsVideoCompleted(false);
+      setForwardRestrictionShown(false);
+      // Show the restriction banner briefly once per video
+      setShowForwardRestrictionBanner(true);
+      const hideTimer = setTimeout(() => setShowForwardRestrictionBanner(false), 5000)
       checkAndSetVideoWatched(currentVideo.id)
+      return () => clearTimeout(hideTimer)
     }
   }, [currentVideo])
+
+  // Hide banner if video gets completed early
+  useEffect(() => {
+    if (isVideoCompleted) {
+      setShowForwardRestrictionBanner(false)
+    }
+  }, [isVideoCompleted])
 
   useEffect(() => {
     // Set up fullscreen change event listener
@@ -621,35 +663,30 @@ export default function VideoPlayerPage() {
           
           if (savedPosition > 0 /* && !showQuiz && !currentQuiz */) {
             setLastPosition(savedPosition);
-            // If resume is true, automatically resume without showing dialog
-            if (resume === "true") {
-              // Auto-resume from the position - wait for video to be ready
-              const attemptResume = () => {
-                if (videoRef.current && videoRef.current.readyState >= 2) {
-                  console.log('Video ready, setting currentTime to:', savedPosition);
-                  videoRef.current.currentTime = savedPosition;
-                  videoRef.current.play()
-                    .then(() => {
-                      setIsPlaying(true);
-                      setWatchStartTime(Date.now() / 1000);
-                      videoChangeRef.current = false;
-                      console.log('Successfully resumed video from position:', savedPosition);
-                    })
-                    .catch((error) => {
-                      console.error("Error playing video:", error);
-                    });
-                } else {
-                  // Video not ready yet, try again in a moment
-                  console.log('Video not ready yet, retrying...');
-                  setTimeout(attemptResume, 100);
-                }
-              };
-              
-              // Start attempting to resume
-              attemptResume();
-            } else {
-            setShowResumeDialog(true);
-            }
+            // Always auto-resume from the last saved position without showing a dialog
+            const attemptResume = () => {
+              if (videoRef.current && videoRef.current.readyState >= 2) {
+                console.log('Video ready, setting currentTime to:', savedPosition);
+                videoRef.current.currentTime = savedPosition;
+                videoRef.current.play()
+                  .then(() => {
+                    setIsPlaying(true);
+                    setWatchStartTime(Date.now() / 1000);
+                    videoChangeRef.current = false;
+                    console.log('Successfully resumed video from position:', savedPosition);
+                  })
+                  .catch((error) => {
+                    console.error("Error playing video:", error);
+                  });
+              } else {
+                // Video not ready yet, try again in a moment
+                console.log('Video not ready yet, retrying...');
+                setTimeout(attemptResume, 100);
+              }
+            };
+            
+            // Start attempting to resume
+            attemptResume();
           } else {
             // If no saved position or quiz is active, just show the video
             videoRef.current?.load();
@@ -1104,8 +1141,14 @@ export default function VideoPlayerPage() {
     // Debug: Check for any videos with similar category names
     const allCategories = new Set(videos.map(v => v.category))
     console.log("🔍 All unique categories in videos:", Array.from(allCategories))
-    console.log("🔍 Looking for Sales-like categories:", Array.from(allCategories).filter(cat => cat.toLowerCase().includes('sales')))
-    console.log("🔍 Looking for QA-like categories:", Array.from(allCategories).filter(cat => cat.toLowerCase().includes('qa')))
+    console.log(
+      "🔍 Looking for Sales-like categories:",
+      Array.from(allCategories).filter((cat): cat is string => typeof cat === 'string' && cat.toLowerCase().includes('sales'))
+    )
+    console.log(
+      "🔍 Looking for QA-like categories:",
+      Array.from(allCategories).filter((cat): cat is string => typeof cat === 'string' && cat.toLowerCase().includes('qa'))
+    )
 
     // IMPORTANT: We need to get the ACTUAL user-selected modules from localStorage
     // NOT from the playlist data which may contain previous selections
@@ -1186,10 +1229,18 @@ export default function VideoPlayerPage() {
       })
 
       // Debug: Check all available categories in videos
-      const allCategoriesInVideos = [...new Set(videos.map(v => v.category))]
+      const allCategoriesInVideos = [...new Set(
+        videos.map(v => v.category).filter((c): c is string => typeof c === 'string')
+      )]
       console.log("🔍 All categories available in videos:", allCategoriesInVideos)
-      console.log("🔍 Looking for Sales-related categories:", allCategoriesInVideos.filter(cat => cat.toLowerCase().includes('sales')))
-      console.log("🔍 Looking for QA-related categories:", allCategoriesInVideos.filter(cat => cat.toLowerCase().includes('qa')))
+      console.log(
+        "🔍 Looking for Sales-related categories:",
+        allCategoriesInVideos.filter(cat => cat.toLowerCase().includes('sales'))
+      )
+      console.log(
+        "🔍 Looking for QA-related categories:",
+        allCategoriesInVideos.filter(cat => cat.toLowerCase().includes('qa'))
+      )
     } catch (error) {
       console.error("Error reading user selection from localStorage:", error)
     }
@@ -2234,9 +2285,23 @@ export default function VideoPlayerPage() {
   }
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = Math.floor(seconds % 60)
+    const safeSeconds = Number.isFinite(seconds) && !Number.isNaN(seconds) ? seconds : 0
+    const mins = Math.floor(safeSeconds / 60)
+    const secs = Math.floor(safeSeconds % 60)
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`
+  }
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      const dur = videoRef.current.duration
+      if (Number.isFinite(dur) && !Number.isNaN(dur)) {
+        setDuration(dur)
+      } else {
+        setDuration(0)
+      }
+      // Ensure current time display starts at 0
+      setCurrentTime(videoRef.current.currentTime || 0)
+    }
   }
 
   const isVideoPlayable = (index: number) => {
@@ -2381,6 +2446,37 @@ export default function VideoPlayerPage() {
     // Update URL without refreshing the page
     const newUrl = `/video-player?videoId=${video.id}&playlistId=${playlist.id}`
     window.history.pushState({}, "", newUrl)
+
+    // Scroll to top of the page for better UX
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const playVideoFromPlaylist = (playlistIndex: number) => {
+    if (
+      !playlist ||
+      playlistIndex < 0 ||
+      playlistIndex >= playlist.videos.length
+    )
+      return
+
+    const video = playlist.videos[playlistIndex]
+    
+    // Check if video is playable
+    if (!isVideoPlayable(playlistIndex)) return
+
+    // Change to the selected video
+    videoChangeRef.current = true
+    setCurrentVideoIndex(playlistIndex)
+    setCurrentVideo(video)
+    setProgress(0)
+    setCurrentTime(0)
+
+    // Update URL without refreshing the page
+    const newUrl = `/video-player?videoId=${video.id}&playlistId=${playlist.id}`
+    window.history.pushState({}, "", newUrl)
+
+    // Scroll to top of the page for better UX
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   // Function to handle playback rate change
@@ -2441,7 +2537,10 @@ export default function VideoPlayerPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="relative flex flex-col min-h-screen bg-gradient-to-b from-muted/30 to-background">
+      {/* Subtle background accents */}
+      <div aria-hidden className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-primary/10 blur-3xl -z-10" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-32 -right-32 h-[28rem] w-[28rem] rounded-full bg-secondary/10 blur-3xl -z-10" />
       <header className="border-b sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/dashboard">
@@ -2474,41 +2573,43 @@ export default function VideoPlayerPage() {
         </Button>
       </div>
 
-      {/* Suspension Warning Banner */}
-      {userData && userData.daysUntilSuspension > 0 && userData.daysUntilSuspension <= 7 && (
+      {/* Suspension Warning Banner - aligned, dismissible per login */}
+      {userData && userData.daysUntilSuspension > 0 && userData.daysUntilSuspension <= 7 && showSuspensionWarning && (
         <div className="container mb-4">
-          <Alert className="border-amber-200 bg-amber-50">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800">
-              <strong>Account Suspension Warning:</strong> Your account will be suspended in {userData.daysUntilSuspension} day{userData.daysUntilSuspension !== 1 ? 's' : ''}. 
-              To prevent suspension, please contact <a href="mailto:isha@eoxsteam.com" className="underline font-medium">isha@eoxsteam.com</a>.
-            </AlertDescription>
-          </Alert>
+          <div className="relative">
+            <Alert className="border-amber-200 bg-amber-50 flex items-center gap-3 pr-10">
+              <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+              <AlertDescription className="text-amber-800">
+                <strong>Account Suspension Warning:</strong> Your account will be suspended in {userData.daysUntilSuspension} day{userData.daysUntilSuspension !== 1 ? 's' : ''}. 
+                To prevent suspension, please contact <a href="mailto:isha@eoxsteam.com" className="underline font-medium">isha@eoxsteam.com</a>.
+              </AlertDescription>
+              <button
+                type="button"
+                aria-label="Dismiss"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-amber-100 text-amber-700"
+                onClick={() => {
+                  setShowSuspensionWarning(false)
+                  try {
+                    if (user) sessionStorage.setItem(`dismiss_suspension_${user.uid}`, 'true')
+                  } catch {}
+                }}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </Alert>
+          </div>
         </div>
       )}
 
-      <main className="flex-1 container py-8 px-4">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">{currentVideo.title}</h1>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {currentVideo.category && <Badge variant="outline">{currentVideo.category}</Badge>}
-            {currentVideo.tags &&
-              currentVideo.tags.map((tag, i) => (
-                <Badge key={i} variant="secondary" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+             <main className="flex-1 py-8 px-4">
+         <div className="space-y-6 w-full">
           {/* Video Player */}
-          <div className="lg:col-span-2">
-            <Card className="overflow-hidden">
+          <div className="space-y-6">
+            <Card className="overflow-hidden max-w-5xl mx-auto rounded-xl shadow-lg border">
               <CardContent className="p-0">
                 <div
                   ref={playerContainerRef}
-                  className="relative aspect-video bg-black"
+                  className="relative aspect-video bg-black max-h-[500px] lg:max-h-[600px]"
                   onMouseEnter={() => setIsHovered(true)}
                   onMouseLeave={() => setIsHovered(false)}
                 >
@@ -2522,6 +2623,7 @@ export default function VideoPlayerPage() {
                     onPause={() => setIsPlaying(false)}
                     onEnded={handleVideoEnded}
                     onTimeUpdate={handleVideoTimeUpdate}
+                    onLoadedMetadata={handleLoadedMetadata}
                     onClick={() => (isPlaying ? handleVideoPause() : handleVideoPlay())}
                     onError={(e) => {
                       console.error("Video loading error:", e)
@@ -2600,8 +2702,8 @@ export default function VideoPlayerPage() {
                   <div
                     className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${!isHovered ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"}`}
                   >
-                    {/* Scrubbing Status Indicator */}
-                    {!isVideoCompleted && (
+                    {/* Scrubbing Status Indicator (5s, once per video) */}
+                    {showForwardRestrictionBanner && (
                       <div className="text-xs text-white/70 mb-2 text-center">
                         ⚠️ Forward seeking disabled until video completion
                       </div>
@@ -2736,8 +2838,24 @@ export default function VideoPlayerPage() {
               </CardContent>
             </Card>
 
-            {/* Video Navigation and Rating Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 mb-4">
+
+
+            {/* Video Title - Flush-left under the video */}
+            <div className="container mx-auto max-w-5xl mb-4 px-0">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{currentVideo.title}</h1>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {currentVideo.category && <Badge variant="outline">{currentVideo.category}</Badge>}
+                {currentVideo.tags &&
+                  currentVideo.tags.map((tag, i) => (
+                    <Badge key={i} variant="secondary" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+              </div>
+            </div>
+
+            {/* Top Navigation: Previous / Start from Beginning / Next */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 mb-4 max-w-5xl mx-auto">
               {/* Previous Video Button */}
               <div className="flex-1 flex justify-start">
                 {currentVideoIndex > 0 ? (
@@ -2761,11 +2879,11 @@ export default function VideoPlayerPage() {
                 )}
               </div>
 
-              {/* Center: Rate & Review Button */}
+              {/* Center: Start from Beginning Button */}
               <div className="flex-1 flex justify-center">
-                <Button variant="outline" onClick={() => setVideoFeedbackOpen(true)} className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4" />
-                  Rate & Review This Video
+                <Button variant="ghost" onClick={handleStartFromBeginning} className="flex items-center gap-2 bg-white text-foreground border">
+                  <SkipBack className="h-4 w-4" />
+                  Start from Beginning
                 </Button>
               </div>
 
@@ -2795,17 +2913,17 @@ export default function VideoPlayerPage() {
               </div>
             </div>
 
-            {/* Video Description Container */}
+            {/* Video Description Container - below the navigation */}
             {currentVideo.description && currentVideo.description.trim() !== "" && (
-              <div className="mb-6">
-                <Card className="border-l-4 border-l-primary/60 bg-gradient-to-r from-primary/5 to-transparent">
+              <div className="mb-4 max-w-5xl mx-auto">
+                <Card className="border-l-4 border-l-primary/60 bg-gradient-to-r from-primary/5 to-transparent rounded-lg shadow-sm">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                         <Info className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-foreground mb-2">About This Video</h3>
+                        <h3 className="text-lg font-semibold text-foreground mb-2">Description</h3>
                         <p className="text-muted-foreground leading-relaxed text-base">
                           {currentVideo.description}
                         </p>
@@ -2825,9 +2943,91 @@ export default function VideoPlayerPage() {
               </div>
             )}
 
+            {/* Rating Button - stays below description */}
+            <div className="flex items-center justify-center gap-4 mt-4 mb-4 max-w-5xl mx-auto">
+              <Button variant="outline" onClick={() => setVideoFeedbackOpen(true)} className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Rate & Review This Video
+              </Button>
+            </div>
+
+            {/* Next Videos Section - Moved below description */}
+            <div className="mb-4 max-w-5xl mx-auto">
+              <Card className="rounded-lg shadow-sm">
+                <CardContent className="p-4">
+                  <h2 className="text-lg font-semibold mb-4">
+                    {currentVideo.category === "Sales" ? "Next Videos in Sales Module" : `Next Videos in ${currentVideo.category || "Module"}`}
+                  </h2>
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                    {playlist?.videos && Array.isArray(playlist.videos) && 
+                     playlist.videos.slice(currentVideoIndex + 1, currentVideoIndex + 6).map((video, index) => {
+                       const isWatched = videoWatchEvents[video.id] === true
+                       const isPlayable = isVideoPlayable(currentVideoIndex + 1 + index)
+                       
+                       return (
+                         <div
+                           key={video.id}
+                           className={`flex items-center gap-3 p-2 rounded-md border transition-colors ${
+                             isPlayable
+                               ? "hover:bg-muted cursor-pointer border-transparent hover:border-primary/30"
+                               : "opacity-50 cursor-not-allowed border-transparent"
+                           }`}
+                           onClick={() => {
+                             if (isPlayable) {
+                               playVideoFromPlaylist(currentVideoIndex + 1 + index)
+                             }
+                           }}
+                         >
+                           <div className="relative w-20 h-12 flex-shrink-0 bg-muted rounded overflow-hidden">
+                             {video.thumbnail ? (
+                               <Image
+                                 src={video.thumbnail || "/placeholder.svg?height=40&width=40"}
+                                 width={40}
+                                 height={40}
+                                 alt={video.title}
+                                 className="object-cover w-full h-full"
+                                 onError={() => {
+                                   const imgElement = document.getElementById(
+                                     `next-thumb-${video.id}`,
+                                   ) as HTMLImageElement
+                                   if (imgElement) {
+                                     imgElement.src = "/placeholder.svg?height=40&width=40"
+                                   }
+                                 }}
+                                 id={`next-thumb-${video.id}`}
+                               />
+                             ) : (
+                               <div className="flex items-center justify-center h-full">
+                                 <Play className="h-5 w-5 text-muted-foreground" />
+                               </div>
+                             )}
+                             {isWatched && (
+                               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                 <CheckCircle className="h-4 w-4 text-green-500" />
+                               </div>
+                             )}
+                             {!isPlayable && (
+                               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                 <Lock className="h-4 w-4 text-muted-foreground" />
+                               </div>
+                             )}
+                           </div>
+
+                           <div className="flex-1 min-w-0">
+                             <p className="font-medium text-sm truncate">{video.title}</p>
+                             <p className="text-xs text-muted-foreground">{video.duration}</p>
+                           </div>
+                         </div>
+                       )
+                     })}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Video Feedbacks Section */}
             {showVideoFeedbacks && (
-              <Card className="mb-6">
+              <Card className="mb-6 max-w-5xl mx-auto rounded-lg shadow-sm">
                 <CardContent className="p-4">
                   <h2 className="text-lg font-semibold mb-4">Video Feedback</h2>
                   {videoFeedbacks.length === 0 ? (
@@ -2868,13 +3068,14 @@ export default function VideoPlayerPage() {
               </Card>
             )}
           </div>
+          </div>
 
-          {/* Modules and Videos */}
-          <div>
-            <Card>
+        {/* Learning Modules Section - Moved to bottom */}
+        <div className="mt-8 container mx-auto max-w-5xl">
+            <Card className="rounded-lg shadow-sm">
               <CardContent className="p-4">
                 <h2 className="text-lg font-semibold mb-4">Learning Modules</h2>
-                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                   <Accordion
                     type="single"
                     collapsible
@@ -2902,12 +3103,12 @@ export default function VideoPlayerPage() {
                                     return (
                                       <div
                                         key={video.id}
-                                        className={`flex items-center gap-3 p-2 rounded-md transition-colors ${
+                                        className={`flex items-center gap-3 p-2 rounded-md border transition-colors ${
                                           isCurrentVideo
-                                            ? "bg-primary/10 border border-primary/30"
+                                            ? "bg-primary/10 border-primary/30"
                                             : isPlayable
-                                              ? "hover:bg-muted cursor-pointer"
-                                              : "opacity-50 cursor-not-allowed"
+                                              ? "hover:bg-muted cursor-pointer border-transparent hover:border-primary/30"
+                                              : "opacity-50 cursor-not-allowed border-transparent"
                                         }`}
                                         onClick={() => {
                                           if (isPlayable && !isCurrentVideo) {
@@ -2952,7 +3153,9 @@ export default function VideoPlayerPage() {
                                         </div>
 
                                         <div className="flex-1 min-w-0">
-                                          <p className="font-medium text-sm truncate">{video.title}</p>
+                                  <p className="font-medium text-sm truncate">
+                                    {module.name === "Sales" ? video.title : `S${moduleIndex + 1}.E${videoIndex + 1} ${video.title}`}
+                                  </p>
                                           <p className="text-xs text-muted-foreground">{video.duration}</p>
                                         </div>
 
@@ -2972,7 +3175,6 @@ export default function VideoPlayerPage() {
                 </div>
               </CardContent>
             </Card>
-          </div>
         </div>
       </main>
 
