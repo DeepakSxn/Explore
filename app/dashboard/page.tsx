@@ -169,6 +169,8 @@ export default function Dashboard() {
   const searchParams = useSearchParams()
   const { userData } = useAuth()
   const { userProgress } = useGamification()
+  // Dismissible suspension banner
+  const [showSuspensionWarning, setShowSuspensionWarning] = useState(true)
 
   const globalCheckboxRef = useRef<HTMLButtonElement>(null)
   const moduleCheckboxRefs = useRef<(HTMLButtonElement | null)[]>([])
@@ -202,6 +204,10 @@ export default function Dashboard() {
       if (currentUser) {
         setUser(currentUser)
         fetchVideos(currentUser.uid)
+        // Reset dismissal on fresh login session
+        try {
+          sessionStorage.removeItem(`dismiss_suspension_${currentUser.uid}`)
+        } catch {}
       } else {
         // Redirect to login if not authenticated
         router.push("/login")
@@ -223,6 +229,15 @@ export default function Dashboard() {
       console.log("Dashboard - User is suspended, redirecting to /suspended")
       // User is suspended, redirect to suspension page
       router.push("/suspended")
+    }
+    // Initialize dismissible banner visibility per session
+    if (user) {
+      try {
+        const dismissed = sessionStorage.getItem(`dismiss_suspension_${user.uid}`) === 'true'
+        setShowSuspensionWarning(!dismissed)
+      } catch {
+        setShowSuspensionWarning(true)
+      }
     }
   }, [userData, router])
 
@@ -831,7 +846,7 @@ export default function Dashboard() {
           </div>
         )}
         <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto px-6">
-          <div className="flex items-center gap-6 mt-3">
+          <div className="flex items-center gap-6">
             {/* Mobile Menu Button */}
             <Button
               variant="ghost"
@@ -845,7 +860,7 @@ export default function Dashboard() {
             <img 
               src="/Black logo.png" 
               alt="EOXS Logo" 
-              className="h-10 w-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105" 
+              className="h-8 w-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105" 
               onClick={() => router.push("/")}
             />
             <div className="hidden md:block">
@@ -853,7 +868,7 @@ export default function Dashboard() {
               
             </div>
           </div>
-          <div className="flex items-center gap-3 mt-2">
+          <div className="flex items-center gap-3">
             {showGamifiedDashboard && userProgress && (
               <>
                 <div className="hidden lg:flex items-center gap-3">
@@ -911,11 +926,9 @@ export default function Dashboard() {
                   variant="ghost" 
                   size="icon" 
                   onClick={() => setIsSidebarOpen(false)}
-                  className="text-white hover:bg-white/10"
+                  className="text-white hover:bg-transparent"
                 >
-                  <div className="p-2 bg-white/10 rounded-lg">
-                    <X className="h-4 w-4 text-white" />
-                  </div>
+                  <ArrowLeft className="h-4 w-4 text-white" />
                 </Button>
               </div>
            
@@ -1074,15 +1087,30 @@ export default function Dashboard() {
         ) : (
           <>
             {/* Enhanced Suspension Warning Banner */}
-            {userData && userData.daysUntilSuspension > 0 && userData.daysUntilSuspension <= 7 && (
+            {userData && userData.daysUntilSuspension > 0 && userData.daysUntilSuspension <= 7 && showSuspensionWarning && (
               <div className="max-w-6xl mx-auto p-6">
-                <Alert className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 shadow-lg">
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
-                  <AlertDescription className="text-amber-800 font-medium">
-                    <strong>Account Suspension Warning:</strong> Your account will be suspended in {userData.daysUntilSuspension} day{userData.daysUntilSuspension !== 1 ? 's' : ''}. 
-                    To prevent suspension, please contact <a href="mailto:isha@eoxsteam.com" className="underline font-semibold hover:text-amber-900 transition-colors">isha@eoxsteam.com</a>.
-                  </AlertDescription>
-                </Alert>
+                <div className="relative">
+                  <Alert className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 shadow-lg pr-10">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-amber-800 font-medium">
+                      <strong>Account Suspension Warning:</strong> Your account will be suspended in {userData.daysUntilSuspension} day{userData.daysUntilSuspension !== 1 ? 's' : ''}. 
+                      To prevent suspension, please contact <a href="mailto:isha@eoxsteam.com" className="underline font-semibold hover:text-amber-900 transition-colors">isha@eoxsteam.com</a>.
+                    </AlertDescription>
+                    <button
+                      type="button"
+                      aria-label="Dismiss"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-amber-700"
+                      onClick={() => {
+                        setShowSuspensionWarning(false)
+                        try {
+                          if (user) sessionStorage.setItem(`dismiss_suspension_${user.uid}`, 'true')
+                        } catch {}
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </Alert>
+                </div>
               </div>
             )}
             
@@ -1190,11 +1218,10 @@ export default function Dashboard() {
                               <table className="w-full text-sm">
                                 <thead className="bg-slate-50 border-t border-slate-200">
                                   <tr>
-                                    <th className="w-6 px-6 py-3 text-left">
-                                      <span className="sr-only">Selection disabled</span>
-                                    </th>
                                     <th className="px-6 py-3 text-left font-semibold text-slate-700">Feature</th>
-                                    <th className="px-6 py-3 text-left font-semibold text-slate-700 w-32">Time Required</th>
+                                    <th className="px-6 py-3 text-left font-semibold text-slate-700 w-32 whitespace-nowrap">
+                                      Video Length
+                                    </th>
                                     <th className="px-6 py-3 text-left font-semibold text-slate-700 w-24">Status</th>
                                   </tr>
                                 </thead>
@@ -1202,16 +1229,10 @@ export default function Dashboard() {
                                   {module.videos.map((video) => (
                                     <tr key={video.id} className="hover:bg-slate-50/50 transition-colors">
                                       <td className="px-6 py-4">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-slate-300 opacity-60" />
-                                      </td>
-                                      <td className="px-6 py-4">
                                         <div className="font-medium text-slate-900">{video.title}</div>
-                                        {video.description && (
-                                          <div className="text-slate-500 text-xs mt-1 line-clamp-2">{video.description}</div>
-                                        )}
                                       </td>
-                                      <td className="px-6 py-4">
-                                        <div className="flex items-center text-slate-600">
+                                      <td className="px-6 py-4 whitespace-nowrap text-slate-700">
+                                        <div className="flex items-center text-slate-600 whitespace-nowrap">
                                           <Clock className="h-3.5 w-3.5 mr-2 text-slate-400" />
                                           {video.duration}
                                         </div>

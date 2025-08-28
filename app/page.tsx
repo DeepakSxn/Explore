@@ -108,7 +108,7 @@ export default function Home() {
                   <img 
                     src="EOXSplore.svg" 
                     alt="EOXSplore" 
-                    className="h-50 md:h-55 w-auto drop-shadow-2xl hover:scale-105 transition-transform duration-300"
+                    className="h-20 md:h-25 w-auto drop-shadow-2xl hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute -inset-4 bg-gradient-to-r from-green-400/20 to-blue-400/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
@@ -125,8 +125,8 @@ export default function Home() {
                   Explore Software Features
                 </h1>
                 <p className="text-xl md:text-2xl text-gray-600 max-w-4xl leading-relaxed">
-                  Discover our powerful software solutions at your own pace. 
-                  <span className="text-green-600 font-semibold"> No scheduling required.</span>
+                  Discover our powerful software solutions at your own pace.<br/>
+                  <span className="text-green-600 font-semibold">No scheduling required.</span>
                 </p>
               </div>
 
@@ -151,7 +151,9 @@ export default function Home() {
           <div className="container px-4 md:px-6 max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                Why choose <span className="text-green-600">EOXSplore</span>?
+                Why choose 
+                <img src="/EOXSplore.svg" alt="EOXSplore" className="inline-block align-middle h-10 md:h-12 w-auto mx-2" />
+                ?
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                 Experience EOXS software demos like never before with our innovative platform
@@ -207,7 +209,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
               <div className="text-white group">
                 <div className="text-4xl md:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">100+</div>
-                <div className="text-green-100 text-lg">Features demos</div>
+                <div className="text-green-100 text-lg">Features demo</div>
               </div>
              
               <div className="text-white group">

@@ -308,12 +308,12 @@ export default function VideoPlayerPage() {
       // Only allow forward scrubbing if video has been completed
       if (!isVideoCompleted) {
         if (!forwardRestrictionShown) {
-          toast({
+        toast({
             title: "Forward seeking disabled",
-            description: "You must complete watching this video before you can skip forward.",
-            variant: "destructive",
+          description: "You must complete watching this video before you can skip forward.",
+          variant: "destructive",
             duration: 5000,
-          });
+        });
           setForwardRestrictionShown(true)
         }
         return;
@@ -338,12 +338,12 @@ export default function VideoPlayerPage() {
       // Only allow forward seeking if video has been completed
       if (!isVideoCompleted) {
         if (!forwardRestrictionShown) {
-          toast({
+        toast({
             title: "Forward seeking disabled",
-            description: "You must complete watching this video before you can skip forward.",
-            variant: "destructive",
+          description: "You must complete watching this video before you can skip forward.",
+          variant: "destructive",
             duration: 5000,
-          });
+        });
           setForwardRestrictionShown(true)
         }
         return;
@@ -664,29 +664,29 @@ export default function VideoPlayerPage() {
           if (savedPosition > 0 /* && !showQuiz && !currentQuiz */) {
             setLastPosition(savedPosition);
             // Always auto-resume from the last saved position without showing a dialog
-            const attemptResume = () => {
-              if (videoRef.current && videoRef.current.readyState >= 2) {
-                console.log('Video ready, setting currentTime to:', savedPosition);
-                videoRef.current.currentTime = savedPosition;
-                videoRef.current.play()
-                  .then(() => {
-                    setIsPlaying(true);
-                    setWatchStartTime(Date.now() / 1000);
-                    videoChangeRef.current = false;
-                    console.log('Successfully resumed video from position:', savedPosition);
-                  })
-                  .catch((error) => {
-                    console.error("Error playing video:", error);
-                  });
-              } else {
-                // Video not ready yet, try again in a moment
-                console.log('Video not ready yet, retrying...');
-                setTimeout(attemptResume, 100);
-              }
-            };
-            
-            // Start attempting to resume
-            attemptResume();
+              const attemptResume = () => {
+                if (videoRef.current && videoRef.current.readyState >= 2) {
+                  console.log('Video ready, setting currentTime to:', savedPosition);
+                  videoRef.current.currentTime = savedPosition;
+                  videoRef.current.play()
+                    .then(() => {
+                      setIsPlaying(true);
+                      setWatchStartTime(Date.now() / 1000);
+                      videoChangeRef.current = false;
+                      console.log('Successfully resumed video from position:', savedPosition);
+                    })
+                    .catch((error) => {
+                      console.error("Error playing video:", error);
+                    });
+                } else {
+                  // Video not ready yet, try again in a moment
+                  console.log('Video not ready yet, retrying...');
+                  setTimeout(attemptResume, 100);
+                }
+              };
+              
+              // Start attempting to resume
+              attemptResume();
           } else {
             // If no saved position or quiz is active, just show the video
             videoRef.current?.load();
@@ -2579,10 +2579,10 @@ export default function VideoPlayerPage() {
           <div className="relative">
             <Alert className="border-amber-200 bg-amber-50 flex items-center gap-3 pr-10">
               <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-              <AlertDescription className="text-amber-800">
-                <strong>Account Suspension Warning:</strong> Your account will be suspended in {userData.daysUntilSuspension} day{userData.daysUntilSuspension !== 1 ? 's' : ''}. 
-                To prevent suspension, please contact <a href="mailto:isha@eoxsteam.com" className="underline font-medium">isha@eoxsteam.com</a>.
-              </AlertDescription>
+            <AlertDescription className="text-amber-800">
+              <strong>Account Suspension Warning:</strong> Your account will be suspended in {userData.daysUntilSuspension} day{userData.daysUntilSuspension !== 1 ? 's' : ''}. 
+              To prevent suspension, please contact <a href="mailto:isha@eoxsteam.com" className="underline font-medium">isha@eoxsteam.com</a>.
+            </AlertDescription>
               <button
                 type="button"
                 aria-label="Dismiss"
@@ -2596,7 +2596,7 @@ export default function VideoPlayerPage() {
               >
                 <X className="h-4 w-4" />
               </button>
-            </Alert>
+          </Alert>
           </div>
         </div>
       )}

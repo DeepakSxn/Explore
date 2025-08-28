@@ -161,14 +161,14 @@ export default function Login() {
               <img 
                 src="lVJ7PU01.svg"
                 alt="EOXS Logo"
-                className="h-12.5 w-auto mb-4"
+                className="h-20 md:h-25 w-auto mb-4"
               />
               <div className="flex items-center gap-2">
                
               </div>
             </div>
             
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+            <h1 className="text-4xl font-light text-gray-900 mb-3">
               Sign in to your account
             </h1>
            
@@ -260,7 +260,7 @@ export default function Login() {
                     </>
                   ) : (
                     <>
-                      <span className="text-white">Sign in</span>
+                      <span className="text-white">Sign In</span>
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform text-white" />
                     </>
                   )}
@@ -272,7 +272,7 @@ export default function Login() {
                 <p className="text-sm text-gray-600">
                   Don&apos;t have an account?{" "}
                   <Link href="/signup" className="text-green-600 hover:text-green-700 hover:underline font-medium transition-colors">
-                    Sign up
+                    Sign Up
                   </Link>
                 </p>
               </div>

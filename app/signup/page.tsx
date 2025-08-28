@@ -269,10 +269,10 @@ export default function SignUp() {
         <div className="w-full max-w-md text-center mb-8">
           <div className={`transform transition-all duration-700 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
             <div className="flex items-center justify-center gap-2 mb-6">
-              <img src="/lVJ7PU01.svg" alt="Logo" className="h-12.5 w-auto" />
+              <img src="/lVJ7PU01.svg" alt="Logo" className="h-20 md:h-25 w-auto" />
             </div>
             
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+            <h1 className="text-4xl font-light text-gray-900 mb-3">
               Create your account
             </h1>
             <p className="text-lg text-gray-600">Start your personalized demo experience today</p>
@@ -435,20 +435,20 @@ export default function SignUp() {
 
               <Button
                 type="submit"
-                className="w-full h-12 text-base bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
+                className="w-full h-12 text-base text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
                 disabled={loading}
               >
-                <span className="relative z-10 flex items-center justify-center">
+                <span className="relative z-10 flex items-center justify-center text-white">
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin text-white" />
                       Creating account...
                     </>
                   ) : (
                     <>
-                      <UserPlus className="mr-2 h-5 w-5" />
-                      Create Account
-                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      <UserPlus className="mr-2 h-5 w-5 text-white" />
+                      <span className="text-white">Create Account</span>
+                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform text-white" />
                     </>
                   )}
                 </span>
@@ -459,7 +459,7 @@ export default function SignUp() {
                 <p className="text-sm text-gray-600">
                   Already have an account?{" "}
                   <Link href="/login" className="text-green-600 hover:text-green-700 hover:underline font-medium transition-colors">
-                    Sign in
+                    Sign In
                   </Link>
                 </p>
               </div>

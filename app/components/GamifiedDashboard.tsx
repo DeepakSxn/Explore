@@ -488,8 +488,8 @@ export default function GamifiedDashboard() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Play className="h-4 w-4" />
                   </div>
-                  <p className="text-2xl font-bold text-white">{userProgress.totalVideosWatched}</p>
-                  <p className="text-xs text-white">Videos Watched</p>
+                  <p className="text-3xl font-extrabold text-white">{userProgress.totalVideosWatched}</p>
+                  <p className="text-sm text-white">Videos Watched</p>
                 </CardContent>
               </Card>
 
@@ -498,8 +498,8 @@ export default function GamifiedDashboard() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Flame className="h-4 w-4" />
                   </div>
-                  <p className="text-2xl font-bold text-white">{userProgress.currentStreak}</p>
-                  <p className="text-xs text-white">Day Streak</p>
+                  <p className="text-3xl font-extrabold text-white">{userProgress.currentStreak}</p>
+                  <p className="text-sm text-white">Day Streak</p>
                 </CardContent>
               </Card>
 
@@ -508,8 +508,8 @@ export default function GamifiedDashboard() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Award className="h-4 w-4" />
                   </div>
-                  <p className="text-2xl font-bold text-white">{userProgress.badges.length}</p>
-                  <p className="text-xs text-white">Badges Earned</p>
+                  <p className="text-3xl font-extrabold text-white">{userProgress.badges.length}</p>
+                  <p className="text-sm text-white">Badges Earned</p>
                 </CardContent>
               </Card>
 
@@ -518,8 +518,8 @@ export default function GamifiedDashboard() {
                   <div className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-2">
                     <span className="text-[10px] font-bold text-white">XP</span>
                   </div>
-                  <p className="text-2xl font-bold text-white">{userProgress.totalXP}</p>
-                  <p className="text-xs text-white">Total XP</p>
+                  <p className="text-3xl font-extrabold text-white">{userProgress.totalXP}</p>
+                  <p className="text-sm text-white">Total XP</p>
                 </CardContent>
               </Card>
             </div>
@@ -636,8 +636,8 @@ export default function GamifiedDashboard() {
                                     {index + 1}
                                   </div>
                                   <div className="flex-1">
-                                    <h4 className="font-medium text-sm">{category}</h4>
-                                    <p className="text-xs text-blue-600">
+                                    <h4 className="font-semibold text-base">{category}</h4>
+                                    <p className="text-sm text-blue-700">
                                       {module.watchedCount} of {module.totalVideos} videos watched
                                     </p>
                                   </div>
