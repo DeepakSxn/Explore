@@ -53,6 +53,12 @@ export default function UploadPage() {
     "Analytics",
     
   ])
+  
+  // Thumbnail upload states
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false)
+  const [customThumbnailUrl, setCustomThumbnailUrl] = useState<string>("")
 
   useEffect(() => {
     // Check if user is authenticated and is an admin
@@ -130,6 +136,66 @@ export default function UploadPage() {
     setTags(tags.filter((tag) => tag !== tagToRemove))
   }
 
+  const uploadThumbnail = async (file: File): Promise<string> => {
+    try {
+      setIsUploadingThumbnail(true)
+      
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('upload_preset', 'eoxsDemoTool')
+      formData.append('cloud_name', 'dnx1sl0nq')
+      
+      const response = await fetch(`https://api.cloudinary.com/v1_1/dnx1sl0nq/image/upload`, {
+        method: 'POST',
+        body: formData,
+      })
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Thumbnail upload failed: ${response.status} ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      
+      if (!data.secure_url) {
+        throw new Error('No secure URL returned from Cloudinary')
+      }
+      
+      return data.secure_url
+    } catch (error) {
+      console.error('Error uploading thumbnail:', error)
+      throw error
+    } finally {
+      setIsUploadingThumbnail(false)
+    }
+  }
+
+  const handleThumbnailChange = (file: File) => {
+    setThumbnailFile(file)
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setThumbnailPreview(e.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleThumbnailUpload = async () => {
+    if (!thumbnailFile) return
+
+    try {
+      const thumbnailUrl = await uploadThumbnail(thumbnailFile)
+      setCustomThumbnailUrl(thumbnailUrl)
+      setThumbnailPreview(thumbnailUrl)
+      setThumbnailFile(null)
+      setStatusMessage("Thumbnail uploaded successfully!")
+      setUploadStatus("success")
+    } catch (error) {
+      console.error("Error uploading thumbnail:", error)
+      setStatusMessage("Failed to upload thumbnail. Please try again.")
+      setUploadStatus("error")
+    }
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault()
@@ -194,7 +260,7 @@ export default function UploadPage() {
         tags,
         videoUrl: data.secure_url,
         publicId: data.public_id,
-        thumbnailUrl: `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.public_id}.jpg`,
+        thumbnailUrl: customThumbnailUrl || `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.public_id}.jpg`,
         createdAt: serverTimestamp(),
       })
 
@@ -210,6 +276,9 @@ export default function UploadPage() {
         setTags([])
         setFile(null)
         setPreviewUrl(null)
+        setThumbnailFile(null)
+        setThumbnailPreview(null)
+        setCustomThumbnailUrl("")
         setUploadProgress(0)
         setUploadStatus("idle")
         setStatusMessage("")
@@ -394,6 +463,96 @@ export default function UploadPage() {
                           ))}
                         </div>
                       )}
+                    </div>
+
+                    {/* Thumbnail Upload */}
+                    <div className="space-y-2">
+                      <Label htmlFor="thumbnail" className="flex items-center">
+                        <FileText className="h-4 w-4 mr-1" />
+                        Custom Thumbnail (Optional)
+                      </Label>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Upload a custom thumbnail or leave empty to auto-generate from video
+                      </p>
+                      
+                      {/* Current Thumbnail Preview */}
+                      {thumbnailPreview && (
+                        <div className="relative">
+                          <img 
+                            src={thumbnailPreview} 
+                            alt="Thumbnail preview" 
+                            className="w-full h-24 object-cover rounded-md border"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-1 right-1 h-6 w-6"
+                            onClick={() => {
+                              setThumbnailFile(null)
+                              setThumbnailPreview(null)
+                              setCustomThumbnailUrl("")
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {/* File Upload */}
+                      <div className="space-y-2">
+                        <Input
+                          id="thumbnail"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              handleThumbnailChange(file)
+                            }
+                          }}
+                          className="cursor-pointer"
+                        />
+                        
+                        {thumbnailFile && (
+                          <div className="space-y-2">
+                            {/* File info display */}
+                            <div className="text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 p-2 rounded">
+                              <div className="font-medium mb-1 text-gray-700 dark:text-gray-300">Selected file:</div>
+                              <div className="truncate font-mono text-gray-900 dark:text-gray-100" title={thumbnailFile.name}>
+                                {thumbnailFile.name}
+                              </div>
+                              <div className="text-gray-600 dark:text-gray-400 mt-1">
+                                Size: {(thumbnailFile.size / 1024 / 1024).toFixed(2)} MB
+                              </div>
+                            </div>
+                            
+                            {/* Action buttons */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handleThumbnailUpload}
+                                disabled={isUploadingThumbnail}
+                              >
+                                {isUploadingThumbnail ? "Uploading..." : "Upload"}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setThumbnailFile(null)
+                                  setThumbnailPreview(null)
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
