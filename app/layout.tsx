@@ -15,9 +15,9 @@ export const metadata: Metadata = {
   description: "Access customized software demo videos, track engagement, and get valuable insights.",
   generator: "v0.dev",
   icons: {
-    icon: "/Eoxsplore logo.png",
-    shortcut: "/Eoxsplore logo.png",
-    apple: "/Eoxsplore logo.png",
+    icon: "/Tab icon1.png",
+    shortcut: "/Tab icon1.png",
+    apple: "/Tab icon1.png",
   },
 }
 
@@ -29,9 +29,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/png" href="/Eoxsplore logo.png" />
-        <link rel="shortcut icon" type="image/png" href="/Eoxsplore logo.png" />
-        <link rel="apple-touch-icon" href="/Eoxsplore logo.png" />
+        <link rel="icon" type="image/png" href="/Tab icon1.png" />
+        <link rel="shortcut icon" type="image/png" href="/Tab icon1.png" />
+        <link rel="apple-touch-icon" href="/Tab icon1.png" />
       </head>
       <body className={inter.className}>
         <ThemeProvider defaultTheme="system">

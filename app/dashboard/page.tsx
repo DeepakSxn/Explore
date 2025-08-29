@@ -996,7 +996,7 @@ export default function Dashboard() {
                       <Trophy className="w-4 h-4 text-white" />
                     </div>
                     <span className="text-white">
-                      {userData?.companyName ? `${userData.companyName} Leaderboard` : "Leaderboard"}
+                      {"Leaderboard"}
                     </span>
                   </a>
                 </Button>
