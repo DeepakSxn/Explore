@@ -343,7 +343,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
         return {
           videoId,
           title: data.title || undefined,
-          thumbnail: data.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.publicId}.jpg` : data.thumbnailUrl || `/placeholder.svg?height=120&width=200`,
+          thumbnail: data.thumbnailUrl || (data.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
           duration: data.duration || ""
         }
       }
@@ -357,7 +357,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
         return {
           videoId,
           title: d.title || undefined,
-          thumbnail: d.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.publicId}.jpg` : d.thumbnailUrl || `/placeholder.svg?height=120&width=200`,
+          thumbnail: d.thumbnailUrl || (d.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
           duration: d.duration || ""
         }
       }

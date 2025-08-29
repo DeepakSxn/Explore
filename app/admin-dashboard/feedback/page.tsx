@@ -182,7 +182,7 @@ export default function FeedbackPage() {
         <SelectTrigger className="w-[220px]">
           <SelectValue placeholder="Filter by company" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-white border border-gray-200 shadow-lg">
           <SelectItem value="all">All Companies</SelectItem>
           {companies.map((company) => (
             <SelectItem key={company} value={company}>{company}</SelectItem>

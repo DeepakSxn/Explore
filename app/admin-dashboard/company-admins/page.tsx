@@ -522,7 +522,7 @@ export default function CompanyAdminsPage() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select company" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white border border-gray-200 shadow-lg">
                     {companies.map((company) => (
                       <SelectItem key={company.name} value={company.name}>
                         {company.name} ({company.userCount} users)

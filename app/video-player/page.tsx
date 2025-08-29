@@ -761,9 +761,18 @@ export default function VideoPlayerPage() {
           id: doc.id,
           title: data.title || "Untitled",
           duration: data.duration || "0 minutes",
-          thumbnail: data.publicId
-            ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${data.publicId}.jpg`
-            : "/placeholder.svg?height=180&width=320",
+                      thumbnail: (() => {
+              let thumbnailUrl = data.thumbnailUrl || (data.publicId
+                ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${data.publicId}.jpg`
+                : "/placeholder.svg?height=180&width=320")
+              if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
+                const separator = thumbnailUrl.includes('?') ? '&' : '?'
+                const randomId = Math.random().toString(36).substring(7)
+                const version = Math.floor(Math.random() * 1000)
+                thumbnailUrl = `${thumbnailUrl}${separator}t=${Date.now()}&v=${version}&r=${randomId}&cb=${Math.random()}`
+              }
+              return thumbnailUrl
+            })(),
           description: data.description || "No description available",
           category: data.category || "Uncategorized",
           videoUrl: data.videoUrl || "",
@@ -802,9 +811,18 @@ export default function VideoPlayerPage() {
             id: doc.id,
             title: data.title || "Untitled",
             duration: data.duration || "0 minutes",
-            thumbnail: data.publicId
-              ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${data.publicId}.jpg`
-              : "/placeholder.svg?height=180&width=320",
+            thumbnail: (() => {
+              let thumbnailUrl = data.thumbnailUrl || (data.publicId
+                ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${data.publicId}.jpg`
+                : "/placeholder.svg?height=180&width=320")
+              if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
+                const separator = thumbnailUrl.includes('?') ? '&' : '?'
+                const randomId = Math.random().toString(36).substring(7)
+                const version = Math.floor(Math.random() * 1000)
+                thumbnailUrl = `${thumbnailUrl}${separator}t=${Date.now()}&v=${version}&r=${randomId}&cb=${Math.random()}`
+              }
+              return thumbnailUrl
+            })(),
             description: data.description || "No description available",
             category: data.category || "Uncategorized",
             videoUrl: data.videoUrl || "",
@@ -837,9 +855,18 @@ export default function VideoPlayerPage() {
             id: doc.id,
             title: videoData.title || "Untitled",
             duration: videoData.duration || "0 minutes",
-            thumbnail: videoData.publicId
-              ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${videoData.publicId}.jpg`
-              : "/placeholder.svg?height=180&width=320",
+            thumbnail: (() => {
+              let thumbnailUrl = videoData.thumbnailUrl || (videoData.publicId
+                ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${videoData.publicId}.jpg`
+                : "/placeholder.svg?height=180&width=320")
+              if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
+                const separator = thumbnailUrl.includes('?') ? '&' : '?'
+                const randomId = Math.random().toString(36).substring(7)
+                const version = Math.floor(Math.random() * 1000)
+                thumbnailUrl = `${thumbnailUrl}${separator}t=${Date.now()}&v=${version}&r=${randomId}&cb=${Math.random()}`
+              }
+              return thumbnailUrl
+            })(),
             description: videoData.description || "No description available",
             category: videoData.category || "Uncategorized",
             videoUrl: videoData.videoUrl || "",
@@ -875,9 +902,18 @@ export default function VideoPlayerPage() {
             id: doc.id,
             title: videoData.title || "Untitled",
             duration: videoData.duration || "0 minutes",
-            thumbnail: videoData.publicId
-              ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${videoData.publicId}.jpg`
-              : "/placeholder.svg?height=180&width=320",
+            thumbnail: (() => {
+              let thumbnailUrl = videoData.thumbnailUrl || (videoData.publicId
+                ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${videoData.publicId}.jpg`
+                : "/placeholder.svg?height=180&width=320")
+              if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
+                const separator = thumbnailUrl.includes('?') ? '&' : '?'
+                const randomId = Math.random().toString(36).substring(7)
+                const version = Math.floor(Math.random() * 1000)
+                thumbnailUrl = `${thumbnailUrl}${separator}t=${Date.now()}&v=${version}&r=${randomId}&cb=${Math.random()}`
+              }
+              return thumbnailUrl
+            })(),
             description: videoData.description || "No description available",
             category: videoData.category || "Uncategorized",
             videoUrl: videoData.videoUrl || "",
@@ -910,9 +946,18 @@ export default function VideoPlayerPage() {
           id: docId,
           title: data.title || "Untitled",
           duration: data.duration || "0 minutes",
-          thumbnail: data.publicId
-            ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.publicId}.jpg`
-            : "/placeholder.svg?height=180&width=320",
+          thumbnail: (() => {
+            let thumbnailUrl = data.thumbnailUrl || (data.publicId
+              ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.publicId}.jpg`
+              : "/placeholder.svg?height=180&width=320")
+            if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
+              const separator = thumbnailUrl.includes('?') ? '&' : '?'
+              const randomId = Math.random().toString(36).substring(7)
+              const version = Math.floor(Math.random() * 1000)
+              thumbnailUrl = `${thumbnailUrl}${separator}t=${Date.now()}&v=${version}&r=${randomId}&cb=${Math.random()}`
+            }
+            return thumbnailUrl
+          })(),
           description: data.description || "",
           category: data.category || "",
           videoUrl: data.videoUrl || "",

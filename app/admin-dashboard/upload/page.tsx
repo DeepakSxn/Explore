@@ -394,7 +394,7 @@ export default function UploadPage() {
                             <SelectTrigger>
                               <SelectValue placeholder="Select a category" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white border border-gray-200 shadow-lg">
                               {categories.map((category) => (
                                 <SelectItem key={category} value={category}>
                                   {category}

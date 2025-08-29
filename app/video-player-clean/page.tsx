@@ -141,7 +141,7 @@ export default function CleanVideoPlayer() {
             id: docId,
             title: videoData.title || "Untitled Video",
             duration: videoData.duration || "0:00",
-            thumbnail: videoData.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${videoData.publicId}.jpg` : "/placeholder.svg?height=180&width=320",
+            thumbnail: videoData.thumbnailUrl || (videoData.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${videoData.publicId}.jpg` : "/placeholder.svg?height=180&width=320"),
             publicId: videoData.publicId,
             videoUrl: videoData.videoUrl,
             description: videoData.description || "",

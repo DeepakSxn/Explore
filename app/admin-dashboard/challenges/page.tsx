@@ -393,7 +393,7 @@ export default function ChallengeDashboard() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg">
                       <SelectItem value="weekly">Weekly</SelectItem>
                       <SelectItem value="monthly">Monthly</SelectItem>
                       <SelectItem value="team">Team</SelectItem>
@@ -411,7 +411,7 @@ export default function ChallengeDashboard() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg">
                       <SelectItem value="modules">Modules</SelectItem>
                       <SelectItem value="videos">Videos</SelectItem>
                       <SelectItem value="quizzes">Quizzes</SelectItem>

@@ -770,7 +770,7 @@ export default function IndividualAnalyticsPage() {
                   <SelectTrigger className="w-[160px]">
                     <SelectValue placeholder="Select time range" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white border border-gray-200 shadow-lg">
                     <SelectItem value="all">All Time</SelectItem>
                     <SelectItem value="today">Today</SelectItem>
                     <SelectItem value="week">Last 7 Days</SelectItem>

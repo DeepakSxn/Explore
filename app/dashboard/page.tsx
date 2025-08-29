@@ -305,6 +305,10 @@ export default function Dashboard() {
     if (viewParam === 'classic') {
       console.log("Switching to classic dashboard view")
       setShowGamifiedDashboard(false)
+      // Force refresh videos to get latest thumbnails
+      if (user?.uid) {
+        fetchVideos(user.uid)
+      }
       // Clear the view parameter from URL
       const newUrl = new URL(window.location.href)
       newUrl.searchParams.delete('view')
@@ -394,6 +398,9 @@ export default function Dashboard() {
   const fetchVideos = async (userId: string) => {
     try {
       setLoading(true)
+      
+      // Force refresh by clearing any cached data
+      console.log("Dashboard - Fetching videos with fresh data...")
 
       // Fetch ALL videos from Firestore with ordering by timestamp
       const videosCollection = collection(db, "videos")
@@ -434,9 +441,31 @@ export default function Dashboard() {
           id: doc.id,
           ...data,
           thumbnail: getSafeUrl(
-            data.publicId
-              ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.publicId}.jpg`
-              : undefined,
+            (() => {
+              let thumbnailUrl = data.thumbnailUrl || (data.publicId
+                ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.publicId}.jpg`
+                : undefined)
+              
+              // Add cache-busting timestamp to Cloudinary URLs
+              if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
+                const separator = thumbnailUrl.includes('?') ? '&' : '?'
+                const randomId = Math.random().toString(36).substring(7)
+                thumbnailUrl = `${thumbnailUrl}${separator}t=${Date.now()}&v=2&r=${randomId}`
+              }
+              
+              // Debug logging for thumbnail URLs
+              console.log(`Dashboard - Video: ${data.title}, thumbnailUrl: ${data.thumbnailUrl}, publicId: ${data.publicId}, final thumbnail: ${thumbnailUrl}`)
+              
+              // Force refresh thumbnails by adding more aggressive cache-busting
+              if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
+                const separator = thumbnailUrl.includes('?') ? '&' : '?'
+                const randomId = Math.random().toString(36).substring(7)
+                const version = Math.floor(Math.random() * 1000)
+                thumbnailUrl = `${thumbnailUrl}${separator}t=${Date.now()}&v=${version}&r=${randomId}&cb=${Math.random()}`
+              }
+              
+              return thumbnailUrl
+            })(),
           ),
           description: data.description || "-",
           category: category,
@@ -1138,14 +1167,16 @@ export default function Dashboard() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
-                  <Button
-                    onClick={handleWatchSelected}
-                    disabled={selectedVideos.length === 0}
-                    className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-12 px-6"
-                  >
-                    <Play className="mr-2 h-4 w-4" />
-                    Watch Selected ({selectedVideos.length})
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleWatchSelected}
+                      disabled={selectedVideos.length === 0}
+                      className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-12 px-6"
+                    >
+                      <Play className="mr-2 h-4 w-4" />
+                      Watch Selected ({selectedVideos.length})
+                    </Button>
+                  </div>
                 </div>
               </div>
 

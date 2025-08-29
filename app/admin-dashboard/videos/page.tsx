@@ -455,7 +455,7 @@ export default function VideosPage() {
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border border-gray-200 shadow-lg">
               <SelectItem value="all">All Categories</SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category} value={category}>
@@ -594,7 +594,14 @@ export default function VideosPage() {
                 >
                   <div className="flex items-center gap-3">
                     <span className="w-6 text-xs text-gray-500">{idx + 1}</span>
-                    <img src={v.thumbnailUrl || "/placeholder.svg"} className="w-10 h-7 object-cover rounded border" alt="thumb" />
+                    <img src={(() => {
+                      let thumbnailUrl = v.thumbnailUrl || "/placeholder.svg"
+                      if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
+                        const separator = thumbnailUrl.includes('?') ? '&' : '?'
+                        thumbnailUrl = `${thumbnailUrl}${separator}t=${Date.now()}`
+                      }
+                      return thumbnailUrl
+                    })()} className="w-10 h-7 object-cover rounded border" alt="thumb" />
                     <div className="text-sm">{v.title}</div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -643,7 +650,7 @@ export default function VideosPage() {
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg">
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
@@ -682,7 +689,14 @@ export default function VideosPage() {
               {editedVideo.thumbnailUrl && (
                 <div className="relative">
                   <img 
-                    src={editedVideo.thumbnailUrl} 
+                    src={(() => {
+                      let thumbnailUrl = editedVideo.thumbnailUrl
+                      if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
+                        const separator = thumbnailUrl.includes('?') ? '&' : '?'
+                        thumbnailUrl = `${thumbnailUrl}${separator}t=${Date.now()}`
+                      }
+                      return thumbnailUrl
+                    })()} 
                     alt="Current thumbnail" 
                     className="w-full h-32 object-cover rounded-md border"
                   />
