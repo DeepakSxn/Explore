@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs, orderBy, updateDoc } from "firebase/firestore"
+import { getAllModuleVideoOrders } from "../firestore-utils"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -1033,6 +1034,15 @@ export default function VideoPlayerPage() {
   const reorderVideosByModuleSequence = async (videos: Video[]): Promise<Video[]> => {
     if (!videos || !Array.isArray(videos) || videos.length === 0) return videos
 
+    // Fetch admin-defined per-category order
+    let categoryOrders: Record<string, string[]> = {}
+    try {
+      categoryOrders = await getAllModuleVideoOrders()
+      console.log("🎯 Player loaded admin orders:", categoryOrders)
+    } catch (e) {
+      console.warn("Could not load moduleVideoOrders in player", e)
+    }
+
     // Define the expected module order
     const moduleOrder = [
       "Company Introduction",
@@ -1088,8 +1098,21 @@ export default function VideoPlayerPage() {
       }
       
       if (categoryVideos.length > 0) {
-        // Sort videos within the category according to VIDEO_ORDER if available
-        const sortedCategoryVideos = sortVideosByOrder(categoryVideos, moduleName)
+        // Apply saved order if present for this category; otherwise fallback
+        const saved = categoryOrders[moduleName]
+        let sortedCategoryVideos = categoryVideos
+        if (saved && saved.length > 0) {
+          sortedCategoryVideos = [...categoryVideos].sort((a, b) => {
+            const ia = saved.indexOf(a.id)
+            const ib = saved.indexOf(b.id)
+            const aPos = ia === -1 ? Number.MAX_SAFE_INTEGER : ia
+            const bPos = ib === -1 ? Number.MAX_SAFE_INTEGER : ib
+            return aPos - bPos
+          })
+        } else {
+          // Sort videos within the category according to VIDEO_ORDER if available
+          sortedCategoryVideos = sortVideosByOrder(categoryVideos, moduleName)
+        }
         orderedVideos.push(...sortedCategoryVideos)
         console.log(`✅ Added ${sortedCategoryVideos.length} videos for module: "${moduleName}"`)
       }
