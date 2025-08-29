@@ -26,6 +26,7 @@ import XPRewardPopup from "../components/XPRewardPopup"
 
 
 import ChallengeMode from "../components/ChallengeMode"
+import { getAllModuleVideoOrders } from "../firestore-utils"
 
 interface Video {
   id: string
@@ -154,6 +155,7 @@ export default function Dashboard() {
 
   const [showChallengeMode, setShowChallengeMode] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [categoryOrders, setCategoryOrders] = useState<Record<string, string[]>>({})
 
   // XP Reward Popup states
   const [showXPReward, setShowXPReward] = useState(false)
@@ -443,6 +445,11 @@ export default function Dashboard() {
         };
       }) as unknown as Video[]
 
+      // Fetch saved module orders
+      const categoryToOrderIds = await getAllModuleVideoOrders()
+      console.log("Fetched category orders:", categoryToOrderIds)
+      setCategoryOrders(categoryToOrderIds)
+
       // Fetch watch history to mark watched videos
       const watchHistoryQuery = query(
         collection(db, "videoWatchEvents"),
@@ -454,10 +461,23 @@ export default function Dashboard() {
       const watchedVideoIds = new Set(watchHistorySnapshot.docs.map((doc) => doc.data().videoId))
 
       // Mark watched videos
-      const videosWithWatchStatus = videoList.map((video) => ({
+      // Apply watch status
+      let videosWithWatchStatus = videoList.map((video) => ({
         ...video,
         watched: watchedVideoIds.has(video.id),
       }))
+
+      // Apply per-category ordering if defined
+      videosWithWatchStatus = videosWithWatchStatus.sort((a, b) => {
+        if (a.category !== b.category) return a.category.localeCompare(b.category)
+        const order = categoryToOrderIds[a.category]
+        if (!order || order.length === 0) return 0
+        const ia = order.indexOf(a.id)
+        const ib = order.indexOf(b.id)
+        const aPos = ia === -1 ? Number.MAX_SAFE_INTEGER : ia
+        const bPos = ib === -1 ? Number.MAX_SAFE_INTEGER : ib
+        return aPos - bPos
+      })
 
       setVideos(videosWithWatchStatus)
       setLoading(false)
@@ -515,7 +535,21 @@ export default function Dashboard() {
       
       // Debug logging
       console.log(`Processing category: "${category}" -> normalized: "${normalizedCategory}" -> videoOrderKey: "${videoOrderKey}"`)
+      const savedOrder = categoryOrders[category]
+      console.log(`Sorting videos for category "${category}":`, {
+        savedOrder,
+        videoCount: videos.length,
+        videoIds: videos.map(v => v.id)
+      })
       const sortedVideos = [...videos].sort((a, b) => {
+        if (savedOrder && savedOrder.length > 0) {
+          const ia = savedOrder.indexOf(a.id)
+          const ib = savedOrder.indexOf(b.id)
+          const aPos = ia === -1 ? Number.MAX_SAFE_INTEGER : ia
+          const bPos = ib === -1 ? Number.MAX_SAFE_INTEGER : ib
+          console.log(`Comparing ${a.title} (pos: ${aPos}) vs ${b.title} (pos: ${bPos})`)
+          if (aPos !== bPos) return aPos - bPos
+        }
         const orderA = orderArr?.indexOf(a.title) ?? Number.MAX_SAFE_INTEGER
         const orderB = orderArr?.indexOf(b.title) ?? Number.MAX_SAFE_INTEGER
         if (orderA !== Number.MAX_SAFE_INTEGER && orderB !== Number.MAX_SAFE_INTEGER) {
@@ -572,7 +606,7 @@ export default function Dashboard() {
     // Set all modules as collapsed by default
     setExpandedModules([])
     setModules(moduleArray)
-  }, [videos])
+  }, [videos, categoryOrders])
 
   // Call organizeVideosIntoModules when videos change
   useEffect(() => {

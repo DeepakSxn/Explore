@@ -30,9 +30,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MoreHorizontal, Trash2, PlayCircle, Edit, RefreshCw } from "lucide-react"
+import { MoreHorizontal, Trash2, PlayCircle, Edit, RefreshCw, SortAsc } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "@/components/ui/use-toast"
+import { saveModuleVideoOrder, getAllModuleVideoOrders } from "@/app/firestore-utils"
 
 interface Video {
   id: string
@@ -62,6 +63,11 @@ export default function VideosPage() {
   const [categories, setCategories] = useState<string[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false)
+  const [orderCategory, setOrderCategory] = useState<string>("")
+  const [orderedIds, setOrderedIds] = useState<string[]>([])
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [categoryOrders, setCategoryOrders] = useState<Record<string, string[]>>({})
   
   // Confirmation dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -90,9 +96,20 @@ export default function VideosPage() {
     if (selectedCategory === "all") {
       setFilteredVideos(videos)
     } else {
-      setFilteredVideos(videos.filter((video) => video.category === selectedCategory))
+      const list = videos.filter((video) => video.category === selectedCategory)
+      const order = categoryOrders[selectedCategory]
+      if (order && order.length > 0) {
+        list.sort((a, b) => {
+          const ia = order.indexOf(a.id)
+          const ib = order.indexOf(b.id)
+          const aPos = ia === -1 ? Number.MAX_SAFE_INTEGER : ia
+          const bPos = ib === -1 ? Number.MAX_SAFE_INTEGER : ib
+          return aPos - bPos
+        })
+      }
+      setFilteredVideos(list)
     }
-  }, [selectedCategory, videos])
+  }, [selectedCategory, videos, categoryOrders])
 
   const loadVideos = async () => {
     try {
@@ -145,6 +162,10 @@ export default function VideosPage() {
       setCategories(Array.from(uniqueCategories))
       setVideos(videoData)
       setFilteredVideos(videoData)
+
+      // Load any saved orders
+      const orders = await getAllModuleVideoOrders()
+      setCategoryOrders(orders)
     } catch (error) {
       console.error("Error fetching videos:", error)
       toast({
@@ -385,11 +406,51 @@ export default function VideosPage() {
     loadVideos()
   }
 
+  const openOrderDialogForCategory = (category: string) => {
+    const vids = videos.filter(v => v.category === category)
+    setOrderCategory(category)
+    setOrderedIds(vids.map(v => v.id))
+    setIsOrderDialogOpen(true)
+  }
+
+  const moveItem = (index: number, direction: -1 | 1) => {
+    setOrderedIds(prev => {
+      const next = [...prev]
+      const target = index + direction
+      if (target < 0 || target >= next.length) return next
+      const tmp = next[index]
+      next[index] = next[target]
+      next[target] = tmp
+      return next
+    })
+  }
+
+  const saveOrder = async () => {
+    try {
+      console.log("Saving order for category:", orderCategory)
+      console.log("Ordered IDs:", orderedIds)
+      await saveModuleVideoOrder(orderCategory, orderedIds)
+      console.log("Order saved successfully")
+      // Update local order state immediately so table reflects new order
+      setCategoryOrders(prev => ({ ...prev, [orderCategory]: orderedIds }))
+      toast({ title: "Order saved", description: `Order updated for ${orderCategory}` })
+      setIsOrderDialogOpen(false)
+    } catch (e) {
+      console.error("Error saving order:", e)
+      toast({ title: "Failed to save order", variant: "destructive" })
+    }
+  }
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Videos</h1>
         <div className="flex gap-2">
+          {selectedCategory !== "all" && (
+            <Button variant="default" onClick={() => openOrderDialogForCategory(selectedCategory)}>
+              <SortAsc className="h-4 w-4 mr-2" /> Set Order
+            </Button>
+          )}
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by category" />
@@ -498,6 +559,56 @@ export default function VideosPage() {
               <video src={selectedVideo.videoUrl} controls className="w-full h-full rounded-md" />
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Order Dialog */}
+      <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Set Order - {orderCategory}</DialogTitle>
+            <DialogDescription>Arrange videos for this module. Top appears first.</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[50vh] overflow-auto border rounded">
+            {orderedIds.map((id, idx) => {
+              const v = videos.find(x => x.id === id)
+              if (!v) return null
+              return (
+                <div
+                  key={id}
+                  className={`flex items-center justify-between px-3 py-2 border-b last:border-b-0 ${dragIndex === idx ? "bg-gray-50" : ""}`}
+                  draggable
+                  onDragStart={() => setDragIndex(idx)}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    if (dragIndex === null || dragIndex === idx) return
+                    setOrderedIds(prev => {
+                      const next = [...prev]
+                      const [moved] = next.splice(dragIndex, 1)
+                      next.splice(idx, 0, moved)
+                      return next
+                    })
+                    setDragIndex(idx)
+                  }}
+                  onDragEnd={() => setDragIndex(null)}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 text-xs text-gray-500">{idx + 1}</span>
+                    <img src={v.thumbnailUrl || "/placeholder.svg"} className="w-10 h-7 object-cover rounded border" alt="thumb" />
+                    <div className="text-sm">{v.title}</div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button variant="outline" size="sm" onClick={() => moveItem(idx, -1)}>Up</Button>
+                    <Button variant="outline" size="sm" onClick={() => moveItem(idx, 1)}>Down</Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsOrderDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveOrder}>Save Order</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -2574,33 +2574,7 @@ export default function VideoPlayerPage() {
         </Button>
       </div>
 
-      {/* Suspension Warning Banner - aligned, dismissible per login */}
-      {userData && userData.daysUntilSuspension > 0 && userData.daysUntilSuspension <= 7 && showSuspensionWarning && (
-        <div className="container mb-4">
-          <div className="relative">
-            <Alert className="border-amber-200 bg-amber-50 flex items-center gap-3 pr-10">
-              <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-            <AlertDescription className="text-amber-800">
-              <strong>Account Suspension Warning:</strong> Your account will be suspended in {userData.daysUntilSuspension} day{userData.daysUntilSuspension !== 1 ? 's' : ''}. 
-              To prevent suspension, please contact <a href="mailto:isha@eoxsteam.com" className="underline font-medium">isha@eoxsteam.com</a>.
-            </AlertDescription>
-              <button
-                type="button"
-                aria-label="Dismiss"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-amber-100 text-amber-700"
-                onClick={() => {
-                  setShowSuspensionWarning(false)
-                  try {
-                    if (user) sessionStorage.setItem(`dismiss_suspension_${user.uid}`, 'true')
-                  } catch {}
-                }}
-              >
-                <X className="h-4 w-4" />
-              </button>
-          </Alert>
-          </div>
-        </div>
-      )}
+      {/* Suspension warning intentionally hidden on video player page */}
 
              <main className="flex-1 py-8 px-4">
          <div className="space-y-6 w-full">

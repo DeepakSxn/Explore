@@ -31,6 +31,7 @@ import { useGamification, XP_CONFIG } from "../context/GamificationContext"
 import { useAuth } from "../context/AuthContext"
 import { toast } from "@/components/ui/use-toast"
 import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore"
+import { getAllModuleVideoOrders } from "../firestore-utils"
 import { auth, db } from "@/firebase"
 
 import ChallengeMode from "./ChallengeMode"
@@ -66,6 +67,7 @@ export default function GamifiedDashboard() {
   const [topVideos, setTopVideos] = useState<Video[]>([])
   const [videoProgress, setVideoProgress] = useState<{[key: string]: number}>({})
   const [allVideos, setAllVideos] = useState<Video[]>([])
+  const [categoryOrders, setCategoryOrders] = useState<Record<string, string[]>>({})
 
   const [showChallengeMode, setShowChallengeMode] = useState(false)
 
@@ -176,6 +178,10 @@ export default function GamifiedDashboard() {
       setTopVideos(sortedVideos)
       setVideoProgress(progressData)
       setAllVideos(allVideos) // Store all videos for module counting
+
+      // Fetch saved per-module orders
+      const orders = await getAllModuleVideoOrders()
+      setCategoryOrders(orders)
     } catch (error) {
       console.error("Error fetching top videos:", error)
     }
@@ -204,7 +210,17 @@ export default function GamifiedDashboard() {
       console.log(`🎯 Starting module from category: "${category}"`)
       
       // Get all videos for the selected category
-      const moduleVideos = allVideos.filter((v) => v.category === category)
+      let moduleVideos = allVideos.filter((v) => v.category === category)
+      const moduleOrder = categoryOrders[category]
+      if (moduleOrder && moduleOrder.length > 0) {
+        moduleVideos = [...moduleVideos].sort((a, b) => {
+          const ia = moduleOrder.indexOf(a.id)
+          const ib = moduleOrder.indexOf(b.id)
+          const aPos = ia === -1 ? Number.MAX_SAFE_INTEGER : ia
+          const bPos = ib === -1 ? Number.MAX_SAFE_INTEGER : ib
+          return aPos - bPos
+        })
+      }
       console.log(`📹 Found ${moduleVideos.length} videos for category "${category}":`, moduleVideos.map(v => v.title))
       
       if (moduleVideos.length === 0) {
@@ -218,15 +234,32 @@ export default function GamifiedDashboard() {
       }
 
       // Get compulsory videos (Company Introduction, Miscellaneous, AI tools)
-      const companyIntroVideos = allVideos.filter((v) => v.category === "Company Introduction")
-      const miscellaneousVideos = allVideos.filter((v) => v.category === "Miscellaneous")
-      const aiToolsVideos = allVideos.filter((v) => 
+      let companyIntroVideos = allVideos.filter((v) => v.category === "Company Introduction")
+      let miscellaneousVideos = allVideos.filter((v) => v.category === "Miscellaneous")
+      let aiToolsVideos = allVideos.filter((v) => 
         v.category === "AI tools" || 
         v.category === "AI Tools" || 
         v.category === "ai tools" ||
         v.category === "Artificial Intelligence" ||
         v.category === "artificial intelligence"
       )
+
+      // Apply saved order to compulsory categories as well
+      const applyOrder = (list: Video[], key: string) => {
+        const ord = categoryOrders[key]
+        if (!ord || ord.length === 0) return list
+        return [...list].sort((a, b) => {
+          const ia = ord.indexOf(a.id)
+          const ib = ord.indexOf(b.id)
+          const aPos = ia === -1 ? Number.MAX_SAFE_INTEGER : ia
+          const bPos = ib === -1 ? Number.MAX_SAFE_INTEGER : ib
+          return aPos - bPos
+        })
+      }
+
+      companyIntroVideos = applyOrder(companyIntroVideos, "Company Introduction")
+      miscellaneousVideos = applyOrder(miscellaneousVideos, "Miscellaneous")
+      aiToolsVideos = applyOrder(aiToolsVideos, "AI tools")
 
       console.log(`📹 Compulsory videos found:`)
       console.log(`   - Company Introduction: ${companyIntroVideos.length} videos`)

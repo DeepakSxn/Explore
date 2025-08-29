@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, deleteDoc, query, where } from "firebase/firestore"
+import { collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, deleteDoc, query, where, setDoc, orderBy } from "firebase/firestore"
 import { db } from "@/firebase"
 
 // Function to check if user account is suspended (30 days after creation)
@@ -707,6 +707,60 @@ export const getQuizAttemptsForVideo = async (userId: string, videoId: string): 
   } catch (error) {
     console.error("Error getting quiz attempts:", error)
     throw error
+  }
+}
+
+// Module Video Order Management
+export interface ModuleVideoOrderDoc {
+  category: string
+  videoIds: string[]
+  updatedAt: any
+}
+
+export const saveModuleVideoOrder = async (category: string, videoIds: string[]) => {
+  try {
+    const docRef = doc(db, "moduleVideoOrders", category)
+    await setDoc(docRef, {
+      category,
+      videoIds,
+      updatedAt: serverTimestamp(),
+    })
+    return true
+  } catch (error) {
+    console.error("Error saving module video order:", error)
+    throw error
+  }
+}
+
+export const getAllModuleVideoOrders = async (): Promise<Record<string, string[]>> => {
+  try {
+    const snapshot = await getDocs(collection(db, "moduleVideoOrders"))
+    const mapping: Record<string, string[]> = {}
+    snapshot.docs.forEach((d) => {
+      const data = d.data() as ModuleVideoOrderDoc
+      if (data?.category && Array.isArray(data?.videoIds)) {
+        mapping[data.category] = data.videoIds
+      }
+    })
+    return mapping
+  } catch (error) {
+    console.error("Error fetching module video orders:", error)
+    return {}
+  }
+}
+
+export const getModuleVideoOrder = async (category: string): Promise<string[] | null> => {
+  try {
+    const ref = doc(db, "moduleVideoOrders", category)
+    const d = await getDoc(ref)
+    if (d.exists()) {
+      const data = d.data() as ModuleVideoOrderDoc
+      return data.videoIds || []
+    }
+    return null
+  } catch (error) {
+    console.error("Error getting module video order:", error)
+    return null
   }
 }
 
