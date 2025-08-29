@@ -143,10 +143,18 @@ export default function GamifiedDashboard() {
       // Get all videos
       const videosQuery = query(collection(db, "videos"), orderBy("createdAt", "asc"))
       const videosSnapshot = await getDocs(videosQuery)
-      const allVideos = videosSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Video[]
+      const allVideos = videosSnapshot.docs.map(doc => {
+        const data = doc.data() as any
+        const thumbnailFromPublicId = data?.publicId
+          ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.publicId}.jpg`
+          : undefined
+        return {
+          id: doc.id,
+          ...data,
+          // Normalize thumbnail field so the player poster always renders
+          thumbnail: data?.thumbnailUrl || thumbnailFromPublicId,
+        } as Video
+      })
 
       // Get user's watch history
       const watchHistoryQuery = query(
@@ -271,8 +279,12 @@ export default function GamifiedDashboard() {
         ...companyIntroVideos,
         ...moduleVideos,
         ...miscellaneousVideos,
-        ...aiToolsVideos
-      ]
+        ...aiToolsVideos,
+      ].map(v => ({
+        ...v,
+        // Ensure thumbnail field is populated for the video player poster
+        thumbnail: v.thumbnail || v.thumbnailUrl || (v.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${(v as any).publicId}.jpg` : undefined),
+      }))
 
       console.log(`📋 Total playlist videos: ${allPlaylistVideos.length}`)
       console.log(`📋 Playlist structure:`, allPlaylistVideos.map(v => `${v.category}: ${v.title}`))

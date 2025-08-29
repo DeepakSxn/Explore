@@ -1110,7 +1110,7 @@ export default function VideoPlayerPage() {
             return aPos - bPos
           })
         } else {
-          // Sort videos within the category according to VIDEO_ORDER if available
+        // Sort videos within the category according to VIDEO_ORDER if available
           sortedCategoryVideos = sortVideosByOrder(categoryVideos, moduleName)
         }
         orderedVideos.push(...sortedCategoryVideos)

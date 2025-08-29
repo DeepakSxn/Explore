@@ -1,17 +1,9 @@
 import { collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, deleteDoc, query, where, setDoc, orderBy } from "firebase/firestore"
 import { db } from "@/firebase"
 
-// Function to check if user account is suspended (30 days after creation)
-export const isAccountSuspended = (createdAt: { seconds: number; nanoseconds: number } | null): boolean => {
-  if (!createdAt || !createdAt.seconds) {
-    return false // If no creation date, don't suspend
-  }
-  
-  const creationDate = new Date(createdAt.seconds * 1000)
-  const currentDate = new Date()
-  const daysSinceCreation = Math.floor((currentDate.getTime() - creationDate.getTime()) / (1000 * 60 * 60 * 24))
-  
-  return daysSinceCreation > 30
+// Auto-suspension disabled: all suspension is manual-only
+export const isAccountSuspended = (_createdAt: { seconds: number; nanoseconds: number } | null): boolean => {
+  return false
 }
 
 // Function to get user data including suspension status
@@ -30,9 +22,8 @@ export const getUserData = async (userId: string) => {
       console.log("getUserData - Raw userData:", userData)
       console.log("getUserData - manuallySuspended:", userData.manuallySuspended)
       
-      const isAutoSuspended = isAccountSuspended(userData.createdAt)
-      const isSuspended = userData.manuallySuspended || isAutoSuspended
-      const daysUntilSuspension = isSuspended ? 0 : Math.max(0, 30 - Math.floor((new Date().getTime() - new Date((userData.createdAt?.seconds || 0) * 1000).getTime()) / (1000 * 60 * 60 * 24)))
+      const isSuspended = !!userData.manuallySuspended
+      const daysUntilSuspension = 0
       
       const result = {
         ...userData,
@@ -115,10 +106,7 @@ export const getSuspendedUsers = async () => {
     })) as Array<{ id: string; createdAt?: { seconds: number; nanoseconds: number }; [key: string]: any }>
     
     // Filter suspended users
-    return users.filter(user => {
-      const isSuspended = isAccountSuspended(user.createdAt || null)
-      return isSuspended
-    }).map(user => ({
+    return users.filter(user => !!user.manuallySuspended).map(user => ({
       ...user,
       isSuspended: true,
       daysUntilSuspension: 0
@@ -147,10 +135,8 @@ export const getAllUsersWithSuspensionStatus = async () => {
     }>
     
     return users.map(user => {
-      const isAutoSuspended = isAccountSuspended(user.createdAt || null)
-      const isSuspended = user.manuallySuspended || isAutoSuspended
-      const daysUntilSuspension = isSuspended ? 0 : Math.max(0, 30 - Math.floor((new Date().getTime() - new Date((user.createdAt?.seconds || 0) * 1000).getTime()) / (1000 * 60 * 60 * 24)))
-      
+      const isSuspended = !!user.manuallySuspended
+      const daysUntilSuspension = 0
       return {
         ...user,
         isSuspended,

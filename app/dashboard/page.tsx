@@ -1122,33 +1122,7 @@ export default function Dashboard() {
           <GamifiedDashboard />
         ) : (
           <>
-            {/* Enhanced Suspension Warning Banner */}
-            {userData && userData.daysUntilSuspension > 0 && userData.daysUntilSuspension <= 7 && showSuspensionWarning && (
-              <div className="max-w-6xl mx-auto p-6">
-                <div className="relative">
-                  <Alert className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 shadow-lg pr-10">
-                    <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  <AlertDescription className="text-amber-800 font-medium">
-                    <strong>Account Suspension Warning:</strong> Your account will be suspended in {userData.daysUntilSuspension} day{userData.daysUntilSuspension !== 1 ? 's' : ''}. 
-                    To prevent suspension, please contact <a href="mailto:isha@eoxsteam.com" className="underline font-semibold hover:text-amber-900 transition-colors">isha@eoxsteam.com</a>.
-                  </AlertDescription>
-                    <button
-                      type="button"
-                      aria-label="Dismiss"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-amber-700"
-                      onClick={() => {
-                        setShowSuspensionWarning(false)
-                        try {
-                          if (user) sessionStorage.setItem(`dismiss_suspension_${user.uid}`, 'true')
-                        } catch {}
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                </Alert>
-                </div>
-              </div>
-            )}
+            {/* Suspension warning removed: suspension is manual-only now */}
             
             <div className="max-w-6xl mx-auto p-6">
               {/* Enhanced Search and Actions Section */}
