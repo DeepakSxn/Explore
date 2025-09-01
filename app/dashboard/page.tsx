@@ -939,7 +939,7 @@ export default function Dashboard() {
               src="/Black logo.png" 
               alt="EOXS Logo" 
               className="h-8 w-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105" 
-              onClick={() => router.push("/")}
+              onClick={() => router.push("/dashboard")}
             />
             <div className="hidden md:block">
              
