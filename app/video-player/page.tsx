@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs, orderBy, updateDoc } from "firebase/firestore"
-import { getAllModuleVideoOrders } from "../firestore-utils"
+import { getAllModuleVideoOrders, getAllModuleOrders } from "../firestore-utils"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -247,6 +247,7 @@ export default function VideoPlayerPage() {
   // Add these state variables at the top with other state declarations
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [lastPosition, setLastPosition] = useState(0);
+  const [moduleOrders, setModuleOrders] = useState<Record<string, number>>({});
   // const [showQuiz, setShowQuiz] = useState(false);
   // const [currentQuiz, setCurrentQuiz] = useState<any>(null);
 
@@ -401,6 +402,14 @@ export default function VideoPlayerPage() {
 
         // Debug: Check all categories in database
         await debugCategories()
+
+        // Load module orders from admin settings
+        try {
+          const orders = await getAllModuleOrders()
+          setModuleOrders(orders)
+        } catch (error) {
+          console.error("Error loading module orders:", error)
+        }
 
         // Fetch last watched video if no specific videoId is provided
         if (!videoId) {
@@ -1088,8 +1097,8 @@ export default function VideoPlayerPage() {
       console.warn("Could not load moduleVideoOrders in player", e)
     }
 
-    // Define the expected module order
-    const moduleOrder = [
+    // Define the expected module order - use admin-defined order if available
+    let moduleOrder = [
       "Company Introduction",
       "Sales", 
       "Sales Module ",
@@ -1110,6 +1119,24 @@ export default function VideoPlayerPage() {
       "Miscellaneous",
       "AI tools"
     ]
+
+    // If admin has defined module order, use it to reorder the moduleOrder array
+    if (Object.keys(moduleOrders).length > 0) {
+      // Create a mapping of module names to their admin-defined order
+      const moduleNameToOrder: Record<string, number> = {}
+      Object.entries(moduleOrders).forEach(([moduleName, order]) => {
+        // Extract the category from the module name (e.g., "Sales Module Overview" -> "Sales")
+        const category = moduleName.replace(" Module Overview", "").replace(" Overview", "")
+        moduleNameToOrder[category] = order
+      })
+
+      // Sort the moduleOrder array based on admin-defined order
+      moduleOrder.sort((a, b) => {
+        const orderA = moduleNameToOrder[a] ?? Number.MAX_SAFE_INTEGER
+        const orderB = moduleNameToOrder[b] ?? Number.MAX_SAFE_INTEGER
+        return orderA - orderB
+      })
+    }
 
     // Group videos by category
     const videosByCategory = videos.reduce((acc, video) => {

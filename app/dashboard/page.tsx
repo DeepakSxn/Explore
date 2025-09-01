@@ -26,7 +26,7 @@ import XPRewardPopup from "../components/XPRewardPopup"
 
 
 import ChallengeMode from "../components/ChallengeMode"
-import { getAllModuleVideoOrders } from "../firestore-utils"
+import { getAllModuleVideoOrders, getAllModuleOrders } from "../firestore-utils"
 
 interface Video {
   id: string
@@ -156,6 +156,7 @@ export default function Dashboard() {
   const [showChallengeMode, setShowChallengeMode] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [categoryOrders, setCategoryOrders] = useState<Record<string, string[]>>({})
+  const [moduleOrders, setModuleOrders] = useState<Record<string, number>>({})
 
   // XP Reward Popup states
   const [showXPReward, setShowXPReward] = useState(false)
@@ -479,6 +480,11 @@ export default function Dashboard() {
       console.log("Fetched category orders:", categoryToOrderIds)
       setCategoryOrders(categoryToOrderIds)
 
+      // Fetch saved module orders
+      const moduleToOrderIds = await getAllModuleOrders()
+      console.log("Fetched module orders:", moduleToOrderIds)
+      setModuleOrders(moduleToOrderIds)
+
       // Fetch watch history to mark watched videos
       const watchHistoryQuery = query(
         collection(db, "videoWatchEvents"),
@@ -601,9 +607,18 @@ export default function Dashboard() {
     // Debug: Log all modules before sorting
     console.log("Modules before sorting:", moduleArray.map(m => ({ name: m.name, category: m.category })))
 
-    // Sort modules according to MODULE_ORDER
+    // Sort modules according to admin-defined order or fallback to MODULE_ORDER
     moduleArray.sort((a, b) => {
-      // Normalize category names for comparison
+      // Check if admin has defined order for these modules
+      const orderA = moduleOrders[a.name] ?? Number.MAX_SAFE_INTEGER
+      const orderB = moduleOrders[b.name] ?? Number.MAX_SAFE_INTEGER
+      
+      // If both have admin-defined orders, sort by them
+      if (orderA !== Number.MAX_SAFE_INTEGER && orderB !== Number.MAX_SAFE_INTEGER) {
+        return orderA - orderB
+      }
+      
+      // Fallback to hardcoded MODULE_ORDER for modules without admin-defined order
       const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/gi, "")
       
       // Special handling for Sales module - always put it first
@@ -625,7 +640,7 @@ export default function Dashboard() {
       
       if (indexA === -1 && indexB === -1) return a.category.localeCompare(b.category)
       if (indexA === -1) return 1
-      if (indexB === -1) return -1
+      if (indexB === -1) return 1
       return indexA - indexB
     })
 
@@ -635,7 +650,7 @@ export default function Dashboard() {
     // Set all modules as collapsed by default
     setExpandedModules([])
     setModules(moduleArray)
-  }, [videos, categoryOrders])
+  }, [videos, categoryOrders, moduleOrders])
 
   // Call organizeVideosIntoModules when videos change
   useEffect(() => {

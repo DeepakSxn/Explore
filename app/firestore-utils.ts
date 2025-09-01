@@ -924,3 +924,60 @@ export const initializeDefaultChallenges = async () => {
   }
 }
 
+// Module Order Management
+export interface ModuleOrderDoc {
+  moduleName: string
+  order: number
+  updatedAt: any
+}
+
+export const saveModuleOrder = async (moduleOrders: { moduleName: string; order: number }[]) => {
+  try {
+    // Save each module order individually
+    for (const moduleOrder of moduleOrders) {
+      const docRef = doc(db, "moduleOrders", moduleOrder.moduleName)
+      await setDoc(docRef, {
+        moduleName: moduleOrder.moduleName,
+        order: moduleOrder.order,
+        updatedAt: serverTimestamp(),
+      })
+    }
+    return true
+  } catch (error) {
+    console.error("Error saving module order:", error)
+    throw error
+  }
+}
+
+export const getAllModuleOrders = async (): Promise<Record<string, number>> => {
+  try {
+    const snapshot = await getDocs(collection(db, "moduleOrders"))
+    const mapping: Record<string, number> = {}
+    snapshot.docs.forEach((d) => {
+      const data = d.data() as ModuleOrderDoc
+      if (data?.moduleName && typeof data?.order === 'number') {
+        mapping[data.moduleName] = data.order
+      }
+    })
+    return mapping
+  } catch (error) {
+    console.error("Error fetching module orders:", error)
+    return {}
+  }
+}
+
+export const getModuleOrder = async (moduleName: string): Promise<number | null> => {
+  try {
+    const ref = doc(db, "moduleOrders", moduleName)
+    const d = await getDoc(ref)
+    if (d.exists()) {
+      const data = d.data() as ModuleOrderDoc
+      return data.order || null
+    }
+    return null
+  } catch (error) {
+    console.error("Error getting module order:", error)
+    return null
+  }
+}
+

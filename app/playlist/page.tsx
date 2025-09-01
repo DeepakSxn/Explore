@@ -4,12 +4,14 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ListMusic, ArrowLeft, Trash2 } from "lucide-react"
+import { getAllModuleOrders } from "../firestore-utils"
 
 export default function PlaylistPage() {
   const [playlistVideos, setPlaylistVideos] = useState<any[]>([])
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null)
   const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
   const [confirmRemoveCategory, setConfirmRemoveCategory] = useState<string | null>(null)
+  const [moduleOrders, setModuleOrders] = useState<Record<string, number>>({})
   const router = useRouter()
 
   // Desired module ordering to match the dashboard
@@ -40,6 +42,19 @@ export default function PlaylistPage() {
     }
   }, [])
 
+  // Load module orders from admin settings
+  useEffect(() => {
+    const loadModuleOrders = async () => {
+      try {
+        const orders = await getAllModuleOrders()
+        setModuleOrders(orders)
+      } catch (error) {
+        console.error("Error loading module orders:", error)
+      }
+    }
+    loadModuleOrders()
+  }, [])
+
   // Group playlist videos by their module/category for display
   const videosByCategory = useMemo(() => {
     const grouped: Record<string, any[]> = {}
@@ -54,6 +69,14 @@ export default function PlaylistPage() {
   const sortedCategories = useMemo(() => {
     const categories = Object.keys(videosByCategory)
     const indexOf = (c: string) => {
+      // First check if admin has defined order for this category
+      const moduleName = c.includes("Module") ? `${c} Overview` : `${c} Module Overview`
+      const adminOrder = moduleOrders[moduleName]
+      if (adminOrder !== undefined) {
+        return adminOrder
+      }
+      
+      // Fallback to hardcoded MODULE_ORDER
       const idx = MODULE_ORDER.findIndex((m) => m.toLowerCase() === c.toLowerCase())
       return idx === -1 ? Number.MAX_SAFE_INTEGER : idx
     }
@@ -63,7 +86,7 @@ export default function PlaylistPage() {
       if (ia === ib) return a.localeCompare(b)
       return ia - ib
     })
-  }, [videosByCategory])
+  }, [videosByCategory, moduleOrders])
 
   const handleRemove = (id: string) => {
     setConfirmRemoveId(id)
