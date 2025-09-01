@@ -923,7 +923,7 @@ export default function Dashboard() {
             <div className="progress"></div>
           </div>
         )}
-        <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto px-6">
+        <div className="flex items-center justify-between w-full max-w-screen-2xl pt-3 mx-auto px-6">
           <div className="flex items-center gap-6">
             {/* Mobile Menu Button */}
             <Button
