@@ -55,7 +55,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
     const welcomeMessage: ChatMessage = {
       id: 'welcome',
       type: 'ai',
-      content: `Hi ${userData?.name || 'there'}! I'm EOXSplore, your AI learning assistant. I can help you with:\n\n• Learning questions about EOXS\n• Study tips and strategies\n• Course navigation help\n• General questions about the platform\n\nWhen I reference specific videos, I'll show them as clickable links below my responses.\n\nHow can I assist you today?`,
+      content: `Hi ${userData?.name || 'there'}! I'm Sparky, your AI learning assistant. I can help you with:\n\n• Learning questions about EOXS\n• Study tips and strategies\n• Course navigation help\n• General questions about the platform\n\nWhen I reference specific videos, I'll show them as clickable links below my responses.\n\nHow can I assist you today?`,
       timestamp: new Date(),
       videoReferences: [
         {
@@ -461,7 +461,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                       <Sparkles className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-lg text-gray-800">EOXSplore</h3>
+                      <h3 className="font-bold text-lg text-gray-800">Sparky</h3>
                       <p className="text-sm text-gray-600">AI Learning Assistant</p>
                     </div>
                   </div>
@@ -558,7 +558,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                       <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3 shadow-sm">
                         <div className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin text-green-500" />
-                          <span className="text-sm text-gray-600">EOXSplore is thinking...</span>
+                          <span className="text-sm text-gray-600">Sparky is thinking...</span>
                         </div>
                       </div>
                     </motion.div>

@@ -190,11 +190,7 @@ export default function XPRewardPopup({
                 </Button>
 
                 {/* Top-left accent icon (use electric/Zap for module completion) */}
-                {type === 'module' && (
-                  <div className="absolute top-2 left-2 text-green-500">
-                    <Zap className="h-5 w-5" />
-                  </div>
-                )}
+                {/* Removed lightning bolt icon */}
 
                 {/* Main content */}
                 <div className="text-center">
@@ -244,23 +240,10 @@ export default function XPRewardPopup({
                         }}
                         className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4 mb-6"
                       >
-                        <div className="flex items-center justify-center gap-3">
-                          <motion.div
-                            animate={{ 
-                              scale: [1, 1.2, 1],
-                              rotate: [0, 10, -10, 0]
-                            }}
-                            transition={{ 
-                              duration: 0.6,
-                              repeat: 2,
-                              repeatDelay: 0.5
-                            }}
-                          >
-                            <Zap className="h-6 w-6 text-green-500" />
-                          </motion.div>
-                          <div>
+                        <div className="flex items-center justify-center">
+                          <div className="text-center">
                             <div className="text-3xl font-bold text-green-600">
-                              +50
+                              +{xpAmount}
                             </div>
                             <div className="text-sm text-gray-600">
                               Experience Points
