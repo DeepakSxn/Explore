@@ -213,7 +213,7 @@ export default function ModulesPage() {
               <TableHead>Order</TableHead>
               <TableHead>Module Name</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Duration</TableHead>
+           
               <TableHead>Videos</TableHead>
             </TableRow>
           </TableHeader>
@@ -238,7 +238,7 @@ export default function ModulesPage() {
                   </TableCell>
                   <TableCell className="font-medium">{module.name}</TableCell>
                   <TableCell>{module.category}</TableCell>
-                  <TableCell>{module.totalDuration}</TableCell>
+                  
                   <TableCell>{module.videoCount}</TableCell>
                 </TableRow>
               ))
