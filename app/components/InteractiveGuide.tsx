@@ -59,7 +59,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
       timestamp: new Date(),
       videoReferences: [
         {
-          videoId: "vqokm7kio0dwbvwlzw1q",
+          videoId: "ehskimpirphwekehrzpf",
           title: "Introduction to EOXS",
           thumbnail: "/placeholder.svg?height=120&width=200",
           duration: "5 min"
