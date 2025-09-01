@@ -1,5 +1,27 @@
 "use client"
 
+/**
+ * Video Player Page with Per-Module Progressive Video Unlocking System
+ * 
+ * Video Locking Logic:
+ * - First video of EACH module is unlocked by default (false = unlocked but not watched)
+ * - Subsequent videos within each module start locked (null = locked)
+ * - Videos unlock (null → false) only after completing the previous video in the SAME module
+ * - Completed videos are marked as true
+ * - Users can only play videos that are unlocked
+ * - Different modules can have their first videos unlocked independently
+ * 
+ * Video States:
+ * - null: Locked (cannot be played)
+ * - false: Unlocked but not watched (can be played)
+ * - true: Completed (can be replayed)
+ * 
+ * Module Independence:
+ * - Users can start any module without completing previous modules
+ * - Each module maintains its own progression
+ * - Video unlocking is contained within each module
+ */
+
 import { useState, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -308,20 +330,26 @@ export default function VideoPlayerPage() {
   // 5-second forward handler
   const handleForward5Seconds = () => {
     if (videoRef.current) {
-      // Only allow forward scrubbing if video has been completed
-      if (!isVideoCompleted) {
+      // Check if this is a rewatch (video has been completed before)
+      const isRewatch = videoWatchEvents[currentVideo?.id || ''] === true;
+      
+      console.log(`🔍 Forward 5s: Video ${currentVideo?.id}, isRewatch: ${isRewatch}`);
+      
+      // Only allow forward scrubbing if video has been completed (rewatch)
+      if (!isRewatch) {
         if (!forwardRestrictionShown) {
-        toast({
+          toast({
             title: "Forward seeking disabled",
-          description: "You must complete watching this video before you can skip forward.",
-          variant: "destructive",
+            description: "You must complete watching this video before you can skip forward.",
+            variant: "destructive",
             duration: 5000,
-        });
+          });
           setForwardRestrictionShown(true)
         }
         return;
       }
       
+      console.log(`✅ Forward 5s allowed for rewatch of video: ${currentVideo?.id}`);
       const newTime = videoRef.current.currentTime + 5;
       videoRef.current.currentTime = Math.min(newTime, videoRef.current.duration);
     }
@@ -329,7 +357,7 @@ export default function VideoPlayerPage() {
 
   // Progress bar click handler with scrubbing restrictions
   const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || !currentVideo) return;
     
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -338,15 +366,18 @@ export default function VideoPlayerPage() {
     
     // Check if user is trying to skip forward
     if (newTime > videoRef.current.currentTime) {
-      // Only allow forward seeking if video has been completed
-      if (!isVideoCompleted) {
+      // Check if this is a rewatch (video has been completed before)
+      const isRewatch = videoWatchEvents[currentVideo.id] === true;
+      
+      // Only allow forward seeking if video has been completed (rewatch)
+      if (!isRewatch) {
         if (!forwardRestrictionShown) {
-        toast({
+          toast({
             title: "Forward seeking disabled",
-          description: "You must complete watching this video before you can skip forward.",
-          variant: "destructive",
+            description: "You must complete watching this video before you can skip forward.",
+            variant: "destructive",
             duration: 5000,
-        });
+          });
           setForwardRestrictionShown(true)
         }
         return;
@@ -517,11 +548,21 @@ export default function VideoPlayerPage() {
       // Reset completion status for new video
       setIsVideoCompleted(false);
       setForwardRestrictionShown(false);
-      // Show the restriction banner briefly once per video
-      setShowForwardRestrictionBanner(true);
-      const hideTimer = setTimeout(() => setShowForwardRestrictionBanner(false), 5000)
-      checkAndSetVideoWatched(currentVideo.id)
-      return () => clearTimeout(hideTimer)
+      
+      // Check if this is a rewatch (video has been completed before)
+      const isRewatch = videoWatchEvents[currentVideo.id] === true;
+      
+      // Only show the restriction banner if this is NOT a rewatch
+      if (!isRewatch) {
+        setShowForwardRestrictionBanner(true);
+        const hideTimer = setTimeout(() => setShowForwardRestrictionBanner(false), 5000)
+        checkAndSetVideoWatched(currentVideo.id)
+        return () => clearTimeout(hideTimer)
+      } else {
+        // For rewatches, don't show the restriction banner
+        setShowForwardRestrictionBanner(false);
+        checkAndSetVideoWatched(currentVideo.id)
+      }
     }
   }, [currentVideo])
 
@@ -1200,6 +1241,32 @@ export default function VideoPlayerPage() {
     return orderedVideos
   }
 
+  // Function to unlock the first video of each module
+  const unlockFirstVideoOfEachModule = (moduleArray: Module[]) => {
+    if (!moduleArray || moduleArray.length === 0) return
+    
+    const updatedWatchEvents = { ...videoWatchEvents }
+    let unlockedCount = 0
+    
+    moduleArray.forEach((module) => {
+      if (module.videos && module.videos.length > 0) {
+        const firstVideoId = module.videos[0].id
+        if (updatedWatchEvents[firstVideoId] === null) {
+          updatedWatchEvents[firstVideoId] = false // Unlock first video of each module
+          unlockedCount++
+          console.log(`🔓 Unlocked first video of module "${module.name}": ${firstVideoId}`)
+        } else {
+          console.log(`ℹ️ First video of module "${module.name}" already unlocked: ${firstVideoId}`)
+        }
+      }
+    })
+    
+    if (unlockedCount > 0) {
+      setVideoWatchEvents(updatedWatchEvents)
+      console.log(`🎯 Unlocked ${unlockedCount} module starter videos`)
+    }
+  }
+
   const organizeIntoModules = async (videos: Video[]) => {
     if (!videos || !Array.isArray(videos) || videos.length === 0) return
 
@@ -1483,6 +1550,9 @@ export default function VideoPlayerPage() {
 
     setModules(moduleArray)
 
+    // Unlock the first video of each module
+    unlockFirstVideoOfEachModule(moduleArray)
+
     // Debug: Log all modules being created
     console.log("=== MODULES BEING CREATED ===")
     console.log("📋 ONLY showing: Compulsory modules + User-selected modules")
@@ -1612,10 +1682,13 @@ export default function VideoPlayerPage() {
 
     const watchEvents: Record<string, boolean | null> = {}
 
-    // Initialize all videos as unlocked (false = unlocked but not watched)
+    // Initialize all videos as locked (null = locked)
     playlistData.videos.forEach((video) => {
-      watchEvents[video.id] = false
+      watchEvents[video.id] = null
     })
+    
+    // We'll unlock the first video of each module after modules are loaded
+    // This function will be called again from organizeIntoModules
 
     try {
       // Query Firestore for all completed videos by this user
@@ -1639,6 +1712,14 @@ export default function VideoPlayerPage() {
 
       // Apply the computed watch events (all unlocked; watched are true)
       setVideoWatchEvents(watchEvents)
+      
+      // Debug: Log initial video states
+      console.log("🔍 Initial Video States After Loading History:")
+      playlistData.videos.forEach((video, index) => {
+        const state = watchEvents[video.id]
+        const status = state === null ? "🔒 LOCKED" : state === false ? "🔓 UNLOCKED" : "✅ COMPLETED"
+        console.log(`${index + 1}. ${video.title}: ${status}`)
+      })
 
       // Set current video based on initialVideoId or find the first unlocked/unwatched video
       if (initialVideoId) {
@@ -1745,11 +1826,27 @@ export default function VideoPlayerPage() {
       // Mark video as completed for scrubbing restrictions
       setIsVideoCompleted(true);
   
-      // Unlock the next video if it exists and is currently locked
-      if (currentVideoIndex + 1 < playlist.videos.length) {
-        const nextVideoId = playlist.videos[currentVideoIndex + 1].id;
-        if (updatedWatchEvents[nextVideoId] === null) {
-          updatedWatchEvents[nextVideoId] = false; // Unlock but not watched
+      // Unlock the next video in the same module if it exists and is currently locked
+      const moduleIndex = modules.findIndex(module => 
+        module.videos.some(v => v.id === currentVideo.id)
+      )
+      
+      if (moduleIndex !== -1) {
+        const module = modules[moduleIndex]
+        const moduleVideoIndex = module.videos.findIndex(v => v.id === currentVideo.id)
+        
+        if (moduleVideoIndex !== -1 && moduleVideoIndex < module.videos.length - 1) {
+          const nextModuleVideo = module.videos[moduleVideoIndex + 1]
+          const nextVideoId = nextModuleVideo.id
+          
+          if (updatedWatchEvents[nextVideoId] === null) {
+            updatedWatchEvents[nextVideoId] = false; // Unlock but not watched
+            console.log(`🔓 Video completed! Unlocking next video in module "${module.name}": ${nextVideoId}`);
+          } else {
+            console.log(`ℹ️ Next video ${nextVideoId} in module "${module.name}" is already unlocked or watched`);
+          }
+        } else {
+          console.log(`🎉 Congratulations! You've completed all videos in module "${module.name}"!`);
         }
       }
   
@@ -1873,13 +1970,31 @@ export default function VideoPlayerPage() {
         // Find the current video index in the playlist
         const currentIndex = playlist.videos.findIndex((v) => v.id === videoId)
 
-        // Unlock the next video if it exists and is currently locked
-        if (currentIndex !== -1 && currentIndex + 1 < playlist.videos.length) {
-          const nextVideoId = playlist.videos[currentIndex + 1].id
-          if (updatedWatchEvents[nextVideoId] === null) {
-            updatedWatchEvents[nextVideoId] = false // Unlock but not watched
+              // Unlock the next video in the same module if it exists and is currently locked
+      if (modules) {
+        const moduleIndex = modules.findIndex(module => 
+          module.videos.some(v => v.id === videoId)
+        )
+        
+        if (moduleIndex !== -1) {
+          const module = modules[moduleIndex]
+          const moduleVideoIndex = module.videos.findIndex(v => v.id === videoId)
+          
+          if (moduleVideoIndex !== -1 && moduleVideoIndex < module.videos.length - 1) {
+            const nextModuleVideo = module.videos[moduleVideoIndex + 1]
+            const nextVideoId = nextModuleVideo.id
+            
+            if (updatedWatchEvents[nextVideoId] === null) {
+              updatedWatchEvents[nextVideoId] = false // Unlock but not watched
+              console.log(`🔓 From checkAndSetVideoWatched: Unlocked next video in module "${module.name}": ${nextVideoId}`);
+            } else {
+              console.log(`ℹ️ From checkAndSetVideoWatched: Next video ${nextVideoId} in module "${module.name}" is already unlocked or watched`);
+            }
+          } else {
+            console.log(`🎉 From checkAndSetVideoWatched: Completed all videos in module "${module.name}"!`);
           }
         }
+      }
 
         setVideoWatchEvents(updatedWatchEvents)
         
@@ -1925,20 +2040,25 @@ export default function VideoPlayerPage() {
         }
       });
   
-      // Unlock videos after watched ones in sequence
-      let lastUnlockedIndex = 0;
-      for (let i = 0; i < playlist.videos.length; i++) {
-        const videoId = playlist.videos[i].id;
-  
-        // If this video is watched, update lastUnlockedIndex
-        if (updatedWatchEvents[videoId] === true) {
-          lastUnlockedIndex = i + 1;
-        }
-        
-        // Unlock videos up to lastUnlockedIndex
-        if (i <= lastUnlockedIndex && updatedWatchEvents[videoId] === null) {
-          updatedWatchEvents[videoId] = false; // Unlocked but not watched
-        }
+      // Unlock videos after watched ones within each module
+      if (modules && modules.length > 0) {
+        modules.forEach((module) => {
+          let lastUnlockedIndex = 0;
+          
+          for (let i = 0; i < module.videos.length; i++) {
+            const videoId = module.videos[i].id;
+            
+            // If this video is watched, update lastUnlockedIndex
+            if (updatedWatchEvents[videoId] === true) {
+              lastUnlockedIndex = i + 1;
+            }
+            
+            // Unlock videos up to lastUnlockedIndex within this module (only if they were previously locked)
+            if (i <= lastUnlockedIndex && updatedWatchEvents[videoId] === null) {
+              updatedWatchEvents[videoId] = false; // Unlocked but not watched
+            }
+          }
+        });
       }
   
       // Update state
@@ -2207,23 +2327,34 @@ export default function VideoPlayerPage() {
 
     const nextIndex = currentVideoIndex + 1
     if (nextIndex < playlist.videos.length) {
-      const nextVideoId = playlist.videos[nextIndex].id
+      const nextVideo = playlist.videos[nextIndex]
+      
+      // Check if the next video is playable (unlocked)
+      if (!isVideoPlayable(nextIndex)) {
+        toast({
+          title: "Video Locked",
+          description: "Complete the current video to unlock the next one.",
+          variant: "destructive",
+          duration: 3000,
+        })
+        return
+      }
 
-      // Always allow moving to the next video
+      // Only allow moving to the next video if it's unlocked
       videoChangeRef.current = true
       setCurrentVideoIndex(nextIndex)
-      setCurrentVideo(playlist.videos[nextIndex])
+      setCurrentVideo(nextVideo)
       setProgress(0)
       setCurrentTime(0)
 
       // Update URL without refreshing the page
-      const newUrl = `/video-player?videoId=${nextVideoId}&playlistId=${playlist.id}`
+      const newUrl = `/video-player?videoId=${nextVideo.id}&playlistId=${playlist.id}`
       window.history.pushState({}, "", newUrl)
 
       // Update active module if needed
       if (modules.length > 0) {
         const moduleIndex = modules.findIndex((module) =>
-          module.videos.some((video) => video.id === playlist.videos[nextIndex].id),
+          module.videos.some((video) => video.id === nextVideo.id),
         )
 
         if (moduleIndex !== -1 && moduleIndex !== activeModuleIndex) {
@@ -2234,51 +2365,124 @@ export default function VideoPlayerPage() {
   }
 
   const unlockNextVideoIfNeeded = (videoId: string) => {
-    if (!playlist || !playlist.videos) return
+    if (!playlist || !playlist.videos || !modules) return
 
-    const currentIndex = playlist.videos.findIndex((v) => v.id === videoId)
-    if (currentIndex === -1 || currentIndex >= playlist.videos.length - 1) return
-
-    const nextVideoId = playlist.videos[currentIndex + 1].id
+    // Find which module this video belongs to
+    const moduleIndex = modules.findIndex(module => 
+      module.videos.some(v => v.id === videoId)
+    )
+    
+    if (moduleIndex === -1) return
+    
+    const module = modules[moduleIndex]
+    const moduleVideoIndex = module.videos.findIndex(v => v.id === videoId)
+    
+    // Check if there's a next video in the same module
+    if (moduleVideoIndex === -1 || moduleVideoIndex >= module.videos.length - 1) return
+    
+    const nextModuleVideo = module.videos[moduleVideoIndex + 1]
+    const nextVideoId = nextModuleVideo.id
 
     // Only update if the current video is watched and next video is locked
     if (videoWatchEvents[videoId] === true && videoWatchEvents[nextVideoId] === null) {
       const updatedWatchEvents = { ...videoWatchEvents }
       updatedWatchEvents[nextVideoId] = false // Unlock but not watched
       setVideoWatchEvents(updatedWatchEvents)
+      console.log(`🔓 Unlocked next video in module "${module.name}": ${nextVideoId}`)
     }
   }
 
+  // Debug function to show current video states
+  const debugVideoStates = () => {
+    if (!playlist || !playlist.videos) return
+    
+    console.log("🔍 Current Video States:")
+    playlist.videos.forEach((video, index) => {
+      const state = videoWatchEvents[video.id]
+      const status = state === null ? "🔒 LOCKED" : state === false ? "🔓 UNLOCKED" : "✅ COMPLETED"
+      console.log(`${index + 1}. ${video.title}: ${status}`)
+    })
+  }
+
+  // Helper function to check if there's a previous video in the current module
+  const hasPreviousVideoInModule = () => {
+    if (!currentVideo || !modules) return false
+    
+    const currentModuleIndex = modules.findIndex(module => 
+      module.videos.some(v => v.id === currentVideo.id)
+    )
+    
+    if (currentModuleIndex === -1) return false
+    
+    const currentModule = modules[currentModuleIndex]
+    const currentModuleVideoIndex = currentModule.videos.findIndex(v => v.id === currentVideo.id)
+    
+    return currentModuleVideoIndex > 0
+  }
+
+  // Helper function to check if there's a next video in the current module
+  const hasNextVideoInModule = () => {
+    if (!currentVideo || !modules) return false
+    
+    const currentModuleIndex = modules.findIndex(module => 
+      module.videos.some(v => v.id === currentVideo.id)
+    )
+    
+    if (currentModuleIndex === -1) return false
+    
+    const currentModule = modules[currentModuleIndex]
+    const currentModuleVideoIndex = currentModule.videos.findIndex(v => v.id === currentVideo.id)
+    
+    return currentModuleVideoIndex < currentModule.videos.length - 1
+  }
+
   const playPreviousVideo = () => {
-    if (!playlist || !playlist.videos || !Array.isArray(playlist.videos) || playlist.videos.length === 0) return
+    if (!playlist || !playlist.videos || !Array.isArray(playlist.videos) || !currentVideo || !modules) return
 
-    const prevIndex = currentVideoIndex - 1
-    if (prevIndex >= 0) {
-      const prevVideoId = playlist.videos[prevIndex].id
+    // Find which module the current video belongs to
+    const currentModuleIndex = modules.findIndex(module => 
+      module.videos.some(v => v.id === currentVideo.id)
+    )
+    
+    if (currentModuleIndex === -1) return
+    
+    const currentModule = modules[currentModuleIndex]
+    const currentModuleVideoIndex = currentModule.videos.findIndex(v => v.id === currentVideo.id)
+    
+    // Check if there's a previous video in the same module
+    if (currentModuleVideoIndex > 0) {
+      const prevModuleVideo = currentModule.videos[currentModuleVideoIndex - 1]
+      const prevVideoId = prevModuleVideo.id
+      
+      // Find the playlist index for the previous video
+      const prevPlaylistIndex = playlist.videos.findIndex(v => v.id === prevVideoId)
+      
+      if (prevPlaylistIndex !== -1) {
+        // Navigate to the previous video in the same module
+        videoChangeRef.current = true
+        setCurrentVideoIndex(prevPlaylistIndex)
+        setCurrentVideo(playlist.videos[prevPlaylistIndex])
+        setProgress(0)
+        setCurrentTime(0)
 
-      // Previous videos should always be unlocked
-      videoChangeRef.current = true
-      setCurrentVideoIndex(prevIndex)
-      setCurrentVideo(playlist.videos[prevIndex])
-      setProgress(0)
-      setCurrentTime(0)
+        // Update URL without refreshing the page
+        const newUrl = `/video-player?videoId=${prevVideoId}&playlistId=${playlist.id}`
+        window.history.pushState({}, "", newUrl)
 
-      // Update URL without refreshing the page
-      const newUrl = `/video-player?videoId=${playlist.videos[prevIndex].id}&playlistId=${playlist.id}`
-      window.history.pushState({}, "", newUrl)
-
-      // Update active module if needed
-      if (modules.length > 0) {
-        const moduleIndex = modules.findIndex((module) =>
-          module.videos.some((video) => video.id === playlist.videos[prevIndex].id),
-        )
-
-        if (moduleIndex !== -1 && moduleIndex !== activeModuleIndex) {
-          setActiveModuleIndex(moduleIndex)
-        }
+        // Keep the same active module
+        setActiveModuleIndex(currentModuleIndex)
+        
+        console.log(`🔙 Navigated to previous video in module "${currentModule.name}": ${prevVideoId}`)
       }
-
-      //
+    } else {
+      // This is the first video in the module, show message
+      console.log(`ℹ️ Already at first video in module "${currentModule.name}"`)
+      toast({
+        title: "First Video in Module",
+        description: `You're already at the first video in the ${currentModule.name} module.`,
+        variant: "default",
+        duration: 3000,
+      })
     }
   }
 
@@ -2411,8 +2615,29 @@ export default function VideoPlayerPage() {
       return false
     }
 
-    // Unlock all videos: always allow playback
-    return true
+    const video = playlist.videos[index]
+    
+    // Find which module this video belongs to
+    const moduleIndex = modules.findIndex(module => 
+      module.videos.some(v => v.id === video.id)
+    )
+    
+    if (moduleIndex === -1) return false
+    
+    const module = modules[moduleIndex]
+    const moduleVideoIndex = module.videos.findIndex(v => v.id === video.id)
+    
+    // First video of each module is always unlocked
+    if (moduleVideoIndex === 0) {
+      return true
+    }
+    
+    // For subsequent videos within the same module, check if the previous video has been completed
+    const previousModuleVideo = module.videos[moduleVideoIndex - 1]
+    const previousVideoId = previousModuleVideo.id
+    
+    // Video is playable only if the previous video in the same module has been completed
+    return videoWatchEvents[previousVideoId] === true
   }
 
   const generateQuizForVideo = (video: Video) => {
@@ -2531,7 +2756,18 @@ export default function VideoPlayerPage() {
 
     if (playlistIndex === -1) return
 
-    // Always allow playing any video from module list
+    // Check if video is playable before allowing navigation
+    if (!isVideoPlayable(playlistIndex)) {
+      toast({
+        title: "Video Locked",
+        description: "Complete the previous video in this module to unlock this one.",
+        variant: "destructive",
+        duration: 3000,
+      })
+      return
+    }
+
+    // Only allow playing unlocked videos
     videoChangeRef.current = true
     setCurrentVideoIndex(playlistIndex)
     setCurrentVideo(playlist.videos[playlistIndex])
@@ -2558,7 +2794,15 @@ export default function VideoPlayerPage() {
     const video = playlist.videos[playlistIndex]
     
     // Check if video is playable
-    if (!isVideoPlayable(playlistIndex)) return
+    if (!isVideoPlayable(playlistIndex)) {
+      toast({
+        title: "Video Locked",
+        description: "Complete the previous video to unlock this one.",
+        variant: "destructive",
+        duration: 3000,
+      })
+      return
+    }
 
     // Change to the selected video
     videoChangeRef.current = true
@@ -2750,17 +2994,29 @@ export default function VideoPlayerPage() {
                         role="button"
                         tabIndex={0}
                         className={`p-3 rounded-full cursor-pointer bg-black/40 backdrop-blur-sm transition-all duration-200 hover:scale-110 ${
-                          isVideoCompleted 
-                            ? "text-white hover:bg-white/20 hover:scale-110" 
-                            : "text-white/50 cursor-not-allowed"
+                          (() => {
+                            // Check if this is a rewatch (video has been completed before)
+                            const isRewatch = currentVideo && videoWatchEvents[currentVideo.id] === true;
+                            return isRewatch 
+                              ? "text-white hover:bg-white/20 hover:scale-110" 
+                              : "text-white/50 cursor-not-allowed"
+                          })()
                         }`}
-                        onClick={isVideoCompleted ? handleForward5Seconds : undefined}
+                        onClick={(() => {
+                          // Check if this is a rewatch (video has been completed before)
+                          const isRewatch = currentVideo && videoWatchEvents[currentVideo.id] === true;
+                          return isRewatch ? handleForward5Seconds : undefined
+                        })()}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ' && isVideoCompleted) {
+                          const isRewatch = currentVideo && videoWatchEvents[currentVideo.id] === true;
+                          if (e.key === 'Enter' || e.key === ' ' && isRewatch) {
                             handleForward5Seconds();
                           }
                         }}
-                        title={isVideoCompleted ? "Forward 5 seconds" : "Complete the video to enable forward seeking"}
+                        title={(() => {
+                          const isRewatch = currentVideo && videoWatchEvents[currentVideo.id] === true;
+                          return isRewatch ? "Forward 5 seconds" : "Complete the video to enable forward seeking"
+                        })()}
                       >
                         <img src="/rewind-double-arrow.png" alt="Forward 5s" width="24" height="24" style={{ display: 'inline', verticalAlign: 'middle', transform: 'scaleX(-1)' }} />
                         <span className="ml-1 text-sm text-white font-medium">5s</span>
@@ -2773,22 +3029,38 @@ export default function VideoPlayerPage() {
                     className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${!isHovered ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"}`}
                   >
                     {/* Scrubbing Status Indicator (5s, once per video) */}
-                    {showForwardRestrictionBanner && (
-                      <div className="text-xs text-white/70 mb-2 text-center">
-                        ⚠️ Forward seeking disabled until video completion
-                      </div>
-                    )}
+                    {(() => {
+                      // Check if this is a rewatch (video has been completed before)
+                      const isRewatch = currentVideo && videoWatchEvents[currentVideo.id] === true;
+                      
+                      if (showForwardRestrictionBanner && !isRewatch) {
+                        return (
+                          <div className="text-xs text-white/70 mb-2 text-center">
+                            ⚠️ Forward seeking disabled until video completion
+                          </div>
+                        )
+                      }
+                      return null
+                    })()}
                     
                     {/* Progress Bar */}
                     <div 
                       className="w-full h-1 bg-white/30 mb-4 rounded-full overflow-hidden cursor-pointer relative"
                       onClick={handleProgressBarClick}
-                      title={isVideoCompleted ? "Click to seek to position" : "Complete the video to enable seeking"}
+                      title={(() => {
+                        // Check if this is a rewatch (video has been completed before)
+                        const isRewatch = currentVideo && videoWatchEvents[currentVideo.id] === true;
+                        return isRewatch ? "Click to seek to position" : "Complete the video to enable seeking"
+                      })()}
                     >
                       <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
-                      {!isVideoCompleted && (
-                        <div className="absolute inset-0 bg-black/20 rounded-full" />
-                      )}
+                      {(() => {
+                        // Check if this is a rewatch (video has been completed before)
+                        const isRewatch = currentVideo && videoWatchEvents[currentVideo.id] === true;
+                        return !isRewatch && (
+                          <div className="absolute inset-0 bg-black/20 rounded-full" />
+                        )
+                      })()}
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -2922,31 +3194,110 @@ export default function VideoPlayerPage() {
                     </Badge>
                   ))}
               </div>
+              
+              {/* Video Progress Status - HIDDEN as requested */}
+              {/* 
+              <div className="mt-3 p-3 bg-muted/50 rounded-lg border-l-4 border-l-primary">
+                <div className="flex items-center gap-2 text-sm">
+                  {videoWatchEvents[currentVideo.id] === true ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-green-700 font-medium">Video Completed ✓</span>
+                      {(() => {
+                        // Check if there's a next video in the same module
+                        const moduleIndex = modules.findIndex(module => 
+                          module.videos.some(v => v.id === currentVideo.id)
+                        )
+                        if (moduleIndex !== -1) {
+                          const module = modules[moduleIndex]
+                          const moduleVideoIndex = module.videos.findIndex(v => v.id === currentVideo.id)
+                          if (moduleVideoIndex < module.videos.length - 1) {
+                            return (
+                              <span className="text-muted-foreground">
+                                - Next video in {module.name} unlocked!
+                              </span>
+                            )
+                          }
+                        }
+                        return null
+                      })()}
+                    </>
+                  ) : videoWatchEvents[currentVideo.id] === false ? (
+                    <>
+                      <Play className="h-4 w-4 text-blue-600" />
+                      <span className="text-blue-700 font-medium">Video Available</span>
+                      <span className="text-muted-foreground">
+                        - Watch to unlock next video in this module
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="h-4 w-4 text-orange-600" />
+                      <span className="text-orange-700 font-medium">Video Locked</span>
+                      <span className="text-muted-foreground">
+                        - Complete previous video in this module to unlock
+                      </span>
+                    </>
+                  )}
+                </div>
+                
+                <div className="mt-2 text-xs text-muted-foreground">
+                  <span className="font-medium">{module.name}</span> - Video {moduleVideoIndex + 1} of {totalVideosInModule} 
+                  ({completedVideosInModule} completed)
+                </div>
+              </div>
+              */}
             </div>
 
             {/* Top Navigation: Previous / Start from Beginning / Next */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 mb-4 max-w-5xl mx-auto">
               {/* Previous Video Button */}
               <div className="flex-1 flex justify-start">
-                {currentVideoIndex > 0 ? (
-                  <Button 
-                    variant="outline" 
-                    onClick={playPreviousVideo}
-                    className="flex items-center gap-2 hover:bg-muted transition-colors"
-                  >
-                    <SkipBack className="h-4 w-4" />
-                    <div className="text-left">
-                      <div className="text-sm font-medium">Previous Video</div>
-                      <div className="text-xs text-muted-foreground truncate max-w-[120px]">
-                        {playlist?.videos[currentVideoIndex - 1]?.title}
+                {(() => {
+                  if (!currentVideo || !modules) return null
+                  
+                  // Find which module the current video belongs to
+                  const currentModuleIndex = modules.findIndex(module => 
+                    module.videos.some(v => v.id === currentVideo.id)
+                  )
+                  
+                  if (currentModuleIndex === -1) return null
+                  
+                  const currentModule = modules[currentModuleIndex]
+                  const currentModuleVideoIndex = currentModule.videos.findIndex(v => v.id === currentVideo.id)
+                  const hasPreviousInModule = currentModuleVideoIndex > 0
+                  
+                  if (hasPreviousInModule) {
+                    const prevModuleVideo = currentModule.videos[currentModuleVideoIndex - 1]
+                    const prevPlaylistIndex = playlist.videos.findIndex(v => v.id === prevModuleVideo.id)
+                    
+                    return (
+                      <Button 
+                        variant="outline" 
+                        onClick={playPreviousVideo}
+                        className="flex items-center gap-2 hover:bg-muted transition-colors"
+                        title="Go to previous video in this module"
+                      >
+                        <SkipBack className="h-4 w-4" />
+                        <div className="text-left">
+                          <div className="text-sm font-medium">Previous Video</div>
+                          <div className="text-xs text-muted-foreground truncate max-w-[120px]">
+                            {prevModuleVideo.title}
+                          </div>
+                          <div className="text-xs text-blue-600 font-medium">
+                            {currentModule.name}
+                          </div>
+                        </div>
+                      </Button>
+                    )
+                  } else {
+                    return (
+                      <div className="text-sm text-muted-foreground opacity-50">
+                        First Video in {currentModule.name}
                       </div>
-                    </div>
-                  </Button>
-                ) : (
-                  <div className="text-sm text-muted-foreground opacity-50">
-                    First Video
-                  </div>
-                )}
+                    )
+                  }
+                })()}
               </div>
 
               {/* Center: Start from Beginning Button */}
@@ -2962,19 +3313,56 @@ export default function VideoPlayerPage() {
                 {playlist?.videos && 
                  Array.isArray(playlist.videos) && 
                  currentVideoIndex < playlist.videos.length - 1 ? (
-                  <Button 
-                    variant="outline" 
-                    onClick={playNextVideo}
-                    className="flex items-center gap-2 hover:bg-muted transition-colors"
-                  >
-                    <div className="text-right">
-                      <div className="text-sm font-medium">Next Video</div>
-                      <div className="text-xs text-muted-foreground truncate max-w-[120px]">
-                        {playlist?.videos[currentVideoIndex + 1]?.title}
-                      </div>
-                    </div>
-                    <SkipForward className="h-4 w-4" />
-                  </Button>
+                  (() => {
+                    const nextIndex = currentVideoIndex + 1
+                    const nextVideo = playlist.videos[nextIndex]
+                    const isNextVideoPlayable = isVideoPlayable(nextIndex)
+                    
+                    return (
+                      <Button 
+                        variant="outline" 
+                        onClick={playNextVideo}
+                        disabled={!isNextVideoPlayable}
+                        className={`flex items-center gap-2 transition-colors ${
+                          isNextVideoPlayable 
+                            ? "hover:bg-muted cursor-pointer" 
+                            : "opacity-50 cursor-not-allowed"
+                        }`}
+                        title={isNextVideoPlayable 
+                          ? "Go to next video in this module" 
+                          : "Complete current video to unlock next video"
+                        }
+                      >
+                        <div className="text-right">
+                          <div className="text-sm font-medium">Next Video</div>
+                          <div className="text-xs text-muted-foreground truncate max-w-[120px]">
+                            {nextVideo.title}
+                          </div>
+                          {(() => {
+                            // Find which module the next video belongs to
+                            const nextModuleIndex = modules.findIndex(module => 
+                              module.videos.some(v => v.id === nextVideo.id)
+                            )
+                            if (nextModuleIndex !== -1) {
+                              const nextModule = modules[nextModuleIndex]
+                              return (
+                                <div className="text-xs text-blue-600 font-medium">
+                                  {nextModule.name}
+                                </div>
+                              )
+                            }
+                            return null
+                          })()}
+                          {!isNextVideoPlayable && (
+                            <div className="text-xs text-orange-600 font-medium">
+                              🔒 Locked
+                            </div>
+                          )}
+                        </div>
+                        <SkipForward className="h-4 w-4" />
+                      </Button>
+                    )
+                  })()
                 ) : (
                   <div className="text-sm text-muted-foreground opacity-50">
                     Last Video
@@ -3014,6 +3402,14 @@ export default function VideoPlayerPage() {
                 <MessageSquare className="h-4 w-4" />
                 Rate & Review This Video
               </Button>
+              
+              {/* Debug Button - Only visible in development */}
+              {process.env.NODE_ENV === 'development' && (
+                <Button variant="outline" onClick={debugVideoStates} className="flex items-center gap-2">
+                  <Info className="h-4 w-4" />
+                  Debug Video States
+                </Button>
+              )}
             </div>
 
             {/* Next Videos Section - Moved below description */}
@@ -3021,70 +3417,107 @@ export default function VideoPlayerPage() {
               <Card className="rounded-lg shadow-sm">
                 <CardContent className="p-4">
                   <h2 className="text-lg font-semibold mb-4">
-                    {currentVideo.category === "Sales" ? "Next Videos in Sales Module" : `Next Videos in ${currentVideo.category || "Module"}`}
+                    {(() => {
+                      // Find which module the current video belongs to
+                      const moduleIndex = modules.findIndex(module => 
+                        module.videos.some(v => v.id === currentVideo.id)
+                      )
+                      if (moduleIndex !== -1) {
+                        const module = modules[moduleIndex]
+                        return `Next Videos in ${module.name}`
+                      }
+                      return `Next Videos in ${currentVideo.category || "Module"}`
+                    })()}
                   </h2>
                   <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                    {playlist?.videos && Array.isArray(playlist.videos) && 
-                     playlist.videos.slice(currentVideoIndex + 1, currentVideoIndex + 6).map((video, index) => {
-                       const isWatched = videoWatchEvents[video.id] === true
-                       const isPlayable = isVideoPlayable(currentVideoIndex + 1 + index)
-                       
-                       return (
-                         <div
-                           key={video.id}
-                           className={`flex items-center gap-3 p-2 rounded-md border transition-colors ${
-                             isPlayable
-                               ? "hover:bg-muted cursor-pointer border-transparent hover:border-primary/30"
-                               : "opacity-50 cursor-not-allowed border-transparent"
-                           }`}
-                           onClick={() => {
-                             if (isPlayable) {
-                               playVideoFromPlaylist(currentVideoIndex + 1 + index)
-                             }
-                           }}
-                         >
-                           <div className="relative w-20 h-12 flex-shrink-0 bg-muted rounded overflow-hidden">
-                             {video.thumbnail ? (
-                               <Image
-                                 src={video.thumbnail || "/placeholder.svg?height=40&width=40"}
-                                 width={40}
-                                 height={40}
-                                 alt={video.title}
-                                 className="object-cover w-full h-full"
-                                 onError={() => {
-                                   const imgElement = document.getElementById(
-                                     `next-thumb-${video.id}`,
-                                   ) as HTMLImageElement
-                                   if (imgElement) {
-                                     imgElement.src = "/placeholder.svg?height=40&width=40"
-                                   }
-                                 }}
-                                 id={`next-thumb-${video.id}`}
-                               />
-                             ) : (
-                               <div className="flex items-center justify-center h-full">
-                                 <Play className="h-5 w-5 text-muted-foreground" />
-                               </div>
-                             )}
-                             {isWatched && (
-                               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                 <CheckCircle className="h-4 w-4 text-green-500" />
-                               </div>
-                             )}
-                             {!isPlayable && (
-                               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                 <Lock className="h-4 w-4 text-muted-foreground" />
-                               </div>
-                             )}
-                           </div>
+                    {(() => {
+                      // Find which module the current video belongs to
+                      const moduleIndex = modules.findIndex(module => 
+                        module.videos.some(v => v.id === currentVideo.id)
+                      )
+                      
+                      if (moduleIndex === -1) return null
+                      
+                      const currentModule = modules[moduleIndex]
+                      const currentModuleVideoIndex = currentModule.videos.findIndex(v => v.id === currentVideo.id)
+                      
+                      // Only show videos from the current module, not from other modules
+                      const nextVideosInModule = currentModule.videos.slice(currentModuleVideoIndex + 1, currentModuleVideoIndex + 6)
+                      
+                      return nextVideosInModule.map((video, index) => {
+                        // Find the playlist index for this video
+                        const playlistIndex = playlist.videos.findIndex(v => v.id === video.id)
+                        const isWatched = videoWatchEvents[video.id] === true
+                        const isPlayable = playlistIndex !== -1 ? isVideoPlayable(playlistIndex) : false
+                        const isLocked = videoWatchEvents[video.id] === null
+                        
+                        return (
+                          <div
+                            key={video.id}
+                            className={`flex items-center gap-3 p-2 rounded-md border transition-colors ${
+                              isPlayable
+                                ? "hover:bg-muted cursor-pointer border-transparent hover:border-primary/30"
+                                : "opacity-50 cursor-not-allowed border-transparent"
+                            }`}
+                            onClick={() => {
+                              if (isPlayable && playlistIndex !== -1) {
+                                playVideoFromPlaylist(playlistIndex)
+                              } else {
+                                toast({
+                                  title: "Video Locked",
+                                  description: "Complete the previous video to unlock this one.",
+                                  variant: "destructive",
+                                  duration: 3000,
+                                })
+                              }
+                            }}
+                          >
+                            <div className="relative w-20 h-12 flex-shrink-0 bg-muted rounded overflow-hidden">
+                              {video.thumbnail ? (
+                                <Image
+                                  src={video.thumbnail || "/placeholder.svg?height=40&width=40"}
+                                  width={40}
+                                  height={40}
+                                  alt={video.title}
+                                  className="object-cover w-full h-full"
+                                  onError={() => {
+                                    const imgElement = document.getElementById(
+                                      `next-thumb-${video.id}`,
+                                    ) as HTMLImageElement
+                                    if (imgElement) {
+                                      imgElement.src = "/placeholder.svg?height=40&width=40"
+                                    }
+                                  }}
+                                  id={`next-thumb-${video.id}`}
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center h-full">
+                                  <Play className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                              )}
+                              {isWatched && (
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                </div>
+                              )}
+                              {isLocked && (
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                  <Lock className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
 
-                           <div className="flex-1 min-w-0">
-                             <p className="font-medium text-sm truncate">{video.title}</p>
-                             <p className="text-xs text-muted-foreground">{video.duration}</p>
-                           </div>
-                         </div>
-                       )
-                     })}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{video.title}</p>
+                              <p className="text-xs text-muted-foreground">{video.duration}</p>
+                              {isLocked && (
+                                <p className="text-xs text-muted-foreground">🔒 Locked - Complete previous video to unlock</p>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })
+                    })()}
                   </div>
                 </CardContent>
               </Card>
@@ -3164,6 +3597,7 @@ export default function VideoPlayerPage() {
                                     const isCurrentVideo = currentVideo.id === video.id
                                     const isWatched = videoWatchEvents[video.id] === true
                                     const isPlayable = playlistIndex !== -1 ? isVideoPlayable(playlistIndex) : false
+                                    const isLocked = videoWatchEvents[video.id] === null
 
                                     return (
                                       <div
@@ -3178,6 +3612,13 @@ export default function VideoPlayerPage() {
                                         onClick={() => {
                                           if (isPlayable && !isCurrentVideo) {
                                             playVideoFromModule(moduleIndex, videoIndex)
+                                          } else if (!isPlayable) {
+                                            toast({
+                                              title: "Video Locked",
+                                              description: "Complete the previous video in this module to unlock this one.",
+                                              variant: "destructive",
+                                              duration: 3000,
+                                            })
                                           }
                                         }}
                                       >
@@ -3210,7 +3651,7 @@ export default function VideoPlayerPage() {
                                               <CheckCircle className="h-4 w-4 text-green-500" />
                                             </div>
                                           )}
-                                          {!isPlayable && (
+                                          {isLocked && (
                                             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                                               <Lock className="h-4 w-4 text-muted-foreground" />
                                             </div>
@@ -3222,6 +3663,9 @@ export default function VideoPlayerPage() {
                                     {video.title}
                                   </p>
                                           <p className="text-xs text-muted-foreground">{video.duration}</p>
+                                          {isLocked && (
+                                            <p className="text-xs text-muted-foreground">🔒 Locked - Complete previous video to unlock</p>
+                                          )}
                                         </div>
 
                                         {isCurrentVideo && (
