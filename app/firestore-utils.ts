@@ -981,3 +981,42 @@ export const getModuleOrder = async (moduleName: string): Promise<number | null>
   }
 }
 
+// Module Display Name Overrides
+export interface ModuleDisplayNameDoc {
+  category: string
+  displayName: string
+  updatedAt: any
+}
+
+export const saveModuleDisplayName = async (category: string, displayName: string) => {
+  try {
+    const ref = doc(db, "moduleDisplayNames", category)
+    await setDoc(ref, {
+      category,
+      displayName,
+      updatedAt: serverTimestamp(),
+    })
+    return true
+  } catch (error) {
+    console.error("Error saving module display name:", error)
+    throw error
+  }
+}
+
+export const getAllModuleDisplayNames = async (): Promise<Record<string, string>> => {
+  try {
+    const snapshot = await getDocs(collection(db, "moduleDisplayNames"))
+    const mapping: Record<string, string> = {}
+    snapshot.docs.forEach((d) => {
+      const data = d.data() as ModuleDisplayNameDoc
+      if (data?.category && typeof data?.displayName === 'string') {
+        mapping[data.category] = data.displayName
+      }
+    })
+    return mapping
+  } catch (error) {
+    console.error("Error fetching module display names:", error)
+    return {}
+  }
+}
+

@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RefreshCw, SortAsc, ArrowUp, ArrowDown, GripVertical } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
-import { saveModuleOrder, getAllModuleOrders } from "@/app/firestore-utils"
+import { saveModuleOrder, getAllModuleOrders, getAllModuleDisplayNames, saveModuleDisplayName } from "@/app/firestore-utils"
 
 interface Module {
   name: string
@@ -50,6 +50,9 @@ export default function ModulesPage() {
   const [orderedModules, setOrderedModules] = useState<ModuleOrder[]>([])
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [moduleOrders, setModuleOrders] = useState<Record<string, number>>({})
+  const [displayNames, setDisplayNames] = useState<Record<string, string>>({})
+  const [renameCategory, setRenameCategory] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState<string>("")
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -66,6 +69,7 @@ export default function ModulesPage() {
 
   useEffect(() => {
     loadModuleOrders()
+    ;(async () => setDisplayNames(await getAllModuleDisplayNames()))()
   }, [])
 
   const loadModules = async () => {
@@ -135,6 +139,7 @@ export default function ModulesPage() {
   const handleRefresh = () => {
     loadModules()
     loadModuleOrders()
+    ;(async () => setDisplayNames(await getAllModuleDisplayNames()))()
   }
 
   // Display helper to remove "Overview" but preserve original names for ordering/keys
@@ -229,6 +234,7 @@ export default function ModulesPage() {
               <TableHead>Category</TableHead>
            
               <TableHead>Videos</TableHead>
+              <TableHead className="w-32">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -250,10 +256,16 @@ export default function ModulesPage() {
                   <TableCell className="font-medium">
                     {moduleOrders[module.name] !== undefined ? moduleOrders[module.name] + 1 : index + 1}
                   </TableCell>
-                  <TableCell className="font-medium">{getDisplayModuleName(module.name)}</TableCell>
+                  <TableCell className="font-medium">{displayNames[module.category] || getDisplayModuleName(module.name)}</TableCell>
                   <TableCell>{module.category}</TableCell>
                   
                   <TableCell>{module.videoCount}</TableCell>
+                  <TableCell>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setRenameCategory(module.category)
+                      setRenameValue(displayNames[module.category] || getDisplayModuleName(module.name))
+                    }}>Rename</Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -335,6 +347,35 @@ export default function ModulesPage() {
               Cancel
             </Button>
             <Button onClick={saveOrder}>Save Order</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename Module Dialog */}
+      <Dialog open={!!renameCategory} onOpenChange={(open) => { if (!open) { setRenameCategory(null); setRenameValue("") } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename Module</DialogTitle>
+            <DialogDescription>
+              Set a display name for this module. This only changes how it appears to users.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <Input value={renameCategory || ''} disabled />
+            <Label>Display name</Label>
+            <Input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} placeholder="e.g., Sales" />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRenameCategory(null); setRenameValue('') }}>Cancel</Button>
+            <Button onClick={async () => {
+              if (!renameCategory) return
+              await saveModuleDisplayName(renameCategory, renameValue.trim())
+              setDisplayNames(await getAllModuleDisplayNames())
+              setRenameCategory(null)
+              setRenameValue('')
+              toast({ title: 'Saved', description: 'Module display name updated.' })
+            }}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

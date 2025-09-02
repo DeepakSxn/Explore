@@ -26,7 +26,7 @@ import XPRewardPopup from "../components/XPRewardPopup"
 
 
 import ChallengeMode from "../components/ChallengeMode"
-import { getAllModuleVideoOrders, getAllModuleOrders } from "../firestore-utils"
+import { getAllModuleVideoOrders, getAllModuleOrders, getAllModuleDisplayNames } from "../firestore-utils"
 
 interface Video {
   id: string
@@ -157,6 +157,7 @@ export default function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [categoryOrders, setCategoryOrders] = useState<Record<string, string[]>>({})
   const [moduleOrders, setModuleOrders] = useState<Record<string, number>>({})
+  const [moduleDisplayNames, setModuleDisplayNames] = useState<Record<string, string>>({})
 
   // XP Reward Popup states
   const [showXPReward, setShowXPReward] = useState(false)
@@ -484,6 +485,10 @@ export default function Dashboard() {
       const moduleToOrderIds = await getAllModuleOrders()
       console.log("Fetched module orders:", moduleToOrderIds)
       setModuleOrders(moduleToOrderIds)
+
+      // Fetch module display names
+      const displayNames = await getAllModuleDisplayNames()
+      setModuleDisplayNames(displayNames)
 
       // Fetch watch history to mark watched videos
       const watchHistoryQuery = query(
@@ -1303,7 +1308,7 @@ export default function Dashboard() {
                                     <Target className="h-4 w-4 text-green-600" />
                                   </div>
                                   <div>
-                                    <span className="font-semibold text-slate-900 text-left">{module.name.trim()}</span>
+                                    <span className="font-semibold text-slate-900 text-left">{(moduleDisplayNames[module.category] || module.name).trim()}</span>
                                     <div className="flex items-center gap-2 mt-1">
                                       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
                                         <Clock className="h-3 w-3 mr-1" />
