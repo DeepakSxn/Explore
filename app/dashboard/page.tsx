@@ -528,6 +528,11 @@ export default function Dashboard() {
   }
 
   const organizeVideosIntoModules = useCallback(() => {
+    const sanitize = (str: string) =>
+      (str || "")
+        .replace(/[\u00A0\u200B\u2009\u202F]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
     // Group videos by category
     const videosByCategory = videos.reduce(
       (acc, video) => {
@@ -535,7 +540,7 @@ export default function Dashboard() {
         if (video.category === "Company Introduction" || video.category === "AI tools"|| video.category === "Miscellaneous") {
           return acc
         }
-        const category = video.category || "Uncategorized"
+        const category = sanitize(video.category || "Uncategorized")
         if (!acc[category]) {
           acc[category] = []
         }
@@ -594,11 +599,12 @@ export default function Dashboard() {
         if (orderB !== Number.MAX_SAFE_INTEGER) return 1
         return a.title.localeCompare(b.title)
       })
-      // Create module name, avoiding double "Module" if category already contains it
-      const moduleName = category.includes("Module") ? `${category} Overview` : `${category} Module Overview`
+      // Create module name without extra spaces or the word "Overview"
+      const cleanCategory = sanitize(category)
+      const moduleName = cleanCategory.includes("Module") ? `${cleanCategory}` : `${cleanCategory} Module`
       moduleArray.push({
-        name: moduleName,
-        category,
+        name: sanitize(moduleName),
+        category: cleanCategory,
         totalDuration: calculateTotalDuration(sortedVideos),
         videos: sortedVideos,
       })
@@ -609,9 +615,23 @@ export default function Dashboard() {
 
     // Sort modules according to admin-defined order or fallback to MODULE_ORDER
     moduleArray.sort((a, b) => {
-      // Check if admin has defined order for these modules
-      const orderA = moduleOrders[a.name] ?? Number.MAX_SAFE_INTEGER
-      const orderB = moduleOrders[b.name] ?? Number.MAX_SAFE_INTEGER
+      // Helper: try multiple keys to find stored admin order
+      const getOrder = (name: string, category: string) => {
+        // Current key: name without "Overview"
+        const direct = moduleOrders[name]
+        if (typeof direct === 'number') return direct
+        // Legacy key: name with " Module Overview"
+        const legacyName = name.replace(/\s*Module$/i, ' Module Overview')
+        const legacy = moduleOrders[legacyName]
+        if (typeof legacy === 'number') return legacy
+        // Category as key (rare)
+        const byCategory = moduleOrders[category]
+        if (typeof byCategory === 'number') return byCategory
+        return Number.MAX_SAFE_INTEGER
+      }
+
+      const orderA = getOrder(a.name, a.category)
+      const orderB = getOrder(b.name, b.category)
       
       // If both have admin-defined orders, sort by them
       if (orderA !== Number.MAX_SAFE_INTEGER && orderB !== Number.MAX_SAFE_INTEGER) {
@@ -628,19 +648,26 @@ export default function Dashboard() {
       if (isSalesA && !isSalesB) return -1
       if (!isSalesA && isSalesB) return 1
       
-      const indexA = MODULE_ORDER.findIndex(
-        (name) => normalize(a.category) === normalize(name)
-      )
-      const indexB = MODULE_ORDER.findIndex(
-        (name) => normalize(b.category) === normalize(name)
-      )
+      // Try match by category first
+      let indexA = MODULE_ORDER.findIndex((name) => normalize(a.category) === normalize(name))
+      let indexB = MODULE_ORDER.findIndex((name) => normalize(b.category) === normalize(name))
+
+      // If no match by category, attempt to match by the legacy module name containing "Overview"
+      if (indexA === -1) {
+        const legacyNameA = a.category.includes("Module") ? `${a.category} Overview` : `${a.category} Module Overview`
+        indexA = MODULE_ORDER.findIndex((name) => normalize(legacyNameA.replace(/ Module Overview$/i, " Module")) === normalize(name))
+      }
+      if (indexB === -1) {
+        const legacyNameB = b.category.includes("Module") ? `${b.category} Overview` : `${b.category} Module Overview`
+        indexB = MODULE_ORDER.findIndex((name) => normalize(legacyNameB.replace(/ Module Overview$/i, " Module")) === normalize(name))
+      }
       
       // Debug logging
       console.log(`Sorting: ${a.category} (index: ${indexA}) vs ${b.category} (index: ${indexB})`)
       
       if (indexA === -1 && indexB === -1) return a.category.localeCompare(b.category)
       if (indexA === -1) return 1
-      if (indexB === -1) return 1
+      if (indexB === -1) return -1
       return indexA - indexB
     })
 
@@ -1241,7 +1268,7 @@ export default function Dashboard() {
                   <div className="p-6">
                     {/* Module-level selection only */}
                     <div className="flex items-center mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                      <span className="text-sm font-medium text-slate-700">Select whole modules using the checkboxes on each module</span>
+                      <span className="text-sm font-medium text-slate-700">Select the modules you want to watch</span>
                       <Badge variant="outline" className="ml-auto bg-blue-50 text-blue-700 border-blue-200">
                         {selectedVideos.length} videos in selected modules
                       </Badge>
@@ -1253,7 +1280,7 @@ export default function Dashboard() {
                         <AccordionItem key={moduleIndex} value={module.category} className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-200">
                           <AccordionTrigger className="px-6 py-4 hover:no-underline bg-gradient-to-r from-slate-50 to-white hover:from-slate-100 hover:to-slate-50">
                             <div className="flex items-center justify-between w-full">
-                              <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2">
                                 {/* Module Select All Checkbox */}
                                 <Checkbox
                                   ref={(el) => {
@@ -1271,12 +1298,12 @@ export default function Dashboard() {
                                   }}
                                   className="mr-2"
                                 />
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
                                   <div className="p-2 bg-green-100 rounded-lg">
                                     <Target className="h-4 w-4 text-green-600" />
                                   </div>
                                   <div>
-                                    <span className="font-semibold text-slate-900 text-left">{module.name}</span>
+                                    <span className="font-semibold text-slate-900 text-left">{module.name.trim()}</span>
                                     <div className="flex items-center gap-2 mt-1">
                                       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
                                         <Clock className="h-3 w-3 mr-1" />

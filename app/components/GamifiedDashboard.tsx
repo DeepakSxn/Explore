@@ -533,7 +533,7 @@ export default function GamifiedDashboard() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Play className="h-4 w-4" />
                   </div>
-                  <p className="text-3xl font-extrabold text-white">{userProgress.totalVideosWatched}</p>
+                  <p className="text-3xl font-normal text-white">{userProgress.totalVideosWatched}</p>
                   <p className="text-sm text-white">Videos Watched</p>
                 </CardContent>
               </Card>
@@ -543,7 +543,7 @@ export default function GamifiedDashboard() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Flame className="h-4 w-4" />
                   </div>
-                  <p className="text-3xl font-extrabold text-white">{userProgress.currentStreak}</p>
+                  <p className="text-3xl font-normal text-white">{userProgress.currentStreak}</p>
                   <p className="text-sm text-white">Day Streak</p>
                 </CardContent>
               </Card>
@@ -553,7 +553,7 @@ export default function GamifiedDashboard() {
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Award className="h-4 w-4" />
                   </div>
-                  <p className="text-3xl font-extrabold text-white">{userProgress.badges.length}</p>
+                  <p className="text-3xl font-normal text-white">{userProgress.badges.length}</p>
                   <p className="text-sm text-white">Badges Earned</p>
                 </CardContent>
               </Card>
@@ -563,7 +563,7 @@ export default function GamifiedDashboard() {
                   <div className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-2">
                     <span className="text-[10px] font-bold text-white">XP</span>
                   </div>
-                  <p className="text-3xl font-extrabold text-white">{userProgress.totalXP}</p>
+                  <p className="text-3xl font-normal text-white">{userProgress.totalXP}</p>
                   <p className="text-sm text-white">Total XP</p>
                 </CardContent>
               </Card>

@@ -28,6 +28,13 @@ interface Module {
   videoCount: number
 }
 
+// Minimal shape of video documents we read from Firestore
+interface FirestoreVideoDoc {
+  id: string
+  category?: string
+  duration?: number
+}
+
 interface ModuleOrder {
   moduleName: string
   order: number
@@ -65,9 +72,9 @@ export default function ModulesPage() {
     try {
       setIsLoading(true)
       const videosSnapshot = await getDocs(collection(db, "videos"))
-      const videos = videosSnapshot.docs.map(doc => ({
+      const videos: FirestoreVideoDoc[] = videosSnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...(doc.data() as any),
       }))
 
       // Group videos by category to create modules
@@ -128,6 +135,13 @@ export default function ModulesPage() {
   const handleRefresh = () => {
     loadModules()
     loadModuleOrders()
+  }
+
+  // Display helper to remove "Overview" but preserve original names for ordering/keys
+  const getDisplayModuleName = (name: string): string => {
+    // Replace trailing "Module Overview" with "Module", or plain trailing "Overview"
+    const withoutModuleOverview = name.replace(/\s*Module\s*Overview$/i, " Module")
+    return withoutModuleOverview.replace(/\s*Overview$/i, "")
   }
 
   const openOrderDialog = () => {
@@ -236,7 +250,7 @@ export default function ModulesPage() {
                   <TableCell className="font-medium">
                     {moduleOrders[module.name] !== undefined ? moduleOrders[module.name] + 1 : index + 1}
                   </TableCell>
-                  <TableCell className="font-medium">{module.name}</TableCell>
+                  <TableCell className="font-medium">{getDisplayModuleName(module.name)}</TableCell>
                   <TableCell>{module.category}</TableCell>
                   
                   <TableCell>{module.videoCount}</TableCell>
@@ -292,7 +306,7 @@ export default function ModulesPage() {
                   <div className="flex items-center gap-3">
                     <GripVertical className="h-4 w-4 text-gray-400 cursor-grab" />
                     <span className="w-6 text-xs text-gray-500">{idx + 1}</span>
-                    <div className="text-sm font-medium">{module.name}</div>
+                    <div className="text-sm font-medium">{getDisplayModuleName(module.name)}</div>
                   </div>
                   <div className="flex items-center gap-1">
                     <Button 
