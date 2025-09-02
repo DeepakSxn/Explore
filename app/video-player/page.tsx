@@ -1867,14 +1867,11 @@ export default function VideoPlayerPage() {
         await completeVideo(currentVideo.id, watchDuration);
         
         // Show XP reward for video completion
-        // Clean up the video title by removing "Module" for display
-        const cleanVideoTitle = currentVideo.title.replace(/\s*Module\s*/gi, ' ').trim();
-        
         setXpRewardData({
           xpAmount: 50, // From XP_CONFIG.VIDEO_COMPLETION
           reason: "Video completion",
           type: 'video',
-          videoTitle: cleanVideoTitle
+          videoTitle: currentVideo.title
         });
         setShowXPReward(true);
         
