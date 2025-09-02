@@ -95,7 +95,7 @@ export default function ModulesPage() {
       const moduleArray: Module[] = []
       Object.entries(videosByCategory).forEach(([category, videos]) => {
         // Skip certain categories
-        if (category === "Company Introduction" || category === "Miscellaneous" || category === "AI tools") {
+        if (category === "Company Introduction" || category === "AI tools") {
           return
         }
 

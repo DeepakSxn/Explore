@@ -241,9 +241,9 @@ export default function GamifiedDashboard() {
         return
       }
 
-      // Get compulsory videos (Company Introduction, Miscellaneous, AI tools)
+      // Get compulsory videos (Company Introduction, Additional Features, AI tools)
       let companyIntroVideos = allVideos.filter((v) => v.category === "Company Introduction")
-      let miscellaneousVideos = allVideos.filter((v) => v.category === "Miscellaneous")
+      let additionalFeaturesVideos = allVideos.filter((v) => v.category === "Additional Features")
       let aiToolsVideos = allVideos.filter((v) => 
         v.category === "AI tools" || 
         v.category === "AI Tools" || 
@@ -266,19 +266,19 @@ export default function GamifiedDashboard() {
       }
 
       companyIntroVideos = applyOrder(companyIntroVideos, "Company Introduction")
-      miscellaneousVideos = applyOrder(miscellaneousVideos, "Miscellaneous")
+      additionalFeaturesVideos = applyOrder(additionalFeaturesVideos, "Additional Features")
       aiToolsVideos = applyOrder(aiToolsVideos, "AI tools")
 
       console.log(`📹 Compulsory videos found:`)
       console.log(`   - Company Introduction: ${companyIntroVideos.length} videos`)
-      console.log(`   - Miscellaneous: ${miscellaneousVideos.length} videos`)
+      console.log(`   - Additional Features: ${additionalFeaturesVideos.length} videos`)
       console.log(`   - AI tools: ${aiToolsVideos.length} videos`)
 
-      // Combine all videos in the proper order: Company Intro + Selected Module + Miscellaneous + AI Tools
+      // Combine all videos in the proper order: Company Intro + Selected Module + Additional Features + AI Tools
       const allPlaylistVideos = [
         ...companyIntroVideos,
         ...moduleVideos,
-        ...miscellaneousVideos,
+        ...additionalFeaturesVideos,
         ...aiToolsVideos,
       ].map(v => ({
         ...v,
@@ -637,7 +637,7 @@ export default function GamifiedDashboard() {
                         const moduleProgress: {[key: string]: {progress: number, videoCount: number, watchedCount: number, totalVideos: number}} = {}
                         
                         // Define compulsory modules to exclude
-                        const compulsoryModules = ["Company Introduction", "Miscellaneous", "AI tools", "AI Tools", "ai tools", "Artificial Intelligence", "artificial intelligence"]
+                        const compulsoryModules = ["Company Introduction", "Additional Features", "AI tools", "AI Tools", "ai tools", "Artificial Intelligence", "artificial intelligence"]
                         
                         // Calculate progress for all videos across all modules
                         allVideos.forEach(video => {

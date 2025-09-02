@@ -80,7 +80,7 @@ export default function SignUp() {
         const uniqueCategories = new Set<string>()
         videoSnapshot.docs.forEach((doc) => {
           const category = doc.data().category
-          if (category && category !== "General" && category !== "Other" && category !== "Miscellaneous") {
+          if (category && category !== "General" && category !== "Other") {
             uniqueCategories.add(category)
           }
         })

@@ -36,7 +36,7 @@ export default function PlaylistPage() {
       try {
         const parsed = JSON.parse(stored)
         if (parsed && Array.isArray(parsed.videos)) {
-          setPlaylistVideos(parsed.videos.filter((v: any) => v.category !== "Company Introduction" && v.category !== "Miscellaneous"))
+          setPlaylistVideos(parsed.videos.filter((v: any) => v.category !== "Company Introduction"))
         }
       } catch {}
     }
@@ -102,7 +102,7 @@ export default function PlaylistPage() {
           const updated = parsed.videos.filter((v: any) => v.id !== confirmRemoveId)
           parsed.videos = updated
           localStorage.setItem("currentPlaylist", JSON.stringify(parsed))
-          setPlaylistVideos(updated.filter((v: any) => v.category !== "Company Introduction" && v.category !== "Miscellaneous"))
+          setPlaylistVideos(updated.filter((v: any) => v.category !== "Company Introduction"))
         }
       } catch {}
     }
@@ -132,7 +132,7 @@ export default function PlaylistPage() {
           const updated = parsed.videos.filter((v: any) => v.category !== confirmRemoveCategory)
           parsed.videos = updated
           localStorage.setItem("currentPlaylist", JSON.stringify(parsed))
-          setPlaylistVideos(updated.filter((v: any) => v.category !== "Company Introduction" && v.category !== "Miscellaneous"))
+          setPlaylistVideos(updated.filter((v: any) => v.category !== "Company Introduction"))
         }
       } catch {}
     }

@@ -265,9 +265,9 @@ export default function Dashboard() {
   useEffect(() => {
     // Filter videos based on search query and company
     if (!searchQuery && !selectedCompany) {
-      // Filter out General and Miscellaneous videos for dashboard display only
+      // Filter out General videos for dashboard display only
       const filteredForDisplay = videos.filter(
-        (video) => video.category !== "Company Introduction" && video.category !== "Miscellaneous"
+        (video) => video.category !== "Company Introduction"
       )
       setFilteredVideos(filteredForDisplay)
       return
@@ -293,9 +293,9 @@ export default function Dashboard() {
       )
     }
 
-    // Filter out General and Miscellaneous videos for dashboard display only
+    // Filter out General videos for dashboard display only
     const filteredForDisplay = filtered.filter(
-      (video) => video.category !== "Company Introduction" && video.category !== "Miscellaneous"
+      (video) => video.category !== "Company Introduction"
     )
 
     setFilteredVideos(filteredForDisplay)
@@ -541,8 +541,8 @@ export default function Dashboard() {
     // Group videos by category
     const videosByCategory = videos.reduce(
       (acc, video) => {
-        // Exclude General and Miscellaneous categories
-        if (video.category === "Company Introduction" || video.category === "AI tools"|| video.category === "Miscellaneous") {
+        // Exclude General and AI tools categories
+        if (video.category === "Company Introduction" || video.category === "AI tools") {
           return acc
         }
         const category = sanitize(video.category || "Uncategorized")
@@ -569,7 +569,7 @@ export default function Dashboard() {
       return `${totalMinutes} mins`
     }
 
-    // Add other categories as modules (except General and Miscellaneous)
+    // Add other categories as modules (except General and AI tools)
     Object.entries(videosByCategory).forEach(([category, videos]) => {
       // Normalize category for lookup
       const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/gi, "")
@@ -729,7 +729,7 @@ export default function Dashboard() {
       // Get the selected videos
       const selectedVideoObjects = videos.filter((video) => selectedVideos.includes(video.id))
       const generalVideos = videos.filter((video) => video.category === "Company Introduction")
-      const miscVideos = videos.filter((video) => video.category === "Miscellaneous")
+      const additionalFeaturesVideos = videos.filter((video) => video.category === "Additional Features")
       const AiTool = videos.filter((video) => video.category === "AI tools")
 
       // Debug: Check if selectedVideoObjects is empty
@@ -758,7 +758,7 @@ export default function Dashboard() {
        const combinedVideoIds = new Set<string>()
        selectedVideoObjects.forEach((v) => combinedVideoIds.add(v.id))
        generalVideos.forEach((v) => combinedVideoIds.add(v.id))
-       miscVideos.forEach((v) => combinedVideoIds.add(v.id))
+       additionalFeaturesVideos.forEach((v) => combinedVideoIds.add(v.id))
        AiTool.forEach((v) => combinedVideoIds.add(v.id))
 
       // Helper to get canonical order of all videos
@@ -804,8 +804,8 @@ export default function Dashboard() {
             console.log(`    ⚠️ Already in playlist: ${v.title}`)
           }
         })
-        // 4. Miscellaneous at the end
-        miscVideos.forEach((v) => {
+        // 4. Additional Features at the end
+        additionalFeaturesVideos.forEach((v) => {
           if (combinedVideoIds.has(v.id) && !ordered.some((o) => o.id === v.id)) ordered.push(v)
         })
         // 5. AI tools at the end

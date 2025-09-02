@@ -1219,7 +1219,7 @@ export default function VideoPlayerPage() {
     if (!videos || !Array.isArray(videos) || videos.length === 0) return
 
     // IMPORTANT: This function ONLY shows:
-    // 1. Compulsory modules (Company Introduction, Miscellaneous, AI tools)
+            // 1. Compulsory modules (Company Introduction, Additional Features, AI tools)
     // 2. User-selected modules from the current playlist
     // 3. NO previous unfinished modules or other categories
 
@@ -1316,17 +1316,17 @@ export default function VideoPlayerPage() {
 
     // 5. ONLY add modules from playlist - NO other categories from previous selections
     // This ensures only the modules that are actually in the current playlist are shown
-    // along with the compulsory modules (Company Introduction, Miscellaneous, AI tools)
+            // along with the compulsory modules (Company Introduction, Additional Features, AI tools)
 
-    // 6. ALWAYS add Miscellaneous module before AI tools (COMPULSORY)
-    if (!addedCategories.has("Miscellaneous")) {
+    // 6. ALWAYS add Additional Features module before AI tools (COMPULSORY)
+    if (!addedCategories.has("Additional Features")) {
       moduleArray.push({
-        name: "Miscellaneous",
-        category: "Miscellaneous",
-        videos: videosByCategory["Miscellaneous"] || [],
+        name: "Additional Features",
+        category: "Additional Features",
+        videos: videosByCategory["Additional Features"] || [],
       })
-      addedCategories.add("Miscellaneous")
-      console.log("Added compulsory Miscellaneous module")
+      addedCategories.add("Additional Features")
+      console.log("Added compulsory Additional Features module")
     }
 
     // 7. ALWAYS add AI tools module last (COMPULSORY)
@@ -1365,7 +1365,7 @@ export default function VideoPlayerPage() {
     console.log("🎯 All modules found in playlist:", allCategoriesInPlaylist);
     moduleArray.forEach((module, index) => {
       const isCompulsory = module.category === "Company Introduction" || 
-                           module.category === "Miscellaneous" || 
+                           module.category === "Additional Features" || 
                            module.category === "AI tools"
       const moduleType = isCompulsory ? "COMPULSORY" : "FROM PLAYLIST"
       console.log(`${index + 1}. ${module.name} (${module.category}) - ${module.videos.length} videos [${moduleType}]`)
