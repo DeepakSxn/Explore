@@ -1138,46 +1138,12 @@ export default function VideoPlayerPage() {
       console.warn("Could not load moduleVideoOrders in player", e)
     }
 
-    // Define the expected module order - use admin-defined order if available
-    let moduleOrder = [
-      "Company Introduction",
-      "Sales", 
-      "Sales Module ",
-      "Processing",
-      "Inventory Management",
-      "Inventory",
-      "Purchase",
-      "Finance and Accounting",
-      "Shipping and Receiving",
-      "CRM",
-      "IT & Security",
-      "Advanced Analytics & Reporting",
-      "Master Data Management",
-      "Master Data",
-      "Contact Management",
-      "QA",
-      "QA Module",
-      "Miscellaneous",
-      "AI tools"
-    ]
-
-    // If admin has defined module order, use it to reorder the moduleOrder array
-    if (Object.keys(moduleOrders).length > 0) {
-      // Create a mapping of module names to their admin-defined order
-      const moduleNameToOrder: Record<string, number> = {}
-      Object.entries(moduleOrders).forEach(([moduleName, order]) => {
-        // Extract the category from the module name (e.g., "Sales Module Overview" -> "Sales")
-        const category = moduleName.replace(" Module Overview", "").replace(" Overview", "")
-        moduleNameToOrder[category] = order
-      })
-
-      // Sort the moduleOrder array based on admin-defined order
-      moduleOrder.sort((a, b) => {
-        const orderA = moduleNameToOrder[a] ?? Number.MAX_SAFE_INTEGER
-        const orderB = moduleNameToOrder[b] ?? Number.MAX_SAFE_INTEGER
-        return orderA - orderB
-      })
-    }
+    // Get all unique categories from the videos in the playlist
+    const allCategoriesInPlaylist = [...new Set(
+      videos.map(v => v.category).filter((c): c is string => typeof c === 'string' && c.trim() !== '')
+    )]
+    
+    console.log("🎯 All categories found in playlist for reordering:", allCategoriesInPlaylist);
 
     // Group videos by category
     const videosByCategory = videos.reduce((acc, video) => {
@@ -1192,27 +1158,18 @@ export default function VideoPlayerPage() {
     // Create ordered videos array
     const orderedVideos: Video[] = []
 
-    // Add videos in the expected module order
-    for (const moduleName of moduleOrder) {
-      let categoryVideos = videosByCategory[moduleName] || []
+    // Add videos in the order they appear in the playlist categories
+    for (const category of allCategoriesInPlaylist) {
+      let categoryVideos = videosByCategory[category] || []
       
       // Debug: Log what's happening with each module
-      console.log(`🔍 Processing module: "${moduleName}"`)
+      console.log(`🔍 Processing module for reordering: "${category}"`)
       console.log(`  - Videos found: ${categoryVideos.length}`)
       console.log(`  - Video titles: ${categoryVideos.map(v => v.title).join(', ')}`)
       
-      // NOTE: Only skip modules if they're missing AND they exist in the current playlist
-      // This prevents adding videos from previous selections
-      if (categoryVideos.length === 0) {
-        console.log(`⚠️ ${moduleName} videos missing from playlist - this is normal if user didn't select them`)
-        console.log(`✅ NOT fetching additional videos to avoid showing previous selections`)
-        // Skip adding this module if it's not in the current playlist
-        continue
-      }
-      
       if (categoryVideos.length > 0) {
-        // Apply saved order if present for this category; otherwise fallback
-        const saved = categoryOrders[moduleName]
+        // Apply saved order if present for this category; otherwise keep original order
+        const saved = categoryOrders[category]
         let sortedCategoryVideos = categoryVideos
         if (saved && saved.length > 0) {
           sortedCategoryVideos = [...categoryVideos].sort((a, b) => {
@@ -1222,20 +1179,11 @@ export default function VideoPlayerPage() {
             const bPos = ib === -1 ? Number.MAX_SAFE_INTEGER : ib
             return aPos - bPos
           })
-        } else {
-        // Sort videos within the category according to VIDEO_ORDER if available
-          sortedCategoryVideos = sortVideosByOrder(categoryVideos, moduleName)
         }
         orderedVideos.push(...sortedCategoryVideos)
-        console.log(`✅ Added ${sortedCategoryVideos.length} videos for module: "${moduleName}"`)
+        console.log(`✅ Added ${sortedCategoryVideos.length} videos for module: "${category}"`)
       }
     }
-
-    // IMPORTANT: Do NOT add remaining videos from previous selections
-    // Only include videos that are explicitly in the current playlist
-    // This prevents showing unfinished modules from previous selections
-    console.log("✅ Only showing videos from current playlist selection")
-    console.log("❌ NOT adding remaining videos from previous selections")
 
     console.log("Reordered videos:", orderedVideos.map(v => `${v.category}: ${v.title}`))
     return orderedVideos
@@ -1313,104 +1261,17 @@ export default function VideoPlayerPage() {
       Array.from(allCategories).filter((cat): cat is string => typeof cat === 'string' && cat.toLowerCase().includes('qa'))
     )
 
-    // IMPORTANT: We need to get the ACTUAL user-selected modules from localStorage
-    // NOT from the playlist data which may contain previous selections
-    let actualSelectedModules: Set<string> = new Set()
+    // Get all unique categories from the videos in the playlist
+    // This makes it fully dynamic based on what comes from the dashboard
+    const allCategoriesInPlaylist = [...new Set(
+      videos.map(v => v.category).filter((c): c is string => typeof c === 'string' && c.trim() !== '')
+    )]
     
-    try {
-      // First try to get selected categories directly from localStorage
-      const storedCategories = localStorage.getItem("selectedCategories")
-      console.log("🔍 Raw storedCategories from localStorage:", storedCategories)
-      
-      if (storedCategories) {
-        const selectedCategories = JSON.parse(storedCategories) as string[]
-        console.log("🔍 Parsed selectedCategories:", selectedCategories)
-        
-        // Add non-compulsory categories to the set
-        selectedCategories.forEach(category => {
-          if (category && 
-              category !== "Company Introduction" && 
-              category !== "Miscellaneous" && 
-              category !== "AI tools" &&
-              category !== "AI Tools" &&
-              category !== "ai tools" &&
-              category !== "Artificial Intelligence" &&
-              category !== "artificial intelligence") {
-            actualSelectedModules.add(category)
-            console.log(`✅ Added category from selectedCategories: ${category}`)
-          } else {
-            console.log(`❌ Skipped category from selectedCategories: ${category} (compulsory module)`)
-          }
-        })
-      } else {
-        // Fallback to the old method using selectedVideos
-        console.log("⚠️ No selectedCategories found, falling back to selectedVideos method")
-      const storedSelection = localStorage.getItem("selectedVideos")
-        console.log("🔍 Raw storedSelection from localStorage:", storedSelection)
-        
-      if (storedSelection) {
-        const selectedVideoIds = JSON.parse(storedSelection) as string[]
-          console.log("🔍 Parsed selectedVideoIds:", selectedVideoIds)
-        
-        // Find the categories of the videos the user actually selected
-        selectedVideoIds.forEach(videoId => {
-          const video = videos.find(v => v.id === videoId)
-            console.log(`🔍 Looking for videoId: ${videoId}`, video ? `Found: ${video.title} (${video.category})` : "NOT FOUND")
-            
-          if (video && video.category && 
-              video.category !== "Company Introduction" && 
-              video.category !== "Miscellaneous" && 
-              video.category !== "AI tools" &&
-                video.category !== "AI Tools" &&
-                video.category !== "ai tools" &&
-                video.category !== "Artificial Intelligence" &&
-                video.category !== "artificial intelligence") {
-            actualSelectedModules.add(video.category)
-              console.log(`✅ Added category: ${video.category}`)
-            } else if (video && video.category) {
-              console.log(`❌ Skipped category: ${video.category} (compulsory module)`)
-            }
-          })
-        } else {
-          console.log("❌ No selectedVideos found in localStorage")
-        }
-      }
-      
-      // Also check if we need to map category names (e.g., "Sales Module " -> "Sales")
-      const categoryMapping: {[key: string]: string} = {
-        "Sales Module ": "Sales",
-        "QA Module": "QA"
-      }
-      
-      // Add mapped categories if they exist in the videos
-      Object.entries(categoryMapping).forEach(([originalCategory, mappedCategory]) => {
-        const hasVideos = videos.some(v => v.category === originalCategory)
-        if (hasVideos && !actualSelectedModules.has(mappedCategory)) {
-          actualSelectedModules.add(mappedCategory)
-          console.log(`✅ Added mapped category: ${originalCategory} -> ${mappedCategory}`)
-        }
-      })
-
-      // Debug: Check all available categories in videos
-      const allCategoriesInVideos = [...new Set(
-        videos.map(v => v.category).filter((c): c is string => typeof c === 'string')
-      )]
-      console.log("🔍 All categories available in videos:", allCategoriesInVideos)
-      console.log(
-        "🔍 Looking for Sales-related categories:",
-        allCategoriesInVideos.filter(cat => cat.toLowerCase().includes('sales'))
-      )
-      console.log(
-        "🔍 Looking for QA-related categories:",
-        allCategoriesInVideos.filter(cat => cat.toLowerCase().includes('qa'))
-      )
-    } catch (error) {
-      console.error("Error reading user selection from localStorage:", error)
-    }
+    console.log("🎯 All categories found in playlist:", allCategoriesInPlaylist);
+    console.log("📋 Total videos in playlist:", videos.length);
     
-    console.log("🎯 ACTUAL user-selected modules:", Array.from(actualSelectedModules));
-    console.log("⚠️  Modules found in playlist (may include previous selections):", 
-      Array.from(new Set(videos.map(v => v.category).filter(Boolean))));
+    // Create a set of all categories for easy lookup
+    const playlistCategories = new Set(allCategoriesInPlaylist)
 
     // 1. ALWAYS add Company Introduction module first (COMPULSORY)
     if (videosByCategory["Company Introduction"] && videosByCategory["Company Introduction"].length > 0) {
@@ -1423,94 +1284,38 @@ export default function VideoPlayerPage() {
       console.log("Added compulsory Company Introduction module")
     }
 
-    // 2. Add ONLY the modules the user actually selected (from localStorage)
-    actualSelectedModules.forEach((profession) => {
-      console.log(`🔍 Processing user-selected module: "${profession}"`)
+    // 2. Add ALL modules found in the playlist (dynamic from dashboard)
+    allCategoriesInPlaylist.forEach((category) => {
+      console.log(`🔍 Processing category from playlist: "${category}"`)
       
-      // Define category mapping for backward compatibility
-      const categoryMapping: {[key: string]: string[]} = {
-        "Sales": ["Sales", "Sales Module ", "Sales Module"],
-        "QA": ["QA", "QA Module", "QA Module "]
-      }
+      const moduleVideos = videosByCategory[category]
       
-      // Try exact match first
-      let moduleVideos = videosByCategory[profession]
-      let foundCategory = profession
-      
-      // If exact match not found, try mapped categories
-      if ((!moduleVideos || moduleVideos.length === 0) && categoryMapping[profession]) {
-        console.log(`⚠️ No exact match found for "${profession}", trying mapped categories...`)
-        for (const mappedCategory of categoryMapping[profession]) {
-          if (videosByCategory[mappedCategory] && videosByCategory[mappedCategory].length > 0) {
-            moduleVideos = videosByCategory[mappedCategory]
-            foundCategory = mappedCategory
-            console.log(`✅ Found mapped category: "${mappedCategory}"`)
-            break
-          }
-        }
-      }
-      
-      // If still not found, try case-insensitive match
-      if (!moduleVideos || moduleVideos.length === 0) {
-        console.log(`⚠️ No mapped category found for "${profession}", trying case-insensitive search...`)
-        const matchingCategory = Object.keys(videosByCategory).find(cat => 
-          cat.toLowerCase() === profession.toLowerCase()
-        )
-        if (matchingCategory) {
-          moduleVideos = videosByCategory[matchingCategory]
-          foundCategory = matchingCategory
-          console.log(`✅ Found case-insensitive match: "${matchingCategory}"`)
-        }
-      }
-      
-      // If still not found, try partial match for Sales and QA
-      if ((!moduleVideos || moduleVideos.length === 0) && (profession === "Sales" || profession === "QA")) {
-        console.log(`⚠️ No exact match found for "${profession}", trying partial search...`)
-        const matchingCategory = Object.keys(videosByCategory).find(cat => 
-          cat.toLowerCase().includes(profession.toLowerCase()) || 
-          profession.toLowerCase().includes(cat.toLowerCase())
-        )
-        if (matchingCategory) {
-          moduleVideos = videosByCategory[matchingCategory]
-          foundCategory = matchingCategory
-          console.log(`✅ Found partial match: "${matchingCategory}"`)
-        }
-      }
-
-      // Additional debug: Log all available categories for this profession
-      console.log(`🔍 Available categories for "${profession}":`, Object.keys(videosByCategory).filter(cat => 
-        cat.toLowerCase().includes(profession.toLowerCase())
-      ))
-      
-      if (moduleVideos && moduleVideos.length > 0 && !addedCategories.has(foundCategory)) {
-        // Special naming for Sales and QA modules
-        let moduleName = profession
-        if (profession === "Sales") {
-          moduleName = "Sales Module Overview"
-        } else if (profession === "QA") {
-          moduleName = "QA Module Overview"
-        }
+      if (moduleVideos && moduleVideos.length > 0 && !addedCategories.has(category)) {
+        // Use the category name as-is from the playlist
+        let moduleName = category
         
-        // Sort videos if it's Sales or QA
-        if (profession === "Sales" || profession === "QA") {
-          moduleVideos = sortVideosByOrder(moduleVideos, profession)
+        // Sort videos if it's a known module type
+        let sortedModuleVideos = moduleVideos
+        if (category.toLowerCase().includes('sales') || category.toLowerCase().includes('qa')) {
+          sortedModuleVideos = sortVideosByOrder(moduleVideos, category)
         }
         
         moduleArray.push({
           name: moduleName,
-          category: foundCategory,
-          videos: moduleVideos,
+          category: category,
+          videos: sortedModuleVideos,
         })
-        addedCategories.add(foundCategory)
-        console.log(`✅ Added user-selected module: ${profession} (${moduleVideos.length} videos)`)
+        addedCategories.add(category)
+        console.log(`✅ Added module from playlist: ${category} (${sortedModuleVideos.length} videos)`)
+      } else if (moduleVideos && moduleVideos.length > 0) {
+        console.log(`ℹ️ Module ${category} already added`)
       } else {
-        console.log(`❌ Could not find videos for module: "${profession}"`)
-        console.log(`❌ Available categories:`, Object.keys(videosByCategory))
+        console.log(`⚠️ No videos found for category: "${category}"`)
       }
     })
 
-    // 5. ONLY add user-selected modules - NO other categories from previous selections
-    // This ensures only the modules the user actually selected are shown
+    // 5. ONLY add modules from playlist - NO other categories from previous selections
+    // This ensures only the modules that are actually in the current playlist are shown
     // along with the compulsory modules (Company Introduction, Miscellaneous, AI tools)
 
     // 6. ALWAYS add Miscellaneous module before AI tools (COMPULSORY)
@@ -1555,14 +1360,14 @@ export default function VideoPlayerPage() {
 
     // Debug: Log all modules being created
     console.log("=== MODULES BEING CREATED ===")
-    console.log("📋 ONLY showing: Compulsory modules + User-selected modules")
+    console.log("📋 ONLY showing: Compulsory modules + Modules from playlist")
     console.log("❌ NOT showing: Previous unfinished modules or other categories")
-    console.log("🎯 User actually selected these modules:", Array.from(actualSelectedModules))
+    console.log("🎯 All modules found in playlist:", allCategoriesInPlaylist);
     moduleArray.forEach((module, index) => {
       const isCompulsory = module.category === "Company Introduction" || 
                            module.category === "Miscellaneous" || 
                            module.category === "AI tools"
-      const moduleType = isCompulsory ? "COMPULSORY" : "USER-SELECTED"
+      const moduleType = isCompulsory ? "COMPULSORY" : "FROM PLAYLIST"
       console.log(`${index + 1}. ${module.name} (${module.category}) - ${module.videos.length} videos [${moduleType}]`)
     })
     console.log("=== END MODULES ===")
