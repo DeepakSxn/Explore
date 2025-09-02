@@ -158,7 +158,14 @@ export default function SuspendedAccountsPage() {
 
   const formatDate = (timestamp: { seconds: number; nanoseconds: number } | undefined) => {
     if (!timestamp) return "N/A"
-    return new Date(timestamp.seconds * 1000).toLocaleDateString()
+    const date = new Date(timestamp.seconds * 1000)
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
   const getSuspensionType = (user: User) => {
@@ -268,7 +275,7 @@ export default function SuspendedAccountsPage() {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Suspension Type</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead>Date of Account Creation</TableHead>
                     <TableHead>Suspended</TableHead>
                     <TableHead>Reason</TableHead>
                     <TableHead>Actions</TableHead>
@@ -287,7 +294,10 @@ export default function SuspendedAccountsPage() {
                         {getSuspensionType(user)}
                       </TableCell>
                       <TableCell>
-                        {formatDate(user.createdAt)}
+                        <div className="text-sm">
+                          <div className="font-medium">{formatDate(user.createdAt)}</div>
+                          <div className="text-xs text-gray-500">Account created</div>
+                        </div>
                       </TableCell>
                       <TableCell>
                         {user.suspendedAt ? formatDate(user.suspendedAt) : "N/A"}

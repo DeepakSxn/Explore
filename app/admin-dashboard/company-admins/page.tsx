@@ -613,14 +613,14 @@ export default function CompanyAdminsPage() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Admin Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Added</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
+                                  <TableRow>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Admin Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date Added</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
               </TableHeader>
               <TableBody>
                 {companyAdmins.map((admin) => (
@@ -641,10 +641,21 @@ export default function CompanyAdminsPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      {admin.createdAt?.toDate?.() 
-                        ? admin.createdAt.toDate().toLocaleDateString()
-                        : 'Unknown'
-                      }
+                      <div className="text-sm">
+                        <div className="font-medium">
+                          {admin.createdAt?.toDate?.() 
+                            ? admin.createdAt.toDate().toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })
+                            : 'Unknown'
+                          }
+                        </div>
+                        <div className="text-xs text-gray-500">Admin added</div>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
