@@ -50,7 +50,7 @@ interface Module {
 }
 
 const VIDEO_ORDER: Record<string, string[]> = {
-  "Sales Module ": [
+  "Sales Module": [
     "Sales Module Overview",
     "Sales Order for Coils",
     "Sales Order for Plates",
@@ -123,7 +123,7 @@ const VIDEO_ORDER: Record<string, string[]> = {
 }
 
 const MODULE_ORDER = [
-  "Sales Module ",
+  "Sales Module",
   "Processing",
   "Inventory Management",
   "Purchase",
@@ -1307,9 +1307,9 @@ export default function Dashboard() {
                                   <div className="p-2 bg-green-100 rounded-lg">
                                     <Target className="h-4 w-4 text-green-600" />
                                   </div>
-                                  <div>
-                                    <span className="font-semibold text-slate-900 text-left">{(moduleDisplayNames[module.category] || module.name).trim()}</span>
-                                    <div className="flex items-center gap-2 mt-1">
+                                  <div className="flex items-center gap-4 flex-1">
+                                    <span className="font-semibold text-slate-900">{(moduleDisplayNames[module.category] || module.name).trim()}</span>
+                                    <div className="flex items-center gap-2">
                                       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
                                         <Clock className="h-3 w-3 mr-1" />
                                         {module.totalDuration}
