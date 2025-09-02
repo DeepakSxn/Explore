@@ -682,6 +682,8 @@ export default function Dashboard() {
   }, [selectedVideos, videos])
 
   const handleWatchSelected = async () => {
+    console.log("🚀 NEW CODE: handleWatchSelected called with new logic!")
+    
     if (selectedVideos.length === 0) {
       toast({
         title: "No videos selected",
@@ -729,12 +731,14 @@ export default function Dashboard() {
 
       // Helper to get canonical order of all videos
       const getOrderedVideos = () => {
+        console.log("🚀 NEW CODE: getOrderedVideos function called!")
+        
         const ordered: Video[] = []
         // 1. General videos first (in their order)
         generalVideos.forEach((v) => {
           if (combinedVideoIds.has(v.id)) ordered.push(v)
         })
-        // 2. By module order
+        // 2. By module order (from MODULE_ORDER)
         MODULE_ORDER.forEach((moduleName) => {
           const videoTitles = VIDEO_ORDER[moduleName]
           if (videoTitles) {
@@ -757,11 +761,22 @@ export default function Dashboard() {
               if (!ordered.some((o) => o.id === v.id)) ordered.push(v)
             })
         })
-        // 3. Miscellaneous at the end
+        // 3. Add user-selected videos that are NOT in MODULE_ORDER (like "Additional Videos")
+        console.log("🔍 Dashboard - Adding user-selected videos not in MODULE_ORDER:")
+        selectedVideoObjects.forEach((v) => {
+          console.log(`  - Checking video: ${v.title} (${v.category})`)
+          if (!ordered.some((o) => o.id === v.id)) {
+            console.log(`    ✅ Adding to playlist: ${v.title}`)
+            ordered.push(v)
+          } else {
+            console.log(`    ⚠️ Already in playlist: ${v.title}`)
+          }
+        })
+        // 4. Miscellaneous at the end
         miscVideos.forEach((v) => {
           if (combinedVideoIds.has(v.id) && !ordered.some((o) => o.id === v.id)) ordered.push(v)
         })
-        // 4. AI tools at the end
+        // 5. AI tools at the end
         AiTool.forEach((v) => {
           if (combinedVideoIds.has(v.id) && !ordered.some((o) => o.id === v.id)) ordered.push(v)
         })
@@ -769,6 +784,13 @@ export default function Dashboard() {
       }
 
       const allPlaylistVideos = getOrderedVideos()
+      
+      // Debug: Log what videos were added to the playlist
+      console.log("🔍 Dashboard - Playlist creation debug:")
+      console.log("  - selectedVideoObjects:", selectedVideoObjects.map(v => ({ id: v.id, title: v.title, category: v.category })))
+      console.log("  - allPlaylistVideos:", allPlaylistVideos.map(v => ({ id: v.id, title: v.title, category: v.category })))
+      console.log("  - Playlist video count:", allPlaylistVideos.length)
+      console.log("  - Playlist categories:", [...new Set(allPlaylistVideos.map(v => v.category))])
 
       // Find the first unwatched video to start playback
       let firstVideoToPlay: string
