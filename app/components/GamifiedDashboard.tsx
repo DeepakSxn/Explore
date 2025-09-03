@@ -48,8 +48,6 @@ interface Video {
   createdAt: any
   watched?: boolean
   company?: string
-  thumbnail?: string
-  publicId?: string
 }
 
 interface Module {
@@ -285,7 +283,7 @@ export default function GamifiedDashboard() {
       ].map(v => ({
         ...v,
         // Ensure thumbnail field is populated for the video player poster
-        thumbnail: v.thumbnailUrl || ((v as any).publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${(v as any).publicId}.jpg` : undefined),
+        thumbnail: v.thumbnail || v.thumbnailUrl || (v.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${(v as any).publicId}.jpg` : undefined),
       }))
 
       console.log(`📋 Total playlist videos: ${allPlaylistVideos.length}`)
@@ -482,18 +480,9 @@ export default function GamifiedDashboard() {
                       variant="secondary" 
                       size="sm"
                       onClick={switchToClassicView}
-                      className="hidden sm:flex items-center gap-2"
                     >
                       <span className="hidden sm:inline">Start Learning</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="secondary" 
-                      size="sm"
-                      onClick={switchToClassicView}
-                      className="sm:hidden p-2"
-                    >
-                      <ArrowRight className="h-4 w-4" />
+                      <ArrowRight className="h-4 w-4 sm:ml-2" />
                     </Button>
                   </div>
                 </CardContent>
@@ -546,6 +535,26 @@ export default function GamifiedDashboard() {
                 </CardContent>
               </Card>
 
+              <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
+                <CardContent className="p-4 text-center">
+                  <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
+                    <Flame className="h-4 w-4" />
+                  </div>
+                  <p className="text-3xl font-normal text-white">{userProgress.currentStreak}</p>
+                  <p className="text-sm text-white">Day Streak</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
+                <CardContent className="p-4 text-center">
+                  <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
+                    <Award className="h-4 w-4" />
+                  </div>
+                  <p className="text-3xl font-normal text-white">{userProgress.badges.length}</p>
+                  <p className="text-sm text-white">Badges Earned</p>
+                </CardContent>
+              </Card>
+
               <Card className="bg-gradient-to-br from-pink-500 to-pink-600 text-white border-0">
                 <CardContent className="p-4 text-center">
                   <div className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-2">
@@ -556,34 +565,6 @@ export default function GamifiedDashboard() {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Day Streak Card - Moved from right side */}
-            {userProgress.currentStreak > 0 && (
-              <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-white/20 p-3 rounded-full">
-                      <Flame className="h-6 w-6" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-white">Amazing Streak!</h3>
-                      <p className="text-white">
-                        You've been learning for {userProgress.currentStreak} day{userProgress.currentStreak !== 1 ? 's' : ''} in a row!
-                      </p>
-                      {userProgress.currentStreak >= 7 && (
-                        <p className="text-sm text-white mt-1">
-                          🎉 You've earned the "Week Warrior" badge!
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-white">{userProgress.currentStreak}</p>
-                      <p className="text-sm text-white">days</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Recent Badges */}
             {userProgress.badges.length > 0 && (
@@ -620,17 +601,17 @@ export default function GamifiedDashboard() {
           {/* Right Column - Learning Path & Suggestions */}
           <div className="lg:col-span-2 space-y-6">
             {/* Learning Path */}
-            <Card className="h-full">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />
                   Your Learning Path
                 </CardTitle>
               </CardHeader>
-              <CardContent className="h-full">
-                <div className="space-y-6 h-full">
+              <CardContent>
+                <div className="space-y-6">
                   {/* Top 3 Modules with Progress */}
-                  <div className="h-full">
+                  <div>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-blue-600">📚 Most Active Modules</h3>
                       <Button 
@@ -682,43 +663,40 @@ export default function GamifiedDashboard() {
                           .slice(0, 3)
                         
                         return topModules.length > 0 ? (
-                          topModules.map(([category, module], index) => {
-                            return (
-                              <motion.div
-                                key={category}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                className="p-3 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
-                                onClick={() => startModuleFromCategory(category)}
-                              >
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                      {index + 1}
-                                    </div>
-                                    <div className="flex-1">
-                                      <h4 className="font-semibold text-base">{category}</h4>
-                                      <p className="text-sm text-blue-700">
-                                        {module.watchedCount} of {module.totalVideos} videos watched
-                                      </p>
-                                    </div>
+                          topModules.map(([category, module], index) => (
+                    <motion.div
+                              key={category}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                              className="p-3 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+                              onClick={() => startModuleFromCategory(category)}
+                    >
+                              <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                    {index + 1}
                                   </div>
-                                  <div className="text-right">
-                                    <div className="text-sm font-bold text-blue-700">
-                                      {Math.round(module.progress)}%
-                                    </div>
-                                    <div className="text-xs text-blue-500">Videos Watched</div>
+                                  <div className="flex-1">
+                                    <h4 className="font-semibold text-base">{category}</h4>
+                                    <p className="text-sm text-blue-700">
+                                      {module.watchedCount} of {module.totalVideos} videos watched
+                                    </p>
                                   </div>
                                 </div>
-                                
-                                <Progress 
-                                  value={module.progress} 
-                                  className="h-2 bg-blue-200"
-                                />
-                              </motion.div>
-                            )
-                          })
+                                <div className="text-right">
+                                  <div className="text-sm font-bold text-blue-700">
+                                    {Math.round(module.progress)}%
+                                  </div>
+                                  <div className="text-xs text-blue-500">Videos Watched</div>
+                                </div>
+                              </div>
+                              <Progress 
+                                value={module.progress} 
+                                className="h-2 bg-blue-200"
+                              />
+                            </motion.div>
+                          ))
                         ) : (
                           <div className="text-center py-6 text-gray-500">
                             <div className="text-4xl mb-2">📚</div>
@@ -727,11 +705,45 @@ export default function GamifiedDashboard() {
                           </div>
                         )
                       })()}
-                    </div>
-                  </div>
+                        </div>
+                      </div>
+
+
+
+
                 </div>
               </CardContent>
             </Card>
+
+            
+
+            {/* Streak Motivation */}
+            {userProgress.currentStreak > 0 && (
+              <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-white/20 p-3 rounded-full">
+                      <Flame className="h-6 w-6" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-white">Amazing Streak!</h3>
+                      <p className="text-white">
+                        You've been learning for {userProgress.currentStreak} day{userProgress.currentStreak !== 1 ? 's' : ''} in a row!
+                      </p>
+                      {userProgress.currentStreak >= 7 && (
+                        <p className="text-sm text-white mt-1">
+                          🎉 You've earned the "Week Warrior" badge!
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-white">{userProgress.currentStreak}</p>
+                      <p className="text-sm text-white">days</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </main>
@@ -773,6 +785,8 @@ export default function GamifiedDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+
 
       {/* Challenge Mode */}
       <ChallengeMode 
