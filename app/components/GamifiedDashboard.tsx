@@ -683,9 +683,6 @@ export default function GamifiedDashboard() {
                         
                         return topModules.length > 0 ? (
                           topModules.map(([category, module], index) => {
-                            // Get videos for this category to display thumbnails
-                            const categoryVideos = allVideos.filter(v => v.category === category).slice(0, 3)
-                            
                             return (
                               <motion.div
                                 key={category}
@@ -713,23 +710,6 @@ export default function GamifiedDashboard() {
                                     </div>
                                     <div className="text-xs text-blue-500">Videos Watched</div>
                                   </div>
-                                </div>
-                                
-                                {/* Video Thumbnails with Duration Overlays */}
-                                <div className="flex gap-2 mb-3">
-                                  {categoryVideos.map((video, videoIndex) => (
-                                    <div key={video.id} className="relative">
-                                      <img
-                                        src={video.thumbnailUrl || `https://res.cloudinary.com/dnx1sl0nq/video/upload/${video.publicId}.jpg`}
-                                        alt={video.title}
-                                        className="w-16 h-12 object-cover rounded-md"
-                                      />
-                                      {/* Duration Overlay */}
-                                      <div className="absolute bottom-1 right-1 bg-black bg-opacity-75 text-white text-xs px-1 py-0.5 rounded">
-                                        {video.duration}
-                                      </div>
-                                    </div>
-                                  ))}
                                 </div>
                                 
                                 <Progress 
