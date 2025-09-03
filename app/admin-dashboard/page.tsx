@@ -24,6 +24,7 @@ import {
   Timer,
   Trophy,
   Target,
+  Building,
 } from "lucide-react"
 import { ThemeToggle } from "../theme-toggle"
 import { Logo } from "../components/logo"
@@ -460,6 +461,15 @@ export default function AdminDashboard() {
             >
               <Upload className="h-4 w-4" />
               Upload Video
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => router.push("/admin-dashboard/companies")}
+              className="flex items-center gap-2"
+            >
+              <Building className="h-4 w-4" />
+              Companies
             </Button>
           </div>
         </div>
