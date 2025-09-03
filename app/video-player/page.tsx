@@ -2865,8 +2865,8 @@ export default function VideoPlayerPage() {
                       })()}
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
 
                         {/* Play/Pause Button */}
                         <div
@@ -2923,15 +2923,13 @@ export default function VideoPlayerPage() {
                           )}
                         </div>
 
-
-
                         {/* Time Display */}
                         <span className="text-white text-sm">
                           {formatTime(currentTime)} / {formatTime(duration)}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {/* Playback Speed Dropdown */}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -2985,8 +2983,8 @@ export default function VideoPlayerPage() {
 
 
             {/* Video Title - Flush-left under the video */}
-            <div className="container mx-auto max-w-5xl mb-4 px-0">
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{currentVideo.title}</h1>
+            <div className="container mx-auto max-w-5xl mb-4 px-4 sm:px-0">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">{currentVideo.title}</h1>
               <div className="flex flex-wrap gap-2 mt-2">
                 {currentVideo.category && <Badge variant="outline">{currentVideo.category}</Badge>}
                 {currentVideo.tags &&
@@ -3052,7 +3050,7 @@ export default function VideoPlayerPage() {
             </div>
 
             {/* Top Navigation: Previous / Start from Beginning / Next */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 mb-4 max-w-5xl mx-auto">
+            <div className="flex flex-row items-center justify-between gap-3 mt-4 mb-4 max-w-5xl mx-auto px-4">
               {/* Previous Video Button */}
               <div className="flex-1 flex justify-start">
                 {(() => {
@@ -3081,20 +3079,14 @@ export default function VideoPlayerPage() {
                         title="Go to previous video in this module"
                       >
                         <SkipBack className="h-4 w-4" />
-                        <div className="text-left">
+                        <div className="text-center sm:text-left">
                           <div className="text-sm font-medium">Previous Video</div>
-                          <div className="text-xs text-muted-foreground truncate max-w-[120px]">
-                            {prevModuleVideo.title}
-                          </div>
-                          <div className="text-xs text-blue-600 font-medium">
-                            {currentModule.name}
-                          </div>
                         </div>
                       </Button>
                     )
                   } else {
                     return (
-                      <div className="text-sm text-muted-foreground opacity-50">
+                      <div className="text-sm text-muted-foreground opacity-50 text-center sm:text-left">
                         First Video in {currentModule.name}
                       </div>
                     )
@@ -3106,7 +3098,8 @@ export default function VideoPlayerPage() {
               <div className="flex-1 flex justify-center">
                 <Button variant="ghost" onClick={handleStartFromBeginning} className="flex items-center gap-2 bg-white text-foreground border">
                   <RefreshCw className="h-4 w-4" />
-                  Start from Beginning
+                  <span className="hidden sm:inline">Start from Beginning</span>
+                  <span className="sm:hidden">Restart</span>
                 </Button>
               </div>
 
@@ -3135,38 +3128,15 @@ export default function VideoPlayerPage() {
                           : "Complete current video to unlock next video"
                         }
                       >
-                        <div className="text-right">
+                        <div className="text-center sm:text-right">
                           <div className="text-sm font-medium">Next Video</div>
-                          <div className="text-xs text-muted-foreground truncate max-w-[120px]">
-                            {nextVideo.title}
-                          </div>
-                          {(() => {
-                            // Find which module the next video belongs to
-                            const nextModuleIndex = modules.findIndex(module => 
-                              module.videos.some(v => v.id === nextVideo.id)
-                            )
-                            if (nextModuleIndex !== -1) {
-                              const nextModule = modules[nextModuleIndex]
-                              return (
-                                <div className="text-xs text-blue-600 font-medium">
-                                  {nextModule.name}
-                                </div>
-                              )
-                            }
-                            return null
-                          })()}
-                          {!isNextVideoPlayable && (
-                            <div className="text-xs text-orange-600 font-medium">
-                              🔒 Locked
-                            </div>
-                          )}
                         </div>
                         <SkipForward className="h-4 w-4" />
                       </Button>
                     )
                   })()
                 ) : (
-                  <div className="text-sm text-muted-foreground opacity-50">
+                  <div className="text-sm text-muted-foreground opacity-50 text-center sm:text-right">
                     Last Video
                   </div>
                 )}
@@ -3199,23 +3169,16 @@ export default function VideoPlayerPage() {
             )}
 
             {/* Rating Button - stays below description */}
-            <div className="flex items-center justify-center gap-4 mt-4 mb-4 max-w-5xl mx-auto">
-              <Button variant="outline" onClick={() => setVideoFeedbackOpen(true)} className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-4 mt-4 mb-4 max-w-5xl mx-auto px-4 sm:px-0">
+              <Button variant="outline" onClick={() => setVideoFeedbackOpen(true)} className="flex items-center gap-2 w-full sm:w-auto">
                 <MessageSquare className="h-4 w-4" />
-                Rate & Review This Video
+                <span className="hidden sm:inline">Rate & Review This Video</span>
+                <span className="sm:hidden">Rate Video</span>
               </Button>
-              
-              {/* Debug Button - Only visible in development */}
-              {process.env.NODE_ENV === 'development' && (
-                <Button variant="outline" onClick={debugVideoStates} className="flex items-center gap-2">
-                  <Info className="h-4 w-4" />
-                  Debug Video States
-                </Button>
-              )}
             </div>
 
             {/* Next Videos Section - Moved below description */}
-            <div className="mb-4 max-w-5xl mx-auto">
+            <div className="mb-4 max-w-5xl mx-auto px-4 sm:px-0">
               <Card className="rounded-lg shadow-sm">
                 <CardContent className="p-4">
                   <h2 className="text-lg font-semibold mb-4">
@@ -3274,7 +3237,7 @@ export default function VideoPlayerPage() {
                               }
                             }}
                           >
-                            <div className="relative w-20 h-12 flex-shrink-0 bg-muted rounded overflow-hidden">
+                            <div className="relative w-16 sm:w-20 h-10 sm:h-12 flex-shrink-0 bg-muted rounded overflow-hidden">
                               {video.thumbnail ? (
                                 <Image
                                   src={video.thumbnail || "/placeholder.svg?height=40&width=40"}
@@ -3294,24 +3257,27 @@ export default function VideoPlayerPage() {
                                 />
                               ) : (
                                 <div className="flex items-center justify-center h-full">
-                                  <Play className="h-5 w-5 text-muted-foreground" />
+                                  <Play className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                                 </div>
                               )}
+                              {/* Duration overlay on thumbnail */}
+                              <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 py-0.5 rounded">
+                                {video.duration}
+                              </div>
                               {isWatched && (
                                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
                                 </div>
                               )}
                               {isLocked && (
                                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                  <Lock className="h-4 w-4 text-muted-foreground" />
+                                  <Lock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                                 </div>
                               )}
                             </div>
 
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">{video.title}</p>
-                              <p className="text-xs text-muted-foreground">{video.duration}</p>
                               {isLocked && (
                                 <p className="text-xs text-muted-foreground">🔒 Locked - Complete previous video to unlock</p>
                               )}
@@ -3371,7 +3337,7 @@ export default function VideoPlayerPage() {
           </div>
 
         {/* Learning Modules Section - Moved to bottom */}
-        <div className="mt-8 container mx-auto max-w-5xl">
+        <div className="mt-8 container mx-auto max-w-5xl px-4 sm:px-0">
             <Card className="rounded-lg shadow-sm">
               <CardContent className="p-4">
                 <h2 className="text-lg font-semibold mb-4">Learning Modules</h2>
