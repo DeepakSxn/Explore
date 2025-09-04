@@ -1306,12 +1306,12 @@ export default function Dashboard() {
                                 <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{(moduleDisplayNames[module.category] || module.name).trim()}</span>
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-0.5">
+                                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs px-2 py-0.5">
                                   <Clock className="h-3 w-3 mr-1" />
                                   <span className="hidden sm:inline">{module.totalDuration}</span>
                                   <span className="sm:hidden">{module.totalDuration.replace(' mins', 'm').replace(' min', 'm')}</span>
                                 </Badge>
-                                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs px-2 py-0.5">
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-0.5">
                                   <span className="hidden sm:inline">{module.videos.length} videos</span>
                                   <span className="sm:hidden">{module.videos.length} v</span>
                                 </Badge>
