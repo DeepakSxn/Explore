@@ -1273,7 +1273,7 @@ export default function Dashboard() {
                     {/* Module-level selection only */}
                     <div className="flex flex-col sm:flex-row sm:items-center mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200 gap-3 sm:gap-0">
                       <span className="text-sm font-medium text-slate-700 leading-relaxed">Select whole modules using the checkboxes on each module</span>
-                      <Badge variant="outline" className="sm:ml-auto bg-gray-50 text-black border-gray-200 self-start sm:self-auto w-fit">
+                      <Badge variant="outline" className="ml-auto sm:ml-auto bg-gray-50 text-black border-gray-200 self-start sm:self-auto w-fit">
                         {selectedVideos.length} videos
                       </Badge>
                     </div>
@@ -1308,11 +1308,11 @@ export default function Dashboard() {
                                 <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs px-2 py-0.5">
                                   <Clock className="h-3 w-3 mr-1" />
                                   <span className="hidden sm:inline">{module.totalDuration}</span>
-                                  <span className="sm:hidden">{module.totalDuration.replace(' mins', 'm').replace(' min', 'm')}</span>
+                                  <span className="sm:hidden">{module.totalDuration.replace(' mins', 'min').replace(' min', 'min')}</span>
                                 </Badge>
                                 <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-0.5">
                                   <span className="hidden sm:inline">{module.videos.length} videos</span>
-                                  <span className="sm:hidden">{module.videos.length} v</span>
+                                  <span className="sm:hidden">{module.videos.length} videos</span>
                                 </Badge>
                               </div>
                             </div>
