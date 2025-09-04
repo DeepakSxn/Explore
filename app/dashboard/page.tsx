@@ -1177,7 +1177,6 @@ export default function Dashboard() {
               </Link>
             </div>
             
-            <Separator className="bg-green-500/30 mx-4" />
             
             {/* Quick Stats Section */}
             <div className="p-4 mt-auto">
@@ -1274,7 +1273,7 @@ export default function Dashboard() {
                     {/* Module-level selection only */}
                     <div className="flex flex-col sm:flex-row sm:items-center mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200 gap-3 sm:gap-0">
                       <span className="text-sm font-medium text-slate-700 leading-relaxed">Select whole modules using the checkboxes on each module</span>
-                      <Badge variant="outline" className="sm:ml-auto bg-blue-50 text-blue-700 border-blue-200 self-start sm:self-auto w-fit">
+                      <Badge variant="outline" className="sm:ml-auto bg-gray-50 text-black border-gray-200 self-start sm:self-auto w-fit">
                         {selectedVideos.length} videos
                       </Badge>
                     </div>
@@ -1324,7 +1323,7 @@ export default function Dashboard() {
                                 <thead className="bg-slate-50 border-t border-slate-200">
                                   <tr>
                                     <th className="px-4 sm:px-6 py-3 text-left font-semibold text-slate-700">Feature</th>
-                                    <th className="hidden sm:table-cell px-6 py-3 text-left font-semibold text-slate-700 w-32 whitespace-nowrap">
+                                    <th className="hidden sm:table-cell px-6 py-3 text-center font-semibold text-slate-700 w-32 whitespace-nowrap">
                                       Video Length
                                     </th>
                                     <th className="px-4 sm:px-6 py-3 text-left font-semibold text-slate-700 w-24">
@@ -1346,7 +1345,7 @@ export default function Dashboard() {
                                         </div>
                                       </td>
                                       <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-slate-700">
-                                        <div className="flex items-center text-slate-600 whitespace-nowrap">
+                                        <div className="flex items-center justify-center text-slate-600 whitespace-nowrap">
                                           <Clock className="h-3.5 w-3.5 mr-2 text-slate-400" />
                                           {video.duration}
                                         </div>

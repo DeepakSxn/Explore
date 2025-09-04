@@ -567,7 +567,7 @@ export default function GamifiedDashboard() {
                         </p>
                       )}
                     </div>
-                    <div className="text-right">
+                    <div className="text-center">
                       <p className="text-2xl font-bold text-white">{userProgress.currentStreak}</p>
                       <p className="text-sm text-white">days</p>
                     </div>
