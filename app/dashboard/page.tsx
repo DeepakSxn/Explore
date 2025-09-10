@@ -120,6 +120,9 @@ const VIDEO_ORDER: Record<string, string[]> = {
     "Email",
     "Credit Management",
   ],
+  "AI tools": [
+    // AI tools videos will be ordered by their creation date or admin-defined order
+  ],
 }
 
 const MODULE_ORDER = [
@@ -135,6 +138,7 @@ const MODULE_ORDER = [
   "Master Data Management",
   "Contact Management",
   "QA Module",
+  "AI tools",
 ]
 
 export default function Dashboard() {
@@ -541,8 +545,8 @@ export default function Dashboard() {
     // Group videos by category
     const videosByCategory = videos.reduce(
       (acc, video) => {
-        // Exclude General and AI tools categories
-        if (video.category === "Company Introduction" || video.category === "AI tools") {
+        // Exclude only General category, include AI tools
+        if (video.category === "Company Introduction") {
           return acc
         }
         const category = sanitize(video.category || "Uncategorized")
