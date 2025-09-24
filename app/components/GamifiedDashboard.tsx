@@ -41,6 +41,8 @@ interface Video {
   title: string
   description: string
   thumbnailUrl?: string
+  thumbnail?: string
+  publicId?: string
   videoUrl?: string
   duration: string
   category: string
@@ -62,7 +64,6 @@ export default function GamifiedDashboard() {
   const { userProgress, loading, getCurrentLevel, getXPToNextLevel, getLevelProgress } = useGamification()
   const { userData } = useAuth()
   const [showConfetti, setShowConfetti] = useState(false)
-  const [dailyReminder, setDailyReminder] = useState("")
   const [moduleSuggestions, setModuleSuggestions] = useState<any[]>([])
   const [topVideos, setTopVideos] = useState<Video[]>([])
   const [videoProgress, setVideoProgress] = useState<{[key: string]: number}>({})
@@ -77,19 +78,6 @@ export default function GamifiedDashboard() {
     window.dispatchEvent(new CustomEvent('switchToClassicView'))
   }
 
-  // Generate daily reminder based on user progress
-  useEffect(() => {
-    if (userProgress) {
-      const suggestions = [
-        "Just 5 minutes to finish the Inventory module!",
-        "Keep your streak alive - watch one video today!",
-        "You're close to leveling up - complete a quiz!",
-        "Try the Processing module for 50 XP!",
-        "Your streak is impressive - maintain it today!"
-      ]
-      setDailyReminder(suggestions[Math.floor(Math.random() * suggestions.length)])
-    }
-  }, [userProgress])
 
   // Generate module suggestions
   useEffect(() => {
@@ -461,38 +449,27 @@ export default function GamifiedDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* Daily Reminder Banner */}
-        <AnimatePresence>
-          {dailyReminder && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="mb-6"
-            >
-              <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-white/20 p-2 rounded-full">
-                      <Clock className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-white">{dailyReminder}</p>
-                    </div>
-                    <Button 
-                      variant="secondary" 
-                      size="sm"
-                      onClick={switchToClassicView}
-                    >
-                      Start Learning
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Start Learning Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-end">
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={switchToClassicView}
+                >
+                  <span className="hidden sm:inline">Start Learning</span>
+                  <ArrowRight className="h-4 w-4 sm:ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Progress & Stats */}
@@ -538,26 +515,6 @@ export default function GamifiedDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
-                <CardContent className="p-4 text-center">
-                  <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
-                    <Flame className="h-4 w-4" />
-                  </div>
-                  <p className="text-3xl font-normal text-white">{userProgress.currentStreak}</p>
-                  <p className="text-sm text-white">Day Streak</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
-                <CardContent className="p-4 text-center">
-                  <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
-                    <Award className="h-4 w-4" />
-                  </div>
-                  <p className="text-3xl font-normal text-white">{userProgress.badges.length}</p>
-                  <p className="text-sm text-white">Badges Earned</p>
-                </CardContent>
-              </Card>
-
               <Card className="bg-gradient-to-br from-pink-500 to-pink-600 text-white border-0">
                 <CardContent className="p-4 text-center">
                   <div className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-2">
@@ -569,32 +526,29 @@ export default function GamifiedDashboard() {
               </Card>
             </div>
 
-            {/* Recent Badges */}
-            {userProgress.badges.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5" />
-                    Recent Badges
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {userProgress.badges.slice(-3).reverse().map((badge, index) => (
-                      <motion.div
-                        key={badge.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="flex items-center gap-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border"
-                      >
-                        <div className="text-2xl">{badge.icon}</div>
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{badge.name}</p>
-                          <p className="text-xs text-muted-foreground">{badge.description}</p>
-                        </div>
-                      </motion.div>
-                    ))}
+            {/* Streak Motivation moved under stats */}
+            {userProgress.currentStreak > 0 && (
+              <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-white/20 p-3 rounded-full">
+                      <Flame className="h-6 w-6" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-white">Amazing Streak!</h3>
+                      <p className="text-white">
+                        You've been learning for {userProgress.currentStreak} day{userProgress.currentStreak !== 1 ? 's' : ''} in a row!
+                      </p>
+                      {userProgress.currentStreak >= 7 && (
+                        <p className="text-sm text-white mt-1">
+                          🎉 You've earned the "Week Warrior" badge!
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-white">{userProgress.currentStreak}</p>
+                      <p className="text-sm text-white">days</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -604,10 +558,10 @@ export default function GamifiedDashboard() {
           {/* Right Column - Learning Path & Suggestions */}
           <div className="lg:col-span-2 space-y-6">
             {/* Learning Path */}
-            <Card>
+            <Card className="min-h-[440px]">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
+                  <TrendingUp className="h-12 w-7" />
                   Your Learning Path
                 </CardTitle>
               </CardHeader>
@@ -720,33 +674,7 @@ export default function GamifiedDashboard() {
 
             
 
-            {/* Streak Motivation */}
-            {userProgress.currentStreak > 0 && (
-              <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-white/20 p-3 rounded-full">
-                      <Flame className="h-6 w-6" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-white">Amazing Streak!</h3>
-                      <p className="text-white">
-                        You've been learning for {userProgress.currentStreak} day{userProgress.currentStreak !== 1 ? 's' : ''} in a row!
-                      </p>
-                      {userProgress.currentStreak >= 7 && (
-                        <p className="text-sm text-white mt-1">
-                          🎉 You've earned the "Week Warrior" badge!
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-white">{userProgress.currentStreak}</p>
-                      <p className="text-sm text-white">days</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* Streak Motivation moved to left column */}
           </div>
         </div>
       </main>

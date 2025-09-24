@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, User, Mail, Lock, Eye, EyeOff, Sparkles, Shield, ArrowRight, CheckCircle, Building, Phone, UserPlus } from "lucide-react"
 import { db, auth } from "../../firebase"
-import { collection, addDoc, serverTimestamp, getDocs } from "firebase/firestore"
+import { collection, addDoc, serverTimestamp, getDocs, query, where } from "firebase/firestore"
 import { createUserWithEmailAndPassword } from "firebase/auth"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
@@ -30,20 +30,10 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [showNewCompanyInput, setShowNewCompanyInput] = useState(false)
+  const [newCompanyName, setNewCompanyName] = useState("")
 
-  // Predefined company names
-  const predefinedCompanies = [
-    "EOXS",
-    "3GM", 
-    "Sabre",
-    "RW Conklin",
-    "Discount Pipe",
-    "Gerdau",
-    "Eastern States Steel (ESS)",
-    "Greer",
-    "PPC",
-    "Titanium Industries"
-  ]
+  const [companies, setCompanies] = useState<string[]>(["Other"])
 
   // Update countryCodes array to include flag, country name, and code
   const countryCodes = [
@@ -70,30 +60,24 @@ export default function SignUp() {
   ]
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchCompanies = async () => {
       try {
-        // Fetch all videos to extract unique categories
-        const videosCollection = collection(db, "videos")
-        const videoSnapshot = await getDocs(videosCollection)
-
-        // Extract unique categories
-        const uniqueCategories = new Set<string>()
-        videoSnapshot.docs.forEach((doc) => {
-          const category = doc.data().category
-          if (category && category !== "General" && category !== "Other") {
-            uniqueCategories.add(category)
-          }
-        })
-
-        
+        const companiesCollection = collection(db, "companies")
+        const companiesSnapshot = await getDocs(companiesCollection)
+        const list = companiesSnapshot.docs
+          .map((d) => (d.data() as any).name)
+          .filter(Boolean) as string[]
+        const unique = Array.from(new Set(list)).sort((a, b) => a.localeCompare(b))
+        const withOther = unique.includes("Other") ? unique : [...unique, "Other"]
+        setCompanies(withOther.length ? withOther : ["Other"])
       } catch (error) {
-        console.error("Error fetching categories:", error)
+        console.error("Error fetching companies:", error)
+        setCompanies(["Other"])
       }
     }
 
-    fetchCategories()
-    
-    // Trigger animations
+    fetchCompanies()
+
     setTimeout(() => {
       setIsLoaded(true)
     }, 100)
@@ -131,8 +115,11 @@ export default function SignUp() {
       errors.push("Passwords do not match")
     }
 
-    if (!companyName) {
+    if (!showNewCompanyInput && !companyName) {
       errors.push("Company Name is required")
+    }
+    if (showNewCompanyInput && !newCompanyName) {
+      errors.push("Please enter your company name")
     }
     
     if (!phoneNumber) {
@@ -159,6 +146,20 @@ export default function SignUp() {
     }
 
     try {
+      if (showNewCompanyInput && newCompanyName) {
+        const normalized = newCompanyName.toLowerCase().trim()
+        const companiesRef = collection(db, "companies")
+        const existing = await getDocs(query(companiesRef, where("normalizedName", "==", normalized)))
+        if (existing.empty) {
+          await addDoc(companiesRef, {
+            name: newCompanyName.trim(),
+            normalizedName: normalized,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          })
+        }
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 
       // Add user to users collection
@@ -166,7 +167,7 @@ export default function SignUp() {
         userId: userCredential.user.uid,
         email: userCredential.user.email,
         name: name,
-        companyName: companyName,
+        companyName: showNewCompanyInput ? newCompanyName : companyName,
         phoneCountryCode: phoneCountryCode,
         phoneNumber: phoneNumber,
         createdAt: serverTimestamp(),
@@ -341,16 +342,54 @@ export default function SignUp() {
                   <Building className="h-4 w-4 text-green-600" />
                   Company Name
                 </label>
-                <Select value={companyName} onValueChange={setCompanyName}>
-                  <SelectTrigger className="h-12 text-base rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500 transition-all duration-300 w-full">
-                    <SelectValue placeholder="Select a company" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border border-gray-200">
-                    {predefinedCompanies.map((company) => (
-                      <SelectItem key={company} value={company} className="hover:bg-gray-50">{company}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {!showNewCompanyInput ? (
+                  <Select
+                    value={companyName}
+                    onValueChange={(value) => {
+                      setCompanyName(value)
+                      if (value === "Other") {
+                        setShowNewCompanyInput(true)
+                      } else {
+                        setShowNewCompanyInput(false)
+                        setNewCompanyName("")
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-12 text-base rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500 transition-all duration-300 w-full">
+                      <SelectValue placeholder="Select a company" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border border-gray-200">
+                      {companies.map((company) => (
+                        <SelectItem key={company} value={company} className="hover:bg-gray-50">{company}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Input
+                        id="companyName"
+                        type="text"
+                        placeholder="Enter your company name"
+                        value={newCompanyName}
+                        onChange={(e) => setNewCompanyName(e.target.value)}
+                        disabled={loading}
+                        className="h-12 text-base rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500 transition-all duration-300 flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowNewCompanyInput(false)
+                          setCompanyName("")
+                          setNewCompanyName("")
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">

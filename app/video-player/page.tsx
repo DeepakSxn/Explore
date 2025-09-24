@@ -1294,11 +1294,8 @@ export default function VideoPlayerPage() {
         // Use the category name as-is from the playlist
         let moduleName = category
         
-        // Sort videos if it's a known module type
-        let sortedModuleVideos = moduleVideos
-        if (category.toLowerCase().includes('sales') || category.toLowerCase().includes('qa')) {
-          sortedModuleVideos = sortVideosByOrder(moduleVideos, category)
-        }
+        // Preserve video order as prepared earlier (admin-defined where available)
+        const sortedModuleVideos = moduleVideos
         
         moduleArray.push({
           name: moduleName,
@@ -1353,7 +1350,45 @@ export default function VideoPlayerPage() {
       console.log("AI tools module created with 0 videos (compulsory module)")
     }
 
-    setModules(moduleArray)
+    // 8. Sort modules according to admin-defined order while keeping compulsory modules positioned
+    let moduleOrders: Record<string, number> = {}
+    try {
+      moduleOrders = await getAllModuleOrders()
+    } catch (e) {
+      console.warn("Could not load moduleOrders in player", e)
+    }
+
+    const isCompulsory = (m: { category: string }) => (
+      m.category === "Company Introduction" ||
+      m.category === "Additional Features" ||
+      m.category === "AI tools"
+    )
+
+    const compulsoryIntro = moduleArray.find(m => m.category === "Company Introduction")
+    const compulsoryAdditional = moduleArray.find(m => m.category === "Additional Features")
+    const compulsoryAI = moduleArray.find(m => m.category === "AI tools")
+    const others = moduleArray.filter(m => !isCompulsory(m))
+
+    const getOrder = (name: string, category: string) => {
+      const direct = moduleOrders[name]
+      if (typeof direct === 'number') return direct
+      const legacyName = name.replace(/\s*Module$/i, ' Module Overview')
+      const legacy = moduleOrders[legacyName]
+      if (typeof legacy === 'number') return legacy
+      const byCategory = moduleOrders[category]
+      if (typeof byCategory === 'number') return byCategory
+      return Number.MAX_SAFE_INTEGER
+    }
+
+    others.sort((a, b) => getOrder(a.name, a.category) - getOrder(b.name, b.category))
+
+    const sortedModuleArray: Module[] = []
+    if (compulsoryIntro) sortedModuleArray.push(compulsoryIntro)
+    sortedModuleArray.push(...others)
+    if (compulsoryAdditional) sortedModuleArray.push(compulsoryAdditional)
+    if (compulsoryAI) sortedModuleArray.push(compulsoryAI)
+
+    setModules(sortedModuleArray)
 
     // Unlock the first video of each module
     unlockFirstVideoOfEachModule(moduleArray)
@@ -3081,15 +3116,7 @@ export default function VideoPlayerPage() {
                         title="Go to previous video in this module"
                       >
                         <SkipBack className="h-4 w-4" />
-                        <div className="text-left">
-                          <div className="text-sm font-medium">Previous Video</div>
-                          <div className="text-xs text-muted-foreground truncate max-w-[120px]">
-                            {prevModuleVideo.title}
-                          </div>
-                          <div className="text-xs text-blue-600 font-medium">
-                            {currentModule.name}
-                          </div>
-                        </div>
+                        <span className="text-sm font-medium">Previous</span>
                       </Button>
                     )
                   } else {
@@ -3135,32 +3162,7 @@ export default function VideoPlayerPage() {
                           : "Complete current video to unlock next video"
                         }
                       >
-                        <div className="text-right">
-                          <div className="text-sm font-medium">Next Video</div>
-                          <div className="text-xs text-muted-foreground truncate max-w-[120px]">
-                            {nextVideo.title}
-                          </div>
-                          {(() => {
-                            // Find which module the next video belongs to
-                            const nextModuleIndex = modules.findIndex(module => 
-                              module.videos.some(v => v.id === nextVideo.id)
-                            )
-                            if (nextModuleIndex !== -1) {
-                              const nextModule = modules[nextModuleIndex]
-                              return (
-                                <div className="text-xs text-blue-600 font-medium">
-                                  {nextModule.name}
-                                </div>
-                              )
-                            }
-                            return null
-                          })()}
-                          {!isNextVideoPlayable && (
-                            <div className="text-xs text-orange-600 font-medium">
-                              🔒 Locked
-                            </div>
-                          )}
-                        </div>
+                        <span className="text-sm font-medium">Next</span>
                         <SkipForward className="h-4 w-4" />
                       </Button>
                     )
@@ -3256,7 +3258,7 @@ export default function VideoPlayerPage() {
                         return (
                           <div
                             key={video.id}
-                            className={`flex items-center gap-3 p-2 rounded-md border transition-colors ${
+                            className={`flex items-start gap-3 p-2 rounded-md border transition-colors ${
                               isPlayable
                                 ? "hover:bg-muted cursor-pointer border-transparent hover:border-primary/30"
                                 : "opacity-50 cursor-not-allowed border-transparent"
@@ -3297,9 +3299,13 @@ export default function VideoPlayerPage() {
                                   <Play className="h-5 w-5 text-muted-foreground" />
                                 </div>
                               )}
+                              {/* Time overlay */}
+                              <div className="absolute bottom-1 left-1 bg-black/80 text-white text-xs px-1 py-0.5 rounded">
+                                {video.duration}
+                              </div>
                               {isWatched && (
-                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                <div className="absolute top-1 right-1 bg-green-500 text-white rounded-full p-1">
+                                  <CheckCircle className="h-3 w-3" />
                                 </div>
                               )}
                               {isLocked && (
@@ -3311,7 +3317,6 @@ export default function VideoPlayerPage() {
 
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">{video.title}</p>
-                              <p className="text-xs text-muted-foreground">{video.duration}</p>
                               {isLocked && (
                                 <p className="text-xs text-muted-foreground">🔒 Locked - Complete previous video to unlock</p>
                               )}
@@ -3404,7 +3409,7 @@ export default function VideoPlayerPage() {
                                     return (
                                       <div
                                         key={video.id}
-                                        className={`flex items-center gap-3 p-2 rounded-md border transition-colors ${
+                                        className={`flex items-start gap-3 p-2 rounded-md border transition-colors ${
                                           isCurrentVideo
                                             ? "bg-primary/10 border-primary/30"
                                             : isPlayable
@@ -3448,9 +3453,13 @@ export default function VideoPlayerPage() {
                                               <Play className="h-5 w-5 text-muted-foreground" />
                                             </div>
                                           )}
+                                          {/* Time overlay */}
+                                          <div className="absolute bottom-1 left-1 bg-black/80 text-white text-xs px-1 py-0.5 rounded">
+                                            {video.duration}
+                                          </div>
                                           {isWatched && (
-                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                              <CheckCircle className="h-4 w-4 text-green-500" />
+                                            <div className="absolute top-1 right-1 bg-green-500 text-white rounded-full p-1">
+                                              <CheckCircle className="h-3 w-3" />
                                             </div>
                                           )}
                                           {isLocked && (
@@ -3464,7 +3473,6 @@ export default function VideoPlayerPage() {
                                   <p className="font-medium text-sm truncate">
                                     {video.title}
                                   </p>
-                                          <p className="text-xs text-muted-foreground">{video.duration}</p>
                                           {isLocked && (
                                             <p className="text-xs text-muted-foreground">🔒 Locked - Complete previous video to unlock</p>
                                           )}

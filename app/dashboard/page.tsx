@@ -120,6 +120,9 @@ const VIDEO_ORDER: Record<string, string[]> = {
     "Email",
     "Credit Management",
   ],
+  "AI tools": [
+    // AI tools videos will be ordered by their creation date or admin-defined order
+  ],
 }
 
 const MODULE_ORDER = [
@@ -135,6 +138,7 @@ const MODULE_ORDER = [
   "Master Data Management",
   "Contact Management",
   "QA Module",
+  "AI tools",
 ]
 
 export default function Dashboard() {
@@ -541,8 +545,8 @@ export default function Dashboard() {
     // Group videos by category
     const videosByCategory = videos.reduce(
       (acc, video) => {
-        // Exclude General and AI tools categories
-        if (video.category === "Company Introduction" || video.category === "AI tools") {
+        // Exclude only General category, include AI tools
+        if (video.category === "Company Introduction") {
           return acc
         }
         const category = sanitize(video.category || "Uncategorized")
@@ -1177,7 +1181,6 @@ export default function Dashboard() {
               </Link>
             </div>
             
-            <Separator className="bg-green-500/30 mx-4" />
             
             {/* Quick Stats Section */}
             <div className="p-4 mt-auto">
@@ -1236,11 +1239,11 @@ export default function Dashboard() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
-                  <div className="flex gap-2">
+                  <div className="w-full lg:w-auto">
                     <Button
                       onClick={handleWatchSelected}
                       disabled={selectedVideos.length === 0}
-                      className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-12 px-6"
+                      className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-12 px-6"
                     >
                       <Play className="mr-2 h-4 w-4" />
                       Watch Selected ({selectedVideos.length})
@@ -1270,12 +1273,12 @@ export default function Dashboard() {
                     <p className="text-slate-500">Try adjusting your search criteria or filters</p>
                   </div>
                 ) : (
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     {/* Module-level selection only */}
-                    <div className="flex items-center mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                      <span className="text-sm font-medium text-slate-700">Select the modules you want to watch</span>
-                      <Badge variant="outline" className="ml-auto bg-blue-50 text-blue-700 border-blue-200">
-                        {selectedVideos.length} videos in selected modules
+                    <div className="flex flex-col sm:flex-row sm:items-center mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200 gap-3 sm:gap-0">
+                      <span className="text-sm font-medium text-slate-700 leading-relaxed">Select whole modules using the checkboxes on each module</span>
+                      <Badge variant="outline" className="ml-auto sm:ml-auto bg-gray-50 text-black border-gray-200 self-start sm:self-auto w-fit">
+                        {selectedVideos.length} videos
                       </Badge>
                     </div>
 
@@ -1283,9 +1286,9 @@ export default function Dashboard() {
                     <Accordion type="multiple" value={expandedModules} onValueChange={setExpandedModules} className="w-full space-y-3">
                       {modules.map((module, moduleIndex) => (
                         <AccordionItem key={moduleIndex} value={module.category} className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-200">
-                          <AccordionTrigger className="px-6 py-4 hover:no-underline bg-gradient-to-r from-slate-50 to-white hover:from-slate-100 hover:to-slate-50">
-                            <div className="flex items-center justify-between w-full">
-                              <div className="flex items-center gap-2">
+                          <AccordionTrigger className="px-4 sm:px-6 py-4 hover:no-underline bg-gradient-to-r from-slate-50 to-white hover:from-slate-100 hover:to-slate-50">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3 sm:gap-0">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
                                 {/* Module Select All Checkbox */}
                                 <Checkbox
                                   ref={(el) => {
@@ -1301,25 +1304,20 @@ export default function Dashboard() {
                                       setSelectedVideos([...new Set([...selectedVideos, ...moduleVideoIds])])
                                     }
                                   }}
-                                  className="mr-2"
+                                  className="flex-shrink-0"
                                 />
-                                <div className="flex items-center gap-2">
-                                  <div className="p-2 bg-green-100 rounded-lg">
-                                    <Target className="h-4 w-4 text-green-600" />
-                                  </div>
-                                  <div className="flex items-center gap-4 flex-1">
-                                    <span className="font-semibold text-slate-900">{(moduleDisplayNames[module.category] || module.name).trim()}</span>
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
-                                        <Clock className="h-3 w-3 mr-1" />
-                                        {module.totalDuration}
-                                      </Badge>
-                                      <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
-                                        {module.videos.length} videos
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                </div>
+                                <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{(moduleDisplayNames[module.category] || module.name).trim()}</span>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs px-2 py-0.5">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  <span className="hidden sm:inline">{module.totalDuration}</span>
+                                  <span className="sm:hidden">{module.totalDuration.replace(' mins', 'min').replace(' min', 'min')}</span>
+                                </Badge>
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-0.5">
+                                  <span className="hidden sm:inline">{module.videos.length} videos</span>
+                                  <span className="sm:hidden">{module.videos.length} videos</span>
+                                </Badge>
                               </div>
                             </div>
                           </AccordionTrigger>
@@ -1328,11 +1326,11 @@ export default function Dashboard() {
                               <table className="w-full text-sm">
                                 <thead className="bg-slate-50 border-t border-slate-200">
                                   <tr>
-                                    <th className="px-6 py-3 text-left font-semibold text-slate-700">Feature</th>
-                                    <th className="px-6 py-3 text-left font-semibold text-slate-700 w-32 whitespace-nowrap">
+                                    <th className="px-4 sm:px-6 py-3 text-left font-semibold text-slate-700">Feature</th>
+                                    <th className="hidden sm:table-cell px-6 py-3 text-center font-semibold text-slate-700 w-32 whitespace-nowrap">
                                       Video Length
                                     </th>
-                                    <th className="px-6 py-3 text-left font-semibold text-slate-700 w-24">
+                                    <th className="px-4 sm:px-6 py-3 text-left font-semibold text-slate-700 w-24">
                                       <div className="flex items-center">
                                         <div className="w-2 h-2 mr-2"></div>
                                         Status
@@ -1343,16 +1341,20 @@ export default function Dashboard() {
                                 <tbody className="divide-y divide-slate-100">
                                   {module.videos.map((video) => (
                                     <tr key={video.id} className="hover:bg-slate-50/50 transition-colors">
-                                      <td className="px-6 py-4">
-                                        <div className="font-medium text-slate-900">{video.title}</div>
+                                      <td className="px-4 sm:px-6 py-4">
+                                        <div className="font-medium text-slate-900 text-sm sm:text-base">{video.title}</div>
+                                        <div className="sm:hidden flex items-center text-slate-600 text-xs mt-1">
+                                          <Clock className="h-3 w-3 mr-1 text-slate-400" />
+                                          {video.duration}
+                                        </div>
                                       </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-slate-700">
-                                        <div className="flex items-center text-slate-600 whitespace-nowrap">
+                                      <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-slate-700">
+                                        <div className="flex items-center justify-center text-slate-600 whitespace-nowrap">
                                           <Clock className="h-3.5 w-3.5 mr-2 text-slate-400" />
                                           {video.duration}
                                         </div>
                                       </td>
-                                      <td className="px-6 py-4">
+                                      <td className="px-4 sm:px-6 py-4">
                                         {video.watched ? (
                                           <div className="flex items-center text-green-600">
                                             <CheckCircle className="h-4 w-4 mr-1.5" />

@@ -187,10 +187,16 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="relative">
-                    <div className="bg-gradient-to-br from-green-100 to-blue-100 rounded-2xl p-8 h-64 flex items-center justify-center">
-                      <div className="text-center">
-                        <Target className="h-16 w-16 text-green-600 mx-auto mb-4" />
-                        <p className="text-gray-700 font-medium">Interactive Demo Preview</p>
+                    <div className="bg-gradient-to-br from-green-100 to-blue-100 rounded-2xl p-0 overflow-hidden">
+                      <div className="relative" style={{ paddingBottom: '56.25%', height: 0 }}>
+                        <iframe
+                          src="https://www.youtube.com/embed/3iKHjpwY_cc"
+                          title="Interactive Demo Preview"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                          className="absolute top-0 left-0 w-full h-full"
+                        ></iframe>
                       </div>
                     </div>
                   </div>
