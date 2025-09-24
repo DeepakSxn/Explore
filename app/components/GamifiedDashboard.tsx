@@ -64,7 +64,6 @@ export default function GamifiedDashboard() {
   const { userProgress, loading, getCurrentLevel, getXPToNextLevel, getLevelProgress } = useGamification()
   const { userData } = useAuth()
   const [showConfetti, setShowConfetti] = useState(false)
-  const [dailyReminder, setDailyReminder] = useState("")
   const [moduleSuggestions, setModuleSuggestions] = useState<any[]>([])
   const [topVideos, setTopVideos] = useState<Video[]>([])
   const [videoProgress, setVideoProgress] = useState<{[key: string]: number}>({})
@@ -79,19 +78,6 @@ export default function GamifiedDashboard() {
     window.dispatchEvent(new CustomEvent('switchToClassicView'))
   }
 
-  // Generate daily reminder based on user progress
-  useEffect(() => {
-    if (userProgress) {
-      const suggestions = [
-        "Just 5 minutes to finish the Inventory module!",
-        "Keep your streak alive - watch one video today!",
-        "You're close to leveling up - complete a quiz!",
-        "Try the Processing module for 50 XP!",
-        "Your streak is impressive - maintain it today!"
-      ]
-      setDailyReminder(suggestions[Math.floor(Math.random() * suggestions.length)])
-    }
-  }, [userProgress])
 
   // Generate module suggestions
   useEffect(() => {
@@ -463,35 +449,27 @@ export default function GamifiedDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* Daily Reminder Banner */}
-        <AnimatePresence>
-          {dailyReminder && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="mb-6"
-            >
-              <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <p className="font-medium text-white">{dailyReminder}</p>
-                    </div>
-                    <Button 
-                      variant="secondary" 
-                      size="sm"
-                      onClick={switchToClassicView}
-                    >
-                      <span className="hidden sm:inline">Start Learning</span>
-                      <ArrowRight className="h-4 w-4 sm:ml-2" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Start Learning Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-end">
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={switchToClassicView}
+                >
+                  <span className="hidden sm:inline">Start Learning</span>
+                  <ArrowRight className="h-4 w-4 sm:ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Progress & Stats */}
