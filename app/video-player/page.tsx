@@ -1294,11 +1294,8 @@ export default function VideoPlayerPage() {
         // Use the category name as-is from the playlist
         let moduleName = category
         
-        // Sort videos if it's a known module type
-        let sortedModuleVideos = moduleVideos
-        if (category.toLowerCase().includes('sales') || category.toLowerCase().includes('qa')) {
-          sortedModuleVideos = sortVideosByOrder(moduleVideos, category)
-        }
+        // Preserve video order as prepared earlier (admin-defined where available)
+        const sortedModuleVideos = moduleVideos
         
         moduleArray.push({
           name: moduleName,
@@ -1353,7 +1350,45 @@ export default function VideoPlayerPage() {
       console.log("AI tools module created with 0 videos (compulsory module)")
     }
 
-    setModules(moduleArray)
+    // 8. Sort modules according to admin-defined order while keeping compulsory modules positioned
+    let moduleOrders: Record<string, number> = {}
+    try {
+      moduleOrders = await getAllModuleOrders()
+    } catch (e) {
+      console.warn("Could not load moduleOrders in player", e)
+    }
+
+    const isCompulsory = (m: { category: string }) => (
+      m.category === "Company Introduction" ||
+      m.category === "Additional Features" ||
+      m.category === "AI tools"
+    )
+
+    const compulsoryIntro = moduleArray.find(m => m.category === "Company Introduction")
+    const compulsoryAdditional = moduleArray.find(m => m.category === "Additional Features")
+    const compulsoryAI = moduleArray.find(m => m.category === "AI tools")
+    const others = moduleArray.filter(m => !isCompulsory(m))
+
+    const getOrder = (name: string, category: string) => {
+      const direct = moduleOrders[name]
+      if (typeof direct === 'number') return direct
+      const legacyName = name.replace(/\s*Module$/i, ' Module Overview')
+      const legacy = moduleOrders[legacyName]
+      if (typeof legacy === 'number') return legacy
+      const byCategory = moduleOrders[category]
+      if (typeof byCategory === 'number') return byCategory
+      return Number.MAX_SAFE_INTEGER
+    }
+
+    others.sort((a, b) => getOrder(a.name, a.category) - getOrder(b.name, b.category))
+
+    const sortedModuleArray: Module[] = []
+    if (compulsoryIntro) sortedModuleArray.push(compulsoryIntro)
+    sortedModuleArray.push(...others)
+    if (compulsoryAdditional) sortedModuleArray.push(compulsoryAdditional)
+    if (compulsoryAI) sortedModuleArray.push(compulsoryAI)
+
+    setModules(sortedModuleArray)
 
     // Unlock the first video of each module
     unlockFirstVideoOfEachModule(moduleArray)
