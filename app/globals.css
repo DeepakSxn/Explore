@@ -33,13 +33,14 @@
 }
 
 /* Add backdrop blur and proper transparency handling for dropdowns and lists */
-[data-radix-popper-content-wrapper] {
+/* [data-radix-popper-content-wrapper] {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-}
+} */
 
 [data-radix-popper-content-wrapper] > * {
-  background-color: hsl(var(--background) / 0.95);
+  background-color: white !important;
+  opacity: 1 !important;
 }
 
 /* Ensure proper z-index stacking for dropdowns */
@@ -49,7 +50,7 @@
 
 /* Improve hover states for better visibility */
 [data-radix-popper-content-wrapper] *:hover {
-  background-color: hsl(var(--accent) / 0.8);
+  background-color: hsl(var(--accent));
 }
 
 /* Ensure gradient text displays properly with full character visibility */
