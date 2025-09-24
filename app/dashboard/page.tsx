@@ -1186,16 +1186,16 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-white text-xs">
                     <span className="text-white">Videos Watched</span>
-                    <span className="font-medium text-white">{videos.filter(v => v.watched).length}</span>
+                    <span className="font-medium text-white">{new Set(videos.filter(v => v.watched).map(v => v.id)).size}</span>
                   </div>
                   <div className="flex items-center justify-between text-white text-xs">
                     <span className="text-white">Total Videos</span>
-                    <span className="font-medium text-white">{videos.length}</span>
+                    <span className="font-medium text-white">{new Set(videos.map(v => v.id)).size}</span>
                   </div>
                   <div className="w-full bg-green-500/30 rounded-full h-1.5">
                     <div 
                       className="bg-white h-1.5 rounded-full transition-all duration-300"
-                      style={{ width: `${videos.length > 0 ? (videos.filter(v => v.watched).length / videos.length) * 100 : 0}%` }}
+                      style={{ width: `${videos.length > 0 ? (new Set(videos.filter(v => v.watched).map(v => v.id)).size / new Set(videos.map(v => v.id)).size) * 100 : 0}%` }}
                     ></div>
                   </div>
                 </div>
