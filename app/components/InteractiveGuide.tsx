@@ -574,7 +574,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Ask me anything about EOXS..."
+                    placeholder="Ask me anything"
                     className="flex-1 text-sm border-gray-200 focus:border-green-500 focus:ring-green-500 rounded-xl"
                     disabled={isLoading}
                   />

@@ -527,7 +527,7 @@ export default function GamifiedDashboard() {
             </div>
 
             {/* Streak Motivation moved under stats */}
-            {userProgress.currentStreak > 0 && (
+            {userProgress.currentStreak >= 0 && (
               <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
@@ -537,7 +537,9 @@ export default function GamifiedDashboard() {
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-white">Amazing Streak!</h3>
                       <p className="text-white">
-                        You've been learning for {userProgress.currentStreak} day{userProgress.currentStreak !== 1 ? 's' : ''} in a row!
+                        {(() => { const displayStreak = Math.max(1, userProgress.currentStreak); return (
+                          <>You've been learning for {displayStreak} day{displayStreak !== 1 ? 's' : ''} in a row!</>
+                        )})()}
                       </p>
                       {userProgress.currentStreak >= 7 && (
                         <p className="text-sm text-white mt-1">
@@ -546,7 +548,7 @@ export default function GamifiedDashboard() {
                       )}
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-white">{userProgress.currentStreak}</p>
+                      <p className="text-2xl font-bold text-white">{Math.max(1, userProgress.currentStreak)}</p>
                       <p className="text-sm text-white">days</p>
                     </div>
                   </div>
