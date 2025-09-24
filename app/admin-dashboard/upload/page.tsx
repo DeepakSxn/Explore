@@ -60,6 +60,10 @@ export default function UploadPage() {
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false)
   const [customThumbnailUrl, setCustomThumbnailUrl] = useState<string>("")
 
+  // Derived validation flags
+  const isCategoryValid = !showNewCategoryInput ? Boolean(category) : Boolean(newCategory.trim())
+  const isFormValid = Boolean(file && title.trim() && description.trim() && duration.trim() && isCategoryValid)
+
   useEffect(() => {
     // Check if user is authenticated and is an admin
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
@@ -218,8 +222,16 @@ export default function UploadPage() {
   }
 
   const handleUpload = async () => {
-    if (!file || !title) {
-      setStatusMessage("Please provide a title and select a video file")
+    // Validate required fields
+    const missing: string[] = []
+    if (!file) missing.push("Video file")
+    if (!title.trim()) missing.push("Title")
+    if (!description.trim()) missing.push("Description")
+    if (!duration.trim()) missing.push("Duration")
+    if (!isCategoryValid) missing.push("Category")
+
+    if (missing.length > 0) {
+      setStatusMessage(`Please fill all required fields: ${missing.join(", ")}`)
       setUploadStatus("error")
       return
     }
@@ -234,7 +246,7 @@ export default function UploadPage() {
     try {
       // Upload video to Cloudinary
       const formData = new FormData()
-      formData.append("file", file)
+      formData.append("file", file as File)
       formData.append("upload_preset", "eoxsDemoTool")
 
       const response = await fetch(`https://api.cloudinary.com/v1_1/dnx1sl0nq/video/upload`, {
@@ -255,8 +267,8 @@ export default function UploadPage() {
       await addDoc(collection(db, "videos"), {
         title,
         description,
-        category: showNewCategoryInput ? newCategory : category,
-        duration: duration || "Unknown",
+        category: showNewCategoryInput ? newCategory.trim() : category,
+        duration: duration,
         tags,
         videoUrl: data.secure_url,
         publicId: data.public_id,
@@ -630,7 +642,7 @@ export default function UploadPage() {
                 </Button>
                 <Button
                   onClick={handleUpload}
-                  disabled={!file || !title || uploading}
+                  disabled={!isFormValid || uploading}
                   className="bg-primary hover:bg-primary/90 btn-enhanced btn-primary-enhanced"
                 >
                   {uploading ? (
