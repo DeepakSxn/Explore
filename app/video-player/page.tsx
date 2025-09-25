@@ -503,7 +503,9 @@ export default function VideoPlayerPage() {
 
   useEffect(() => {
     if (currentVideo && currentVideo.id) {
-      unlockNextVideoIfNeeded(currentVideo.id)
+      // Temporarily disabled to debug locking issue
+      // unlockNextVideoIfNeeded(currentVideo.id)
+      console.log("🔍 unlockNextVideoIfNeeded disabled for debugging")
     }
   }, [videoWatchEvents, currentVideo])
 
@@ -1196,15 +1198,21 @@ export default function VideoPlayerPage() {
     const updatedWatchEvents = { ...videoWatchEvents }
     let unlockedCount = 0
     
+    console.log("🔍 unlockFirstVideoOfEachModule - Current videoWatchEvents:", updatedWatchEvents)
+    
     moduleArray.forEach((module) => {
       if (module.videos && module.videos.length > 0) {
         const firstVideoId = module.videos[0].id
-        if (updatedWatchEvents[firstVideoId] === null) {
+        const currentState = updatedWatchEvents[firstVideoId]
+        console.log(`🔍 Module "${module.name}" - First video "${module.videos[0].title}" (${firstVideoId}) current state: ${currentState}`)
+        
+        // Always ensure first video is unlocked (false = unlocked but not watched)
+        if (currentState !== true) { // If not already watched
           updatedWatchEvents[firstVideoId] = false // Unlock first video of each module
           unlockedCount++
           console.log(`🔓 Unlocked first video of module "${module.name}": ${firstVideoId}`)
         } else {
-          console.log(`ℹ️ First video of module "${module.name}" already unlocked: ${firstVideoId}`)
+          console.log(`ℹ️ First video of module "${module.name}" already watched: ${firstVideoId}`)
         }
       }
     })
@@ -1391,7 +1399,7 @@ export default function VideoPlayerPage() {
     setModules(sortedModuleArray)
 
     // Unlock the first video of each module
-    unlockFirstVideoOfEachModule(moduleArray)
+    unlockFirstVideoOfEachModule(sortedModuleArray)
 
     // Debug: Log all modules being created
     console.log("=== MODULES BEING CREATED ===")
@@ -1522,14 +1530,6 @@ export default function VideoPlayerPage() {
 
     const watchEvents: Record<string, boolean | null> = {}
 
-    // Initialize all videos as locked (null = locked)
-    playlistData.videos.forEach((video) => {
-      watchEvents[video.id] = null
-    })
-    
-    // We'll unlock the first video of each module after modules are loaded
-    // This function will be called again from organizeIntoModules
-
     try {
       // Query Firestore for all completed videos by this user
       const watchHistoryQuery = query(
@@ -1541,20 +1541,21 @@ export default function VideoPlayerPage() {
       const watchHistorySnapshot = await getDocs(watchHistoryQuery)
       const watchedVideoIds = new Set(watchHistorySnapshot.docs.map((doc) => doc.data().videoId))
 
-      // Mark watched videos as true; leave others as false (unlocked)
-      if (watchedVideoIds.size > 0) {
-        playlistData.videos.forEach((video) => {
-          if (watchedVideoIds.has(video.id)) {
-            watchEvents[video.id] = true
-          }
-        })
-      }
+      // Initialize all videos based on watch status
+      playlistData.videos.forEach((video) => {
+        if (watchedVideoIds.has(video.id)) {
+          watchEvents[video.id] = true // Watched (unlocked)
+        } else {
+          watchEvents[video.id] = false // Unwatched (will be unlocked if first video of module)
+        }
+      })
 
       // Apply the computed watch events (all unlocked; watched are true)
       setVideoWatchEvents(watchEvents)
       
       // Debug: Log initial video states
       console.log("🔍 Initial Video States After Loading History:")
+      console.log("videoWatchEvents:", watchEvents)
       playlistData.videos.forEach((video, index) => {
         const state = watchEvents[video.id]
         const status = state === null ? "🔒 LOCKED" : state === false ? "🔓 UNLOCKED" : "✅ COMPLETED"
@@ -1870,36 +1871,47 @@ export default function VideoPlayerPage() {
       // Create a new watch events object
       const updatedWatchEvents = { ...videoWatchEvents };
   
-      // Mark all watched videos
+      // Initialize all videos based on watch status
       playlist.videos.forEach((video) => {
         if (videoCompletionMap[video.id]) {
-          updatedWatchEvents[video.id] = true;
+          updatedWatchEvents[video.id] = true; // Watched (unlocked)
+        } else {
+          updatedWatchEvents[video.id] = false; // Unwatched (will be unlocked if first video of module)
         }
       });
   
-      // Unlock videos after watched ones within each module
+      // Unlock first video of each module
       if (modules && modules.length > 0) {
         modules.forEach((module) => {
-          let lastUnlockedIndex = 0;
-          
-          for (let i = 0; i < module.videos.length; i++) {
-            const videoId = module.videos[i].id;
-            
-            // If this video is watched, update lastUnlockedIndex
-            if (updatedWatchEvents[videoId] === true) {
-              lastUnlockedIndex = i + 1;
-            }
-            
-            // Unlock videos up to lastUnlockedIndex within this module (only if they were previously locked)
-            if (i <= lastUnlockedIndex && updatedWatchEvents[videoId] === null) {
-              updatedWatchEvents[videoId] = false; // Unlocked but not watched
-            }
+          if (module.videos && module.videos.length > 0) {
+            const firstVideoId = module.videos[0].id;
+            updatedWatchEvents[firstVideoId] = false; // First video is always unlocked
           }
         });
       }
   
+      // Debug logging
+      console.log("🔍 fetchWatchHistory - Updated video states:")
+      console.log("updatedWatchEvents:", updatedWatchEvents)
+      
       // Update state
       setVideoWatchEvents(updatedWatchEvents);
+      
+      // Ensure first videos of modules are unlocked after loading watch history
+      if (modules && modules.length > 0) {
+        console.log("🔍 fetchWatchHistory - Ensuring first videos are unlocked")
+        const finalUpdatedWatchEvents = { ...updatedWatchEvents }
+        modules.forEach((module) => {
+          if (module.videos && module.videos.length > 0) {
+            const firstVideoId = module.videos[0].id
+            if (finalUpdatedWatchEvents[firstVideoId] !== true) { // If not already watched
+              finalUpdatedWatchEvents[firstVideoId] = false // Unlock first video
+              console.log(`🔓 fetchWatchHistory - Unlocked first video of module "${module.name}": ${firstVideoId}`)
+            }
+          }
+        })
+        setVideoWatchEvents(finalUpdatedWatchEvents)
+      }
     } catch (error) {
       console.error("Error fetching watch history:", error);
     }
@@ -2594,10 +2606,14 @@ export default function VideoPlayerPage() {
     if (playlistIndex === -1) return
 
     // Check if video is playable before allowing navigation
-    if (!isVideoPlayable(playlistIndex)) {
+    const isWatched = videoWatchEvents[video.id] === true
+    const isFirstVideoInModule = videoIndex === 0
+    const isPlayable = isWatched || isFirstVideoInModule
+    
+    if (!isPlayable) {
       toast({
         title: "Video Locked",
-        description: "Complete the previous video in this module to unlock this one.",
+        description: "Complete this video to unlock it.",
         variant: "destructive",
         duration: 3000,
       })
@@ -2631,10 +2647,25 @@ export default function VideoPlayerPage() {
     const video = playlist.videos[playlistIndex]
     
     // Check if video is playable
-    if (!isVideoPlayable(playlistIndex)) {
+    const isWatched = videoWatchEvents[video.id] === true
+    
+    // Find which module this video belongs to
+    const moduleIndex = modules.findIndex(module => 
+      module.videos.some(v => v.id === video.id)
+    )
+    
+    let isFirstVideoInModule = false
+    if (moduleIndex !== -1) {
+      const moduleVideoIndex = modules[moduleIndex].videos.findIndex(v => v.id === video.id)
+      isFirstVideoInModule = moduleVideoIndex === 0
+    }
+    
+    const isPlayable = isWatched || isFirstVideoInModule
+    
+    if (!isPlayable) {
       toast({
         title: "Video Locked",
-        description: "Complete the previous video to unlock this one.",
+        description: "Complete this video to unlock it.",
         variant: "destructive",
         duration: 3000,
       })
@@ -3252,8 +3283,13 @@ export default function VideoPlayerPage() {
                         // Find the playlist index for this video
                         const playlistIndex = playlist.videos.findIndex(v => v.id === video.id)
                         const isWatched = videoWatchEvents[video.id] === true
-                        const isPlayable = playlistIndex !== -1 ? isVideoPlayable(playlistIndex) : false
-                        const isLocked = videoWatchEvents[video.id] === null
+                        const actualModuleVideoIndex = currentModuleVideoIndex + 1 + index
+                        const isFirstVideoInModule = actualModuleVideoIndex === 0
+                        const isPlayable = isWatched || isFirstVideoInModule
+                        const isLocked = !isPlayable
+                        
+                        // Debug logging
+                        console.log(`Video: ${video.title}, isWatched: ${isWatched}, isFirstVideoInModule: ${isFirstVideoInModule}, isPlayable: ${isPlayable}, isLocked: ${isLocked}`)
                         
                         return (
                           <div
@@ -3389,13 +3425,11 @@ export default function VideoPlayerPage() {
                   >
                                         {modules.map((module, moduleIndex) => (
                       <AccordionItem key={moduleIndex} value={`module-${moduleIndex}`}>
-                              <AccordionTrigger className="hover:no-underline">
-                                                              <div className="flex items-center justify-between w-full">
+                              <AccordionTrigger className="hover:no-underline flex items-center justify-between w-full">
                                 <span className="font-medium">{module.name}</span>
                                 <Badge variant="outline" className="ml-2">
                                   {module.videos.length} videos
                                 </Badge>
-                              </div>
                               </AccordionTrigger>
                               <AccordionContent>
                                 <div className="space-y-2 pl-2">
@@ -3403,8 +3437,12 @@ export default function VideoPlayerPage() {
                                     const playlistIndex = playlist.videos.findIndex((v) => v.id === video.id)
                                     const isCurrentVideo = currentVideo.id === video.id
                                     const isWatched = videoWatchEvents[video.id] === true
-                                    const isPlayable = playlistIndex !== -1 ? isVideoPlayable(playlistIndex) : false
-                                    const isLocked = videoWatchEvents[video.id] === null
+                                    const isFirstVideoInModule = videoIndex === 0
+                                    const isPlayable = isWatched || isFirstVideoInModule
+                                    const isLocked = !isPlayable
+                                    
+                                    // Debug logging
+                                    console.log(`Accordion Video: ${video.title}, videoIndex: ${videoIndex}, isWatched: ${isWatched}, isFirstVideoInModule: ${isFirstVideoInModule}, isPlayable: ${isPlayable}, isLocked: ${isLocked}`)
 
                                     return (
                                       <div

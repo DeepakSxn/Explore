@@ -1286,39 +1286,37 @@ export default function Dashboard() {
                     <Accordion type="multiple" value={expandedModules} onValueChange={setExpandedModules} className="w-full space-y-3">
                       {modules.map((module, moduleIndex) => (
                         <AccordionItem key={moduleIndex} value={module.category} className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-200">
-                          <AccordionTrigger asChild className="px-4 sm:px-6 py-4 hover:no-underline bg-gradient-to-r from-slate-50 to-white hover:from-slate-100 hover:to-slate-50">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3 sm:gap-0">
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                {/* Module Select All Checkbox */}
-                                <Checkbox
-                                  ref={(el) => {
-                                    moduleCheckboxRefs.current[moduleIndex] = el
-                                  }}
-                                  checked={module.videos.every((v) => selectedVideos.includes(v.id))}
-                                  onCheckedChange={() => {
-                                    const moduleVideoIds = module.videos.map((v) => v.id)
-                                    const allSelected = moduleVideoIds.every((id) => selectedVideos.includes(id))
-                                    if (allSelected) {
-                                      setSelectedVideos(selectedVideos.filter((id) => !moduleVideoIds.includes(id)))
-                                    } else {
-                                      setSelectedVideos([...new Set([...selectedVideos, ...moduleVideoIds])])
-                                    }
-                                  }}
-                                  className="flex-shrink-0"
-                                />
-                                <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{(moduleDisplayNames[module.category] || module.name).trim()}</span>
-                              </div>
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs px-2 py-0.5">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  <span className="hidden sm:inline">{module.totalDuration}</span>
-                                  <span className="sm:hidden">{module.totalDuration.replace(' mins', 'min').replace(' min', 'min')}</span>
-                                </Badge>
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-0.5">
-                                  <span className="hidden sm:inline">{module.videos.length} videos</span>
-                                  <span className="sm:hidden">{module.videos.length} videos</span>
-                                </Badge>
-                              </div>
+                          <AccordionTrigger className="px-4 sm:px-6 py-4 hover:no-underline bg-gradient-to-r from-slate-50 to-white hover:from-slate-100 hover:to-slate-50 flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3 sm:gap-0">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              {/* Module Select All Checkbox */}
+                              <Checkbox
+                                ref={(el) => {
+                                  moduleCheckboxRefs.current[moduleIndex] = el
+                                }}
+                                checked={module.videos.every((v) => selectedVideos.includes(v.id))}
+                                onCheckedChange={() => {
+                                  const moduleVideoIds = module.videos.map((v) => v.id)
+                                  const allSelected = moduleVideoIds.every((id) => selectedVideos.includes(id))
+                                  if (allSelected) {
+                                    setSelectedVideos(selectedVideos.filter((id) => !moduleVideoIds.includes(id)))
+                                  } else {
+                                    setSelectedVideos([...new Set([...selectedVideos, ...moduleVideoIds])])
+                                  }
+                                }}
+                                className="flex-shrink-0"
+                              />
+                              <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{(moduleDisplayNames[module.category] || module.name).trim()}</span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs px-2 py-0.5">
+                                <Clock className="h-3 w-3 mr-1" />
+                                <span className="hidden sm:inline">{module.totalDuration}</span>
+                                <span className="sm:hidden">{module.totalDuration.replace(' mins', 'min').replace(' min', 'min')}</span>
+                              </Badge>
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-0.5">
+                                <span className="hidden sm:inline">{module.videos.length} videos</span>
+                                <span className="sm:hidden">{module.videos.length} videos</span>
+                              </Badge>
                             </div>
                           </AccordionTrigger>
                           <AccordionContent className="px-0">
