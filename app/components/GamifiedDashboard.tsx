@@ -71,12 +71,46 @@ export default function GamifiedDashboard() {
   const [categoryOrders, setCategoryOrders] = useState<Record<string, string[]>>({})
 
   const [showChallengeMode, setShowChallengeMode] = useState(false)
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
+
+  // Banner messages that rotate
+  const bannerMessages = [
+    {
+      text: "Try the Processing module",
+      icon: Clock
+    },
+    {
+      text: "Master the Sales module",
+      icon: Target
+    },
+    {
+      text: "Complete the QA module",
+      icon: CheckCircle
+    },
+    {
+      text: "Explore the AI tools",
+      icon: Sparkles
+    },
+    {
+      text: "Learn Contact Management",
+      icon: Users
+    }
+  ]
 
   // Function to switch to classic dashboard view
   const switchToClassicView = () => {
     // Dispatch a custom event to communicate with the parent dashboard component
     window.dispatchEvent(new CustomEvent('switchToClassicView'))
   }
+
+  // Rotate banner messages every 1 minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBannerIndex((prev) => (prev + 1) % bannerMessages.length)
+    }, 60000)
+
+    return () => clearInterval(interval)
+  }, [bannerMessages.length])
 
 
   // Generate module suggestions
@@ -449,24 +483,95 @@ export default function GamifiedDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* Start Learning Banner */}
+        {/* Animated Learning Banner */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
           className="mb-6"
         >
-          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg">
+          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg overflow-hidden">
             <CardContent className="p-4">
-              <div className="flex items-center justify-end">
-                <Button 
-                  variant="secondary" 
-                  size="sm"
-                  onClick={switchToClassicView}
+              <div className="flex items-center justify-between">
+                {/* Left side - Content with animations */}
+                <div className="flex items-center gap-3">
+                  <motion.div
+                    key={`icon-${currentBannerIndex}`}
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ duration: 0.8, delay: 0.2, type: "spring", stiffness: 200 }}
+                    className="bg-white/20 p-2 rounded-full"
+                  >
+                    {React.createElement(bannerMessages[currentBannerIndex].icon, {
+                      className: "h-5 w-5 text-white"
+                    })}
+                  </motion.div>
+                  
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={`text-${currentBannerIndex}`}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                      className="text-base font-semibold text-white"
+                    >
+                      {bannerMessages[currentBannerIndex].text}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
+
+                {/* Right side - Start Learning Button */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.8 }}
                 >
-                  <span className="hidden sm:inline">Start Learning</span>
-                  <ArrowRight className="h-4 w-4 sm:ml-2" />
-                </Button>
+                  <Button 
+                    variant="secondary" 
+                    size="sm"
+                    onClick={switchToClassicView}
+                    className="bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                  >
+                    <span className="hidden sm:inline">Start Learning</span>
+                    <ArrowRight className="h-4 w-4 sm:ml-2" />
+                  </Button>
+                </motion.div>
               </div>
+              
+              {/* Animated background elements */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.1 }}
+                transition={{ duration: 2, delay: 1 }}
+                className="absolute inset-0 overflow-hidden pointer-events-none"
+              >
+                <motion.div
+                  animate={{ 
+                    x: [0, 100, 0],
+                    opacity: [0.1, 0.3, 0.1]
+                  }}
+                  transition={{ 
+                    duration: 4, 
+                    repeat: Infinity, 
+                    ease: "easeInOut" 
+                  }}
+                  className="absolute -top-4 -right-4 w-32 h-32 bg-white rounded-full"
+                />
+                <motion.div
+                  animate={{ 
+                    x: [0, -50, 0],
+                    opacity: [0.1, 0.2, 0.1]
+                  }}
+                  transition={{ 
+                    duration: 3, 
+                    repeat: Infinity, 
+                    ease: "easeInOut",
+                    delay: 1
+                  }}
+                  className="absolute -bottom-2 -left-2 w-24 h-24 bg-white rounded-full"
+                />
+              </motion.div>
             </CardContent>
           </Card>
         </motion.div>
