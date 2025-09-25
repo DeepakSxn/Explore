@@ -3233,14 +3233,6 @@ export default function VideoPlayerPage() {
                 <MessageSquare className="h-4 w-4" />
                 Rate & Review This Video
               </Button>
-              
-              {/* Debug Button - Only visible in development */}
-              {process.env.NODE_ENV === 'development' && (
-                <Button variant="outline" onClick={debugVideoStates} className="flex items-center gap-2">
-                  <Info className="h-4 w-4" />
-                  Debug Video States
-                </Button>
-              )}
             </div>
 
             {/* Next Videos Section - Moved below description */}
@@ -3278,14 +3270,16 @@ export default function VideoPlayerPage() {
                       return nextVideosInModule.map((video, index) => {
                         // Find the playlist index for this video
                         const playlistIndex = playlist.videos.findIndex(v => v.id === video.id)
-                        const isWatched = videoWatchEvents[video.id] === true
                         const actualModuleVideoIndex = currentModuleVideoIndex + 1 + index
-                        const isFirstVideoInModule = actualModuleVideoIndex === 0
-                        const isPlayable = isWatched || isFirstVideoInModule
+                        const prevId = currentModule.videos[actualModuleVideoIndex - 1]?.id
+                        const isPlayable = actualModuleVideoIndex === 0
+                          ? true
+                          : (prevId ? videoWatchEvents[prevId] === true : false)
+                        const isWatched = videoWatchEvents[video.id] === true
                         const isLocked = !isPlayable
                         
                         // Debug logging
-                        console.log(`Video: ${video.title}, isWatched: ${isWatched}, isFirstVideoInModule: ${isFirstVideoInModule}, isPlayable: ${isPlayable}, isLocked: ${isLocked}`)
+                        console.log(`Video: ${video.title}, isWatched: ${isWatched}, isPlayable: ${isPlayable}, isLocked: ${isLocked}`)
                         
                         return (
                           <div
@@ -3335,7 +3329,7 @@ export default function VideoPlayerPage() {
                               <div className="absolute bottom-1 left-1 bg-black/80 text-white text-xs px-1 py-0.5 rounded">
                                 {video.duration}
                               </div>
-                              {isWatched && (
+                              {videoWatchEvents[video.id] === true && (
                                 <div className="absolute top-1 right-1 bg-green-500 text-white rounded-full p-1">
                                   <CheckCircle className="h-3 w-3" />
                                 </div>
@@ -3432,9 +3426,9 @@ export default function VideoPlayerPage() {
                                   {module.videos.map((video, videoIndex) => {
                                     const playlistIndex = playlist.videos.findIndex((v) => v.id === video.id)
                                     const isCurrentVideo = currentVideo.id === video.id
-                                    const isWatched = videoWatchEvents[video.id] === true
                                     const isFirstVideoInModule = videoIndex === 0
-                                    const isPlayable = isWatched || isFirstVideoInModule
+                                    const isWatched = videoWatchEvents[video.id] === true
+                                    const isPlayable = playlistIndex !== -1 ? isVideoPlayable(playlistIndex) : isFirstVideoInModule
                                     const isLocked = !isPlayable
                                     
                                     // Debug logging
@@ -3491,7 +3485,7 @@ export default function VideoPlayerPage() {
                                           <div className="absolute bottom-1 left-1 bg-black/80 text-white text-xs px-1 py-0.5 rounded">
                                             {video.duration}
                                           </div>
-                                          {isWatched && (
+                                          {videoWatchEvents[video.id] === true && (
                                             <div className="absolute top-1 right-1 bg-green-500 text-white rounded-full p-1">
                                               <CheckCircle className="h-3 w-3" />
                                             </div>
