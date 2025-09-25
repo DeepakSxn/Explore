@@ -1,5 +1,6 @@
 "use client"
 
+// Single comment added across the page as requested
 /**
  * Video Player Page with Per-Module Progressive Video Unlocking System
  * 
