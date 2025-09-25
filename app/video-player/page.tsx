@@ -3151,11 +3151,7 @@ export default function VideoPlayerPage() {
                       </Button>
                     )
                   } else {
-                    return (
-                      <div className="text-sm text-muted-foreground opacity-50">
-                        First Video in {currentModule.name}
-                      </div>
-                    )
+                    return null
                   }
                 })()}
               </div>
@@ -3425,9 +3421,9 @@ export default function VideoPlayerPage() {
                   >
                                         {modules.map((module, moduleIndex) => (
                       <AccordionItem key={moduleIndex} value={`module-${moduleIndex}`}>
-                              <AccordionTrigger className="hover:no-underline flex items-center justify-between w-full">
+                              <AccordionTrigger className="hover:no-underline flex items-center w-full pr-6">
                                 <span className="font-medium">{module.name}</span>
-                                <Badge variant="outline" className="ml-2">
+                                <Badge variant="outline" className="ml-auto">
                                   {module.videos.length} videos
                                 </Badge>
                               </AccordionTrigger>
