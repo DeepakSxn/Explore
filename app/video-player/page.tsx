@@ -59,6 +59,7 @@ import {
 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Check } from "lucide-react"
 import { Logo } from "../components/logo"
 import { auth, db } from "@/firebase"
 import { ThemeToggle } from "../theme-toggle"
@@ -3015,14 +3016,21 @@ export default function VideoPlayerPage() {
                               {playbackRate}x
                             </div>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-16">
+                          <DropdownMenuContent align="end" className="w-24">
                             {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
                               <DropdownMenuItem
                                 key={rate}
-                                className={playbackRate === rate ? "bg-muted" : ""}
                                 onClick={() => handlePlaybackRateChange(rate)}
+                                className={playbackRate === rate ? "bg-muted" : ""}
                               >
-                                {rate}x
+                                <div className="flex items-center gap-2 w-full">
+                                  {playbackRate === rate ? (
+                                    <Check className="h-4 w-4" />
+                                  ) : (
+                                    <span className="inline-block w-4" />
+                                  )}
+                                  <span>{rate}x</span>
+                                </div>
                               </DropdownMenuItem>
                             ))}
                           </DropdownMenuContent>

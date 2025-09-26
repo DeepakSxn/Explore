@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
@@ -69,9 +69,11 @@ export default function GamifiedDashboard() {
   const [videoProgress, setVideoProgress] = useState<{[key: string]: number}>({})
   const [allVideos, setAllVideos] = useState<Video[]>([])
   const [categoryOrders, setCategoryOrders] = useState<Record<string, string[]>>({})
+  const completedVideoIdsRef = useRef<Set<string>>(new Set())
 
   const [showChallengeMode, setShowChallengeMode] = useState(false)
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
+  const [isRefreshingPath, setIsRefreshingPath] = useState(false)
 
   // Banner messages that rotate
   const bannerMessages = [
@@ -178,26 +180,36 @@ export default function GamifiedDashboard() {
         } as Video
       })
 
-      // Get user's watch history
+      // Get user's watch history (match the collection used by the video player)
       const watchHistoryQuery = query(
         collection(db, "videoWatchEvents"),
         where("userId", "==", auth.currentUser.uid)
       )
       const watchHistorySnapshot = await getDocs(watchHistoryQuery)
-      const watchHistory = watchHistorySnapshot.docs.map(doc => doc.data())
+      const watchHistory = watchHistorySnapshot.docs.map(doc => doc.data()) as Array<{ videoId: string; progress?: number; completed?: boolean }>
 
-      // Calculate progress for each video
-      const progressData: {[key: string]: number} = {}
-      allVideos.forEach(video => {
-        const watchEvent = watchHistory.find(event => event.videoId === video.id)
-        if (watchEvent) {
-          // Calculate progress based on watch position vs duration
-          const duration = parseInt(video.duration.match(/\d+/)?.[0] || "0")
-          const position = watchEvent.lastPosition || 0
-          progressData[video.id] = duration > 0 ? Math.min(100, (position / duration) * 100) : 0
-        } else {
-          progressData[video.id] = 0
+      // Build a set of definitively completed videos for quick membership tests
+      const completedIds = new Set<string>()
+      watchHistory.forEach(e => {
+        if (e.videoId && (e.completed || (typeof e.progress === 'number' && e.progress >= 90))) {
+          completedIds.add(e.videoId)
         }
+      })
+      completedVideoIdsRef.current = completedIds
+
+      // Build quick lookup for progress/completion by videoId
+      const progressByVideoId: { [key: string]: { progress: number; completed: boolean } } = {}
+      watchHistory.forEach(e => {
+        const p = typeof e.progress === 'number' ? e.progress : 0
+        const c = Boolean(e.completed)
+        progressByVideoId[e.videoId] = { progress: p, completed: c }
+      })
+
+      // Calculate progress mapping for all videos using stored percent/completed
+      const progressData: { [key: string]: number } = {}
+      allVideos.forEach(video => {
+        const entry = progressByVideoId[video.id]
+        progressData[video.id] = entry ? Math.min(100, Math.max(entry.progress, entry.completed ? 100 : entry.progress)) : 0
       })
 
       // Get top 3 videos by progress (most watched)
@@ -681,14 +693,20 @@ export default function GamifiedDashboard() {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => {
-                          fetchTopVideos()
-                          // Also refresh module suggestions if needed
+                        onClick={async () => {
+                          try {
+                            setIsRefreshingPath(true)
+                            await fetchTopVideos()
+                            toast({ title: "Learning path refreshed" })
+                          } finally {
+                            setIsRefreshingPath(false)
+                          }
                         }}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                        disabled={isRefreshingPath}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 disabled:opacity-60"
                       >
-                        <RefreshCw className="h-4 w-4 mr-1" />
-                        Refresh
+                        <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshingPath ? 'animate-spin' : ''}`} />
+                        {isRefreshingPath ? 'Refreshing…' : 'Refresh'}
                       </Button>
                     </div>
                     <p className="text-sm text-blue-600 mb-4">Shows your top 3 modules based on videos watched</p>
@@ -707,8 +725,8 @@ export default function GamifiedDashboard() {
                           }
                           moduleProgress[video.category].totalVideos++
                           
-                          // Count videos that have been watched (any progress > 0)
-                          if ((videoProgress[video.id] || 0) > 0) {
+                          // Count as watched if explicitly completed in watch history or progress >= 90%
+                          if (completedVideoIdsRef.current.has(video.id) || (videoProgress[video.id] || 0) >= 90) {
                             moduleProgress[video.category].watchedCount++
                           }
                         })

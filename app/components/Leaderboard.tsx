@@ -9,7 +9,6 @@ import {
   TrendingUp, 
   Flame,
   Star,
-  Target,
   Calendar,
   Filter,
   RefreshCw
@@ -332,10 +331,6 @@ export default function Leaderboard() {
                               <div className="flex items-center gap-1">
                                 <Flame className="h-4 w-4 text-orange-500" />
                                 <span>{entry.currentStreak} days</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Target className="h-4 w-4 text-blue-500" />
-                                <span>{entry.badgesEarned} badges</span>
                               </div>
                             </div>
                           </div>
