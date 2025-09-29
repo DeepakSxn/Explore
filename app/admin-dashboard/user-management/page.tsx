@@ -33,7 +33,8 @@ import {
 import { 
   getAllUsersWithSuspensionStatus, 
   unsuspendUser, 
-  deleteUser 
+  deleteUser,
+  transferUserCompany
 } from "../../firestore-utils"
 import { toast } from "sonner"
 import { toast as uiToast } from "@/components/ui/use-toast"
@@ -74,6 +75,9 @@ export default function UserManagementPage() {
   const [unsuspendDialogOpen, setUnsuspendDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [transferOpen, setTransferOpen] = useState(false)
+  const [transferCompany, setTransferCompany] = useState("")
+  const [transferring, setTransferring] = useState(false)
 
   useEffect(() => {
     fetchUsers()
@@ -378,6 +382,19 @@ export default function UserManagementPage() {
                             </svg>
                           </Button>
 
+                          {/* Transfer Company Button */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user)
+                              setTransferCompany("")
+                              setTransferOpen(true)
+                            }}
+                          >
+                            Transfer Company
+                          </Button>
+
                           {/* Unsuspend Button (only for suspended users) */}
                           {user.isSuspended && (
                             <Button
@@ -495,6 +512,49 @@ export default function UserManagementPage() {
               className="bg-red-600 hover:bg-red-700"
             >
               Yes, Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Transfer Company Dialog */}
+      <AlertDialog open={transferOpen} onOpenChange={setTransferOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Transfer User to Another Company</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter the destination company name for {selectedUser?.name || selectedUser?.email}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3">
+            <Input
+              placeholder="Target company name (e.g. Gambek LLC)"
+              value={transferCompany}
+              onChange={(e) => setTransferCompany(e.target.value)}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!selectedUser || !transferCompany.trim()) return
+                try {
+                  setTransferring(true)
+                  await transferUserCompany(selectedUser.userId, transferCompany.trim())
+                  toast.success("User transferred successfully")
+                  setTransferOpen(false)
+                  setSelectedUser(null)
+                  setTransferCompany("")
+                  fetchUsers()
+                } catch (e) {
+                  console.error(e)
+                  toast.error("Failed to transfer user")
+                } finally {
+                  setTransferring(false)
+                }
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {transferring ? "Transferring..." : "Transfer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

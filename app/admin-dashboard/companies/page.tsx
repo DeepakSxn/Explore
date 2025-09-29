@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { toast } from "@/hooks/use-toast"
-import { Building, Edit, Plus, Trash2, Save, X } from "lucide-react"
+import { Building, Edit, Plus, Trash2, Save, X, ArrowRight, Merge } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 
 interface CompanyDoc {
   id: string
@@ -30,6 +31,11 @@ export default function CompaniesPage() {
   const [newCompany, setNewCompany] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState("")
+  const [mergeOpen, setMergeOpen] = useState(false)
+  const [mergeSource, setMergeSource] = useState<string>("")
+  const [mergeTarget, setMergeTarget] = useState<string>("")
+  const [mergeDeleteSource, setMergeDeleteSource] = useState<boolean>(true)
+  const [merging, setMerging] = useState(false)
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
@@ -142,25 +148,90 @@ export default function CompaniesPage() {
           <h1 className="text-3xl font-bold">Companies</h1>
           <p className="text-muted-foreground mt-2">Manage the company list available during signup.</p>
         </div>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" /> Add Company
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Company</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <Input placeholder="Company name" value={newCompany} onChange={(e) => setNewCompany(e.target.value)} />
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddCompany}>Add</Button>
+        <div className="flex items-center gap-2">
+          <Dialog open={mergeOpen} onOpenChange={setMergeOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Merge className="h-4 w-4" /> Merge Companies
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Merge Companies</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-3">
+                  <div>
+                    <label className="text-sm text-muted-foreground">Source company</label>
+                    <Input list="companies-src" placeholder="e.g. Gambek Metals" value={mergeSource} onChange={(e) => setMergeSource(e.target.value)} />
+                    <datalist id="companies-src">
+                      {companies.map(c => (
+                        <option key={c.id} value={c.name} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="flex justify-center items-end pb-2">
+                    <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground">Target company</label>
+                    <Input list="companies-dst" placeholder="e.g. Gambek LLC" value={mergeTarget} onChange={(e) => setMergeTarget(e.target.value)} />
+                    <datalist id="companies-dst">
+                      {companies.map(c => (
+                        <option key={c.id} value={c.name} />
+                      ))}
+                    </datalist>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="delete-src" checked={mergeDeleteSource} onCheckedChange={(v) => setMergeDeleteSource(!!v)} />
+                  <label htmlFor="delete-src" className="text-sm">Delete source company record after merge</label>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setMergeOpen(false)}>Cancel</Button>
+                  <Button disabled={merging || !mergeSource.trim() || !mergeTarget.trim()} onClick={async () => {
+                    try {
+                      setMerging(true)
+                      const mod = await import("../../firestore-utils")
+                      const fn = mod.mergeCompanies
+                      if (typeof fn !== "function") throw new Error("mergeCompanies export not found")
+                      const res = await fn(mergeSource, mergeTarget, { deleteSource: mergeDeleteSource })
+                      toast({ title: "Merged", description: `Updated ${res.updatedUsers} users` })
+                      setMergeOpen(false)
+                      setMergeSource("")
+                      setMergeTarget("")
+                      loadCompanies()
+                    } catch (e: any) {
+                      console.error(e)
+                      toast({ title: "Error", description: e?.message || "Failed to merge", variant: "destructive" })
+                    } finally {
+                      setMerging(false)
+                    }
+                  }}>{merging ? "Merging..." : "Merge"}</Button>
+                </div>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" /> Add Company
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Company</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Input placeholder="Company name" value={newCompany} onChange={(e) => setNewCompany(e.target.value)} />
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
+                  <Button onClick={handleAddCompany}>Add</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Card>

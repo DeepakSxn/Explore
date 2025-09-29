@@ -1,5 +1,6 @@
 import { collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, deleteDoc, query, where, setDoc, orderBy } from "firebase/firestore"
 import { db } from "@/firebase"
+import { writeBatch } from "firebase/firestore"
 
 // Auto-suspension disabled: all suspension is manual-only
 export const isAccountSuspended = (_createdAt: { seconds: number; nanoseconds: number } | null): boolean => {
@@ -339,6 +340,92 @@ export const getLeaderboardData = async () => {
     return sortedData
   } catch (error) {
     console.error("Error getting leaderboard data:", error)
+    throw error
+  }
+}
+
+// Company Management Helpers
+export const transferUserCompany = async (userId: string, targetCompanyName: string) => {
+  try {
+    const trimmedTarget = (targetCompanyName || "").trim()
+    if (!trimmedTarget) throw new Error("Target company name is required")
+
+    // Ensure target company exists in `companies` with normalizedName
+    const normalized = trimmedTarget.toLowerCase()
+    const companiesRef = collection(db, "companies")
+    const existsSnap = await getDocs(query(companiesRef, where("normalizedName", "==", normalized)))
+    if (existsSnap.empty) {
+      await addDoc(companiesRef, {
+        name: trimmedTarget,
+        normalizedName: normalized,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+    }
+
+    // Find user doc by userId field and update companyName
+    const usersRef = collection(db, "users")
+    const q = query(usersRef, where("userId", "==", userId))
+    const qs = await getDocs(q)
+    if (qs.empty) throw new Error("User not found")
+    const userDoc = qs.docs[0]
+    await updateDoc(userDoc.ref, {
+      companyName: trimmedTarget,
+      updatedAt: serverTimestamp(),
+    })
+    return true
+  } catch (error) {
+    console.error("Error transferring user company:", error)
+    throw error
+  }
+}
+
+export const mergeCompanies = async (sourceCompanyName: string, targetCompanyName: string, options?: { deleteSource?: boolean }) => {
+  try {
+    const src = (sourceCompanyName || "").trim()
+    const dst = (targetCompanyName || "").trim()
+    if (!src || !dst) throw new Error("Both source and target company names are required")
+    const srcNorm = src.toLowerCase()
+    const dstNorm = dst.toLowerCase()
+    if (srcNorm === dstNorm) throw new Error("Source and target companies are the same")
+
+    // Ensure destination company exists
+    const companiesRef = collection(db, "companies")
+    const dstSnap = await getDocs(query(companiesRef, where("normalizedName", "==", dstNorm)))
+    if (dstSnap.empty) {
+      await addDoc(companiesRef, {
+        name: dst,
+        normalizedName: dstNorm,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+    }
+
+    // Find all users with companyName matching source (case-insensitive)
+    const usersSnap = await getDocs(collection(db, "users"))
+    const toUpdate = usersSnap.docs.filter((d) => {
+      const name = (d.data().companyName || "").toLowerCase().trim()
+      return !!name && name === srcNorm
+    })
+
+    const batch = writeBatch(db)
+    toUpdate.forEach((d) => {
+      batch.update(d.ref, { companyName: dst, updatedAt: serverTimestamp() })
+    })
+    if (toUpdate.length > 0) {
+      await batch.commit()
+    }
+
+    // Optionally delete the source company document(s)
+    if (options?.deleteSource) {
+      const srcSnap = await getDocs(query(companiesRef, where("normalizedName", "==", srcNorm)))
+      const deletions = srcSnap.docs.map((docu) => deleteDoc(docu.ref))
+      if (deletions.length > 0) await Promise.all(deletions)
+    }
+
+    return { updatedUsers: toUpdate.length }
+  } catch (error) {
+    console.error("Error merging companies:", error)
     throw error
   }
 }

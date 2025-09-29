@@ -21,7 +21,8 @@ import {
   Users,
   BarChart3,
   Medal,
-  RefreshCw
+  RefreshCw,
+  MessageCircle
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -533,21 +534,33 @@ export default function GamifiedDashboard() {
                   </AnimatePresence>
                 </div>
 
-                {/* Right side - Start Learning Button */}
+                {/* Right side - Actions */}
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 0.8 }}
                 >
-                  <Button 
-                    variant="secondary" 
-                    size="sm"
-                    onClick={switchToClassicView}
-                    className="bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
-                  >
-                    <span className="hidden sm:inline">Start Learning</span>
-                    <ArrowRight className="h-4 w-4 sm:ml-2" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      onClick={() => router.push('/chat')}
+                      className="bg-white/20 text-white border-white/30 hover:bg-white/30 hover:text-white transition-all duration-300"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Talk to Ryan</span>
+                    </Button>
+
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      onClick={switchToClassicView}
+                      className="bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                    >
+                      <span className="hidden sm:inline">Start Learning</span>
+                      <ArrowRight className="h-4 w-4 sm:ml-2" />
+                    </Button>
+                  </div>
                 </motion.div>
               </div>
               
