@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Bot, Loader2, Send, User, ChevronLeft, Mic, MicOff, Menu, Plus } from "lucide-react"
+import { Bot, Loader2, Send, User, ChevronLeft, Menu, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -19,12 +19,12 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false)
   const [threadId, setThreadId] = useState<string | null>(null)
   const [messageCount, setMessageCount] = useState(0)
-  const [isListening, setIsListening] = useState(false)
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const isListeningRef = useRef(false)
+  
   const endRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const recognitionRef = useRef<any>(null)
+  
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -37,26 +37,18 @@ export default function ChatPage() {
     if (saved) setThreadId(saved)
     if (savedCount) setMessageCount(parseInt(savedCount))
 
-    // welcome (same as popup)
-    const initialRefs = [
-      {
-        videoId: "ehskimpirphwekehrzpf",
-        title: "Introduction to EOXS",
-        thumbnail: "/placeholder.svg?height=120&width=200",
-        duration: "5 min",
-      },
-    ]
+    // welcome (no initial video references)
+    const initialRefs: Array<{ videoId: string; title?: string; thumbnail?: string; duration?: string }> = []
     setMessages([
       {
         id: "welcome",
         role: "assistant",
-        content: `Hi ${userData?.name || 'there'}! I'm Sparky, your AI learning assistant. I can help you with:\n\n• Learning questions about EOXS\n• Study tips and strategies\n• Course navigation help\n• General questions about the platform\n\nWhen I reference specific videos, I'll show them as clickable links below my responses.\n\nHow can I assist you today?`,
+        content: `Hi ${userData?.name || 'there'}! I'm Ryan, How can I help you :`,
         videoReferences: initialRefs,
       },
     ])
 
-    // Try to resolve reference details if they exist in Firestore
-    resolveVideoReferencesForMessage("welcome", initialRefs)
+    // No initial video references to resolve
   }, [userData?.name])
 
   const send = async () => {
@@ -173,55 +165,7 @@ export default function ChatPage() {
     }
   }
 
-  // Speech to Text (Web Speech API)
-  useEffect(() => {
-    const SpeechRecognition: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition) return
-    const recognition = new SpeechRecognition()
-    recognition.lang = "en-US"
-    recognition.interimResults = true
-    recognition.continuous = true
-    recognition.onresult = (event: any) => {
-      let interim = ""
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript
-        if (event.results[i].isFinal) {
-          setInput((prev) => (prev ? prev + " " + transcript : transcript))
-        } else {
-          interim += transcript
-        }
-      }
-    }
-    recognition.onend = () => {
-      // Auto-restart while the mic toggle is ON
-      if (isListeningRef.current) {
-        try { recognition.start() } catch {}
-      } else {
-        setIsListening(false)
-      }
-    }
-    recognition.onerror = () => {
-      // Try to continue unless user stopped manually
-      if (isListeningRef.current) {
-        try { recognition.start() } catch { setIsListening(false) }
-      } else {
-        setIsListening(false)
-      }
-    }
-    recognitionRef.current = recognition
-  }, [])
-
-  const toggleListening = () => {
-    const recognition = recognitionRef.current
-    if (!recognition) return
-    if (isListening) {
-      try { recognition.stop() } catch {}
-      isListeningRef.current = false
-      setIsListening(false)
-    } else {
-      try { recognition.start(); isListeningRef.current = true; setIsListening(true) } catch {}
-    }
-  }
+  
 
   return (
     <div className="min-h-screen bg-lightgreen-50 flex">
@@ -239,7 +183,7 @@ export default function ChatPage() {
             setMessageCount(0)
             sessionStorage.removeItem("sparky_thread_id")
             sessionStorage.setItem("sparky_message_count", "0")
-            setMessages([{ id: "welcome", role: "assistant", content: `Hi ${userData?.name || 'there'}! I'm Sparky, your AI learning assistant. I can help you with:\n\n• Learning questions about EOXS\n• Study tips and strategies\n• Course navigation help\n• General questions about the platform\n\nWhen I reference specific videos, I'll show them as clickable links below my responses.\n\nHow can I assist you today?` }])
+            setMessages([{ id: "welcome", role: "assistant", content: `Hi ${userData?.name || 'there'}! I'm Ryan, How can I help you :` }])
           }}>
             <Plus className="h-4 w-4 mr-2" /> New chat
           </Button>
@@ -259,6 +203,9 @@ export default function ChatPage() {
               <Menu className="h-4 w-4" />
             </Button>
             <div className="ml-auto" />
+            <Button variant="outline" size="sm" onClick={() => router.push('/dashboard')}>
+              Back to Dashboard
+            </Button>
           </div>
         </header>
 
@@ -322,9 +269,6 @@ export default function ChatPage() {
               }}
               placeholder="Send a message"
             />
-            <Button type="button" variant={isListening ? "secondary" : "outline"} onClick={toggleListening} title="Speech to text">
-              {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            </Button>
             <Button onClick={send} disabled={!input.trim() || loading}>
               <Send className="h-4 w-4" />
             </Button>
