@@ -218,6 +218,16 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
     }
   }, [user, userData])
 
+  // Ensure streak updates on daily login/app open
+  useEffect(() => {
+    if (!user || !userProgress) return
+    const today = new Date().toISOString().split('T')[0]
+    if (userProgress.lastActivityDate !== today) {
+      // Fire and forget; internal function updates state + Firestore
+      ;(async () => { try { await updateStreak() } catch (e) { /* noop */ } })()
+    }
+  }, [user, userProgress?.lastActivityDate])
+
   const initializeUserProgress = async () => {
     if (!user) return
 

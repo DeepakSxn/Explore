@@ -504,7 +504,7 @@ export default function GamifiedDashboard() {
           className="mb-6"
         >
           <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg overflow-hidden">
-            <CardContent className="p-4">
+            <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 {/* Left side - Content with animations */}
                 <div className="flex items-center gap-3">
@@ -543,22 +543,22 @@ export default function GamifiedDashboard() {
                   <div className="flex items-center gap-2">
                     <Button 
                       variant="secondary" 
-                      size="sm"
+                      size="lg"
                       onClick={() => router.push('/chat')}
-                      className="bg-white/20 text-white border-white/30 hover:bg-white/30 hover:text-white transition-all duration-300"
+                      className="bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 transition-all duration-300 shadow-md hover:shadow-lg px-5 py-3 text-base"
                     >
-                      <MessageCircle className="h-4 w-4 mr-2" />
+                      <MessageCircle className="h-5 w-5 mr-2" />
                       <span className="hidden sm:inline">Talk to Ryan</span>
                     </Button>
 
                     <Button 
                       variant="secondary" 
-                      size="sm"
+                      size="lg"
                       onClick={switchToClassicView}
-                      className="bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                      className="bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 transition-all duration-300 shadow-md hover:shadow-lg px-5 py-3 text-base"
                     >
                       <span className="hidden sm:inline">Start Learning</span>
-                      <ArrowRight className="h-4 w-4 sm:ml-2" />
+                      <ArrowRight className="h-5 w-5 sm:ml-2" />
                     </Button>
                   </div>
                 </motion.div>
@@ -603,10 +603,10 @@ export default function GamifiedDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Progress & Stats */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-12">
             {/* Level Progress Card */}
             <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="bg-white/20 p-3 rounded-full">
                     {getLevelIcon(userProgress.currentLevel)}
@@ -636,21 +636,21 @@ export default function GamifiedDashboard() {
             {/* Stats Cards */}
             <div className="grid grid-cols-2 gap-4">
               <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
-                <CardContent className="p-4 text-center">
+                <CardContent className="p-2 text-center">
                   <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
                     <Play className="h-4 w-4" />
                   </div>
-                  <p className="text-3xl font-normal text-white">{userProgress.totalVideosWatched}</p>
+                  <p className="text-2xl font-normal text-white">{userProgress.totalVideosWatched}</p>
                   <p className="text-sm text-white">Videos Watched</p>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-br from-pink-500 to-pink-600 text-white border-0">
-                <CardContent className="p-4 text-center">
+                <CardContent className="p-2 text-center">
                   <div className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-2">
                     <span className="text-[10px] font-bold text-white">XP</span>
                   </div>
-                  <p className="text-3xl font-normal text-white">{userProgress.totalXP}</p>
+                  <p className="text-2xl font-normal text-white">{userProgress.totalXP}</p>
                   <p className="text-sm text-white">Total XP</p>
                 </CardContent>
               </Card>
@@ -659,8 +659,8 @@ export default function GamifiedDashboard() {
             {/* Streak Motivation moved under stats */}
             {userProgress.currentStreak >= 0 && (
               <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-6">
                     <div className="bg-white/20 p-3 rounded-full">
                       <Flame className="h-6 w-6" />
                     </div>
@@ -690,7 +690,7 @@ export default function GamifiedDashboard() {
           {/* Right Column - Learning Path & Suggestions */}
           <div className="lg:col-span-2 space-y-6">
             {/* Learning Path */}
-            <Card className="min-h-[440px]">
+            <Card className="min-h-[320px]">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-12 w-7" />
