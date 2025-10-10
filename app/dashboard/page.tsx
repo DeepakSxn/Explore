@@ -151,7 +151,26 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [expandedModules, setExpandedModules] = useState<string[]>([])
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null)
-  const [showGamifiedDashboard, setShowGamifiedDashboard] = useState(true)
+  const [showGamifiedDashboard, setShowGamifiedDashboard] = useState(() => {
+    // Force gamified dashboard - prevent any automatic switching
+    localStorage.setItem('dashboardView', 'gamified')
+    console.log("🚀 FORCED showGamifiedDashboard state to: true (locked)")
+    return true
+  })
+
+  // Track all changes to showGamifiedDashboard
+  const originalSetShowGamifiedDashboard = setShowGamifiedDashboard
+  const trackedSetShowGamifiedDashboard = (value: boolean | ((prev: boolean) => boolean)) => {
+    console.log("🔄 setShowGamifiedDashboard called with:", value)
+    console.trace("Stack trace for setShowGamifiedDashboard:")
+    
+    // Save preference to localStorage
+    const newValue = typeof value === 'function' ? value(showGamifiedDashboard) : value
+    localStorage.setItem('dashboardView', newValue ? 'gamified' : 'classic')
+    console.log("💾 Saved dashboard preference to localStorage:", newValue ? 'gamified' : 'classic')
+    
+    originalSetShowGamifiedDashboard(value)
+  }
 
   // Mobile-responsive sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Start closed by default
@@ -307,10 +326,17 @@ export default function Dashboard() {
 
   // Handle view parameter from URL (for switching to classic dashboard)
   useEffect(() => {
+    console.log("🔄 URL Parameter useEffect running...")
     const viewParam = searchParams.get('view')
+    console.log("🔍 URL Parameters on load:", {
+      view: viewParam,
+      module: searchParams.get('module'),
+      allParams: Object.fromEntries(searchParams.entries())
+    })
     if (viewParam === 'classic') {
-      console.log("Switching to classic dashboard view")
-      setShowGamifiedDashboard(false)
+      console.log("🔄 TRIGGER 1: URL view=classic parameter detected")
+      console.log("🚨 BLOCKING AUTOMATIC SWITCH TO CLASSIC VIEW")
+      // trackedSetShowGamifiedDashboard(false) // COMMENTED OUT TO PREVENT AUTO SWITCH
       // Force refresh videos to get latest thumbnails
       if (user?.uid) {
         fetchVideos(user.uid)
@@ -327,6 +353,12 @@ export default function Dashboard() {
     console.log("🔍 Dashboard - showGamifiedDashboard:", showGamifiedDashboard)
     console.log("🔍 Dashboard - modules count:", modules.length)
     console.log("🔍 Dashboard - selectedVideos count:", selectedVideos.length)
+    
+    // Debug: Log stack trace when showGamifiedDashboard becomes false
+    if (!showGamifiedDashboard) {
+      console.log("❌ showGamifiedDashboard is FALSE - Stack trace:")
+      console.trace()
+    }
   }, [showGamifiedDashboard, modules.length, selectedVideos.length])
 
   // Handle module parameter from URL
@@ -359,9 +391,10 @@ export default function Dashboard() {
       }
       
       if (targetModule) {
-        console.log(`Found target module:`, targetModule)
+        console.log(`🔄 TRIGGER 2: URL module parameter found:`, targetModule)
+        console.log("🚨 BLOCKING AUTOMATIC SWITCH TO CLASSIC VIEW FOR MODULE")
         // Switch to classic view and expand the target module
-        setShowGamifiedDashboard(false)
+        // trackedSetShowGamifiedDashboard(false) // COMMENTED OUT TO PREVENT AUTO SWITCH
         setExpandedModules([targetModule.category])
         
         // Clear the URL parameter after handling it
@@ -377,7 +410,9 @@ export default function Dashboard() {
   // Handle switch to classic view event from GamifiedDashboard
   useEffect(() => {
     const handleSwitchToClassicView = () => {
-      setShowGamifiedDashboard(false)
+      console.log("🔄 TRIGGER 3: switchToClassicView event received")
+      console.log("✅ SWITCHING TO CLASSIC VIEW FROM EVENT")
+      trackedSetShowGamifiedDashboard(false) // Enable switch to classic view
     }
 
     window.addEventListener('switchToClassicView', handleSwitchToClassicView)
@@ -1077,7 +1112,7 @@ export default function Dashboard() {
                 variant="ghost" 
                 size="lg" 
                 onClick={() => {
-                  setShowGamifiedDashboard(true)
+                  trackedSetShowGamifiedDashboard(true)
                   setIsRefreshing(true)
                   setTimeout(() => {
                     window.location.reload()
@@ -1225,7 +1260,7 @@ export default function Dashboard() {
           <>
             {/* Suspension warning removed: suspension is manual-only now */}
             
-            <div className="max-w-6xl mx-auto p-6">
+             <div className="max-w-7xl mx-auto p-6">
               {/* Enhanced Search and Actions Section */}
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
                 <div className="flex flex-col lg:flex-row justify-between gap-4">

@@ -18,3 +18,33 @@ const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const db = getFirestore(app)
 
+// Utility function to test Firebase connection
+export const testFirebaseConnection = async (): Promise<boolean> => {
+  try {
+    // Simple test to check if Firebase is accessible
+    const testPromise = new Promise((resolve, reject) => {
+      const unsubscribe = auth.onAuthStateChanged(
+        (user) => {
+          unsubscribe()
+          resolve(true)
+        },
+        (error) => {
+          unsubscribe()
+          reject(error)
+        }
+      )
+    })
+    
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Firebase connection timeout')), 5000)
+    })
+    
+    await Promise.race([testPromise, timeoutPromise])
+    console.log("Firebase connection test: SUCCESS")
+    return true
+  } catch (error) {
+    console.error("Firebase connection test: FAILED", error)
+    return false
+  }
+}
+

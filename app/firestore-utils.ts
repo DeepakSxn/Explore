@@ -12,10 +12,15 @@ export const getUserData = async (userId: string) => {
   try {
     console.log("getUserData - Searching for user with userId:", userId)
     
+    // Add timeout to prevent infinite loading
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('getUserData timeout after 10 seconds')), 10000)
+    })
+    
     // Query users collection by userId field
     const usersRef = collection(db, "users")
     const q = query(usersRef, where("userId", "==", userId))
-    const querySnapshot = await getDocs(q)
+    const querySnapshot = await Promise.race([getDocs(q), timeoutPromise]) as any
     
     if (!querySnapshot.empty) {
       const userDoc = querySnapshot.docs[0]

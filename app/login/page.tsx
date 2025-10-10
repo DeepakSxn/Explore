@@ -34,7 +34,15 @@ export default function Login() {
 
     try {
       setError("")
-      await signInWithEmailAndPassword(auth, email, password)
+      
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Login timeout after 15 seconds')), 15000)
+      })
+      
+      const loginPromise = signInWithEmailAndPassword(auth, email, password)
+      await Promise.race([loginPromise, timeoutPromise])
+      
       // Store in localStorage if remember me is checked
       if (rememberMe) {
         localStorage.setItem("rememberedEmail", email)
@@ -43,11 +51,26 @@ export default function Login() {
       }
       router.push("/dashboard")
     } catch (err: any) {
-      setError("Failed to log in. Please check your credentials.")
-      console.error(err)
+      console.error("Login error:", err)
+      
+      let errorMessage = "Failed to log in. Please check your credentials."
+      
+      if (err.message?.includes('timeout')) {
+        errorMessage = "Login is taking too long. Please check your internet connection and try again."
+      } else if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+        errorMessage = "Invalid email or password. Please check your credentials."
+      } else if (err.code === "auth/too-many-requests") {
+        errorMessage = "Too many failed login attempts. Please try again later."
+      } else if (err.code === "auth/network-request-failed") {
+        errorMessage = "Network error. Please check your internet connection."
+      } else if (err.code === "auth/invalid-email") {
+        errorMessage = "Please enter a valid email address."
+      }
+      
+      setError(errorMessage)
       toast({
-        title: "Error",
-        description: err.message,
+        title: "Login Error",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

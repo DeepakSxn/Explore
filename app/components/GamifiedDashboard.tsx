@@ -22,20 +22,26 @@ import {
   BarChart3,
   Medal,
   RefreshCw,
-  MessageCircle
+  MessageCircle,
+  Bot,
+  Loader2,
+  Send,
+  User
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { Input } from "@/components/ui/input"
 import { useGamification, XP_CONFIG } from "../context/GamificationContext"
 import { useAuth } from "../context/AuthContext"
 import { toast } from "@/components/ui/use-toast"
-import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore"
+import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore"
 import { getAllModuleVideoOrders } from "../firestore-utils"
 import { auth, db } from "@/firebase"
 
 import ChallengeMode from "./ChallengeMode"
+import { ChevronDown, ChevronRight } from "lucide-react"
 
 interface Video {
   id: string
@@ -60,8 +66,206 @@ interface Module {
   videos: Video[]
 }
 
+// ViewMyProgress Component
+interface ViewMyProgressProps {
+  userProgress: any
+}
+
+function ViewMyProgress({ userProgress }: ViewMyProgressProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const { getCurrentLevel, getXPToNextLevel, getLevelProgress, loading } = useGamification()
+
+  const getLevelTitle = (level: number) => {
+    const titles = [
+      "Beginner",
+      "Apprentice",
+      "Learner",
+      "Student",
+      "Practitioner",
+      "Specialist",
+      "Expert",
+      "Master",
+      "Grandmaster",
+      "Legend"
+    ]
+    return titles[Math.min(level - 1, titles.length - 1)]
+  }
+
+  const getLevelIcon = (level: number) => {
+    if (level <= 3) return <BookOpen className="h-5 w-5" />
+    if (level <= 6) return <Target className="h-5 w-5" />
+    if (level <= 9) return <Trophy className="h-5 w-5" />
+    return <Crown className="h-5 w-5" />
+  }
+
+  // Show loading state instead of hiding completely
+  const isLoading = loading || !userProgress
+
+  return (
+    <Card className="w-full max-w-7xl mx-auto">
+      <CardContent className="p-0">
+        {/* Clickable Header */}
+        <div 
+          className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+          onClick={() => !isLoading && setIsExpanded(!isExpanded)}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <BarChart3 className="h-4 w-4 text-blue-600" />
+              )}
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">View my progress</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            {isLoading ? (
+              <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">
+                Loading...
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                Level {userProgress.currentLevel}
+              </Badge>
+            )}
+            {!isLoading && (isExpanded ? (
+              <ChevronDown className="h-5 w-5 text-gray-500" />
+            ) : (
+              <ChevronRight className="h-5 w-5 text-gray-500" />
+            ))}
+          </div>
+        </div>
+
+        {/* Expandable Content */}
+        <AnimatePresence>
+          {isExpanded && !isLoading && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="overflow-hidden"
+            >
+              <div className="px-4 pb-4 border-t border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  {/* Level Progress Card */}
+                  <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="bg-white/20 p-2 rounded-full">
+                          {getLevelIcon(userProgress.currentLevel)}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-white">{getLevelTitle(userProgress.currentLevel)}</h3>
+                          <p className="text-sm text-white">Level {userProgress.currentLevel}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-white">Progress to Level {userProgress.currentLevel + 1}</span>
+                          <span className="text-white">{Math.round(getLevelProgress())}%</span>
+                        </div>
+                        <Progress 
+                          value={getLevelProgress()} 
+                          className="h-2 bg-white/20 [&>div]:bg-white"
+                        />
+                        <p className="text-xs text-white">
+                          {getXPToNextLevel()} XP needed for next level
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Stats Card */}
+                  <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center">
+                          <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
+                            <Play className="h-4 w-4" />
+                          </div>
+                          <p className="text-xl font-bold text-white">{userProgress.totalVideosWatched}</p>
+                          <p className="text-xs text-white">Videos</p>
+                        </div>
+                        <div className="text-center">
+                          <div className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                            <span className="text-[10px] font-bold text-white">XP</span>
+                          </div>
+                          <p className="text-xl font-bold text-white">{userProgress.totalXP}</p>
+                          <p className="text-xs text-white">Total XP</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Streak Card */}
+                  {userProgress.currentStreak >= 0 && (
+                    <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-white/20 p-2 rounded-full">
+                            <Flame className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-sm font-bold text-white">Streak!</h3>
+                            <p className="text-xs text-white">
+                              {Math.max(1, userProgress.currentStreak)} day{Math.max(1, userProgress.currentStreak) !== 1 ? 's' : ''}
+                            </p>
+                            {userProgress.currentStreak >= 7 && (
+                              <p className="text-xs text-white">
+                                🎉 Week Warrior!
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xl font-bold text-white">{Math.max(1, userProgress.currentStreak)}</p>
+                            <p className="text-xs text-white">days</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function GamifiedDashboard() {
+  console.log("🎮 GamifiedDashboard component rendered - BUTTON VERSION v3.0 - WIDER LAYOUT")
   const router = useRouter()
+  
+  // Force gamified dashboard to stay active and clear problematic URL parameters
+  useEffect(() => {
+    // Lock the dashboard view
+    localStorage.setItem('dashboardView', 'gamified')
+    
+    const url = new URL(window.location.href)
+    let hasChanges = false
+    
+    // Remove problematic parameters
+    if (url.searchParams.has('view')) {
+      url.searchParams.delete('view')
+      hasChanges = true
+    }
+    if (url.searchParams.has('module')) {
+      url.searchParams.delete('module')
+      hasChanges = true
+    }
+    
+    if (hasChanges) {
+      console.log("🧹 Clearing URL parameters that could switch to classic view")
+      window.history.replaceState({}, '', url.toString())
+    }
+    
+    console.log("🔒 Dashboard locked in gamified mode with wider layout")
+  }, [])
   const { userProgress, loading, getCurrentLevel, getXPToNextLevel, getLevelProgress } = useGamification()
   const { userData } = useAuth()
   const [showConfetti, setShowConfetti] = useState(false)
@@ -75,6 +279,16 @@ export default function GamifiedDashboard() {
   const [showChallengeMode, setShowChallengeMode] = useState(false)
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
   const [isRefreshingPath, setIsRefreshingPath] = useState(false)
+  
+  // Chat state
+  type ChatMessage = { id: string; role: "user" | "assistant"; content: string; videoReferences?: Array<{ videoId: string; title?: string; thumbnail?: string; duration?: string }> }
+  const [chatMessages, setChatMessages] = useState<Array<ChatMessage>>([])
+  const [chatInput, setChatInput] = useState("")
+  const [chatLoading, setChatLoading] = useState(false)
+  const [threadId, setThreadId] = useState<string | null>(null)
+  const [messageCount, setMessageCount] = useState(0)
+  const [chatStarted, setChatStarted] = useState(false)
+  const chatEndRef = useRef<HTMLDivElement>(null)
 
   // Banner messages that rotate
   const bannerMessages = [
@@ -114,6 +328,156 @@ export default function GamifiedDashboard() {
 
     return () => clearInterval(interval)
   }, [bannerMessages.length])
+
+  // Scroll to bottom of chat when messages change
+  useEffect(() => {
+    if (chatStarted && chatEndRef.current) {
+      // Only scroll within the chat container, not the entire page
+      chatEndRef.current.scrollIntoView({ 
+        behavior: "smooth", 
+        block: "end",
+        inline: "nearest"
+      })
+    }
+  }, [chatMessages, chatStarted])
+
+  // Initialize chat with welcome message
+  useEffect(() => {
+    if (!chatStarted && chatMessages.length === 0) {
+      setChatMessages([
+        {
+          id: "welcome",
+          role: "assistant",
+          content: `Hi ${userData?.name || 'there'}! I'm Ryan, How can I help you?`,
+          videoReferences: [],
+        },
+      ])
+    }
+  }, [userData?.name, chatStarted, chatMessages.length])
+
+  // Chat functions
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || chatLoading) return
+    const text = chatInput.trim()
+    setChatInput("")
+    setChatMessages((m) => [...m, { id: Date.now().toString(), role: "user", content: text }])
+    setChatLoading(true)
+    
+    // Prevent auto-scroll by maintaining scroll position
+    const scrollY = window.scrollY
+    setChatStarted(true)
+    
+    // Restore scroll position after state change
+    setTimeout(() => {
+      window.scrollTo(0, scrollY)
+    }, 0)
+
+    try {
+      const newCount = messageCount + 1
+      setMessageCount(newCount)
+      sessionStorage.setItem("sparky_message_count", String(newCount))
+      let currentThread = threadId
+      if (newCount >= 20) {
+        currentThread = null
+        setThreadId(null)
+        setMessageCount(0)
+        sessionStorage.removeItem("sparky_thread_id")
+        sessionStorage.setItem("sparky_message_count", "0")
+      }
+
+      const res = await fetch("/api/ai-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, threadId: currentThread }),
+      })
+      const data = await res.json()
+      if (data.threadId && data.threadId !== currentThread) {
+        setThreadId(data.threadId)
+        sessionStorage.setItem("sparky_thread_id", data.threadId)
+      }
+      const replyText: string = data.reply || "I had trouble replying."
+      const aiMessageId = (Date.now() + 1).toString()
+      const refs = extractVideoReferences(replyText)
+      setChatMessages((m) => [
+        ...m,
+        { id: aiMessageId, role: "assistant", content: replyText, videoReferences: refs },
+      ])
+
+      if (refs.length > 0) {
+        resolveVideoReferencesForMessage(aiMessageId, refs)
+      }
+    } catch (e) {
+      setChatMessages((m) => [...m, { id: (Date.now() + 1).toString(), role: "assistant", content: "Network error. Please try again." }])
+    } finally {
+      setChatLoading(false)
+    }
+  }
+
+  // Extract probable video IDs from text
+  const extractVideoReferences = (content: string): Array<{ videoId: string; title?: string; thumbnail?: string; duration?: string }> => {
+    const videoRefs: Array<{ videoId: string; title?: string; thumbnail?: string; duration?: string }> = []
+    const videoIdRegex = /([a-zA-Z0-9]{20,})/g
+    const matches = content.match(videoIdRegex)
+    if (matches) {
+      matches.forEach((match) => {
+        if (match.length >= 20 && /^[a-zA-Z0-9]+$/.test(match)) {
+          videoRefs.push({ videoId: match, thumbnail: `/placeholder.svg?height=120&width=200` })
+        }
+      })
+    }
+    return videoRefs
+  }
+
+  // Resolve video details from Firestore
+  const fetchVideoDetails = async (videoId: string): Promise<{ videoId: string; title?: string; thumbnail?: string; duration?: string } | null> => {
+    try {
+      const byDocRef = doc(db, "videos", videoId)
+      const byDocSnap = await getDoc(byDocRef)
+      if (byDocSnap.exists()) {
+        const d: any = byDocSnap.data()
+        return {
+          videoId,
+          title: d.title || undefined,
+          thumbnail: d.thumbnailUrl || (d.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
+          duration: d.duration || "",
+        }
+      }
+      const videosCol = collection(db, "videos")
+      const qByPublicId = query(videosCol, where("publicId", "==", videoId))
+      const qSnap = await getDocs(qByPublicId)
+      if (!qSnap.empty) {
+        const d = qSnap.docs[0].data() as any
+        return {
+          videoId,
+          title: d.title || undefined,
+          thumbnail: d.thumbnailUrl || (d.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
+          duration: d.duration || "",
+        }
+      }
+      return null
+    } catch (e) {
+      return null
+    }
+  }
+
+  const resolveVideoReferencesForMessage = async (messageId: string, refs: Array<{ videoId: string; title?: string; thumbnail?: string; duration?: string }>) => {
+    const updated = await Promise.all(
+      refs.map(async (r) => {
+        const details = await fetchVideoDetails(r.videoId)
+        return details ? { ...r, ...details } : r
+      })
+    )
+    setChatMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, videoReferences: updated } : m)))
+  }
+
+  const openVideo = (videoId: string) => {
+    const url = `/video-player-clean?videoId=${videoId}&autoplay=true`
+    try {
+      window.open(url, "_blank", "noopener,noreferrer")
+    } catch {
+      window.location.href = url
+    }
+  }
 
 
   // Generate module suggestions
@@ -541,25 +905,17 @@ export default function GamifiedDashboard() {
                   transition={{ duration: 0.6, delay: 0.8 }}
                 >
                   <div className="flex items-center gap-2">
-                    <Button 
-                      variant="secondary" 
-                      size="lg"
-                      onClick={() => router.push('/chat')}
-                      className="bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 transition-all duration-300 shadow-md hover:shadow-lg px-5 py-3 text-base"
-                    >
-                      <MessageCircle className="h-5 w-5 mr-2" />
-                      <span className="hidden sm:inline">Talk to Ryan</span>
-                    </Button>
+                   
 
-                    <Button 
-                      variant="secondary" 
-                      size="lg"
+                  <Button 
+                    variant="secondary" 
+                    size="lg"
                       onClick={switchToClassicView}
-                      className="bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 transition-all duration-300 shadow-md hover:shadow-lg px-5 py-3 text-base"
-                    >
-                      <span className="hidden sm:inline">Start Learning</span>
-                      <ArrowRight className="h-5 w-5 sm:ml-2" />
-                    </Button>
+                    className="bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 transition-all duration-300 shadow-md hover:shadow-lg px-5 py-3 text-base"
+                  >
+                    <span className="hidden sm:inline">Start Learning</span>
+                    <ArrowRight className="h-5 w-5 sm:ml-2" />
+                  </Button>
                   </div>
                 </motion.div>
               </div>
@@ -601,219 +957,260 @@ export default function GamifiedDashboard() {
           </Card>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Progress & Stats */}
-          <div className="lg:col-span-1 space-y-12">
-            {/* Level Progress Card */}
-            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="bg-white/20 p-3 rounded-full">
-                    {getLevelIcon(userProgress.currentLevel)}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">{getLevelTitle(userProgress.currentLevel)}</h2>
-                    <p className="text-white">Level {userProgress.currentLevel}</p>
-                  </div>
+        {/* Single Column Layout - Chat Button Only */}
+        <div className="max-w-5xl mx-auto space-y-6">
+          {/* Chat Section */}
+          <Card className="w-full h-[500px] flex flex-col overflow-hidden">
+            <CardHeader className="pb-3  pl-3 border-b">
+              <CardTitle className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <Bot className="h-4 w-4 text-white" />
                 </div>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white">Progress to Level {userProgress.currentLevel + 1}</span>
-                    <span className="text-white">{Math.round(getLevelProgress())}%</span>
-                  </div>
-                  <Progress 
-                    value={getLevelProgress()} 
-                    className="h-2 bg-white/20 [&>div]:bg-white"
-                  />
-                  <p className="text-sm text-white">
-                    {getXPToNextLevel()} XP needed for next level
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 gap-4">
-              <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
-                <CardContent className="p-2 text-center">
-                  <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
-                    <Play className="h-4 w-4" />
-                  </div>
-                  <p className="text-2xl font-normal text-white">{userProgress.totalVideosWatched}</p>
-                  <p className="text-sm text-white">Videos Watched</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-pink-500 to-pink-600 text-white border-0">
-                <CardContent className="p-2 text-center">
-                  <div className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-2">
-                    <span className="text-[10px] font-bold text-white">XP</span>
-                  </div>
-                  <p className="text-2xl font-normal text-white">{userProgress.totalXP}</p>
-                  <p className="text-sm text-white">Total XP</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Streak Motivation moved under stats */}
-            {userProgress.currentStreak >= 0 && (
-              <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-6">
-                    <div className="bg-white/20 p-3 rounded-full">
-                      <Flame className="h-6 w-6" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-white">Amazing Streak!</h3>
-                      <p className="text-white">
-                        {(() => { const displayStreak = Math.max(1, userProgress.currentStreak); return (
-                          <>You've been learning for {displayStreak} day{displayStreak !== 1 ? 's' : ''} in a row!</>
-                        )})()}
-                      </p>
-                      {userProgress.currentStreak >= 7 && (
-                        <p className="text-sm text-white mt-1">
-                          🎉 You've earned the "Week Warrior" badge!
+                Chat with Ryan
+              </CardTitle>
+            </CardHeader>
+            
+            {/* Chat Messages Area */}
+            <CardContent className="flex-1 flex flex-col p-2 overflow-hidden">
+              {!chatStarted ? (
+                // Initial state - welcome message in center with input below
+                <div className="flex-1 flex flex-col">
+                  <div className="flex-1 flex items-center justify-center px-8 py-6">
+                    <div className="text-center space-y-6 max-w-2xl w-full">
+                      <div className="space-y-2">
+                        <p className="text-black-600">
+                          Got a question about a video?
                         </p>
-                      )}
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-white">{Math.max(1, userProgress.currentStreak)}</p>
-                      <p className="text-sm text-white">days</p>
+                      </div>
+                      
+                      {/* Chat Input - Below the message for initial state */}
+                      <div className="flex gap-2 mt-6 w-full ">
+                        <Input
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault()
+                              sendChatMessage()
+                            }
+                          }}
+                          placeholder="Ask me anything..."
+                            className="flex-1 min-w-0 rounded-3xl border-2 border-gray-300"
+                        />
+                       
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Right Column - Learning Path & Suggestions */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Learning Path */}
-            <Card className="min-h-[320px]">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-12 w-7" />
-                  Your Learning Path
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {/* Top 3 Modules with Progress */}
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-blue-600">📚 Most Active Modules</h3>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={async () => {
-                          try {
-                            setIsRefreshingPath(true)
-                            await fetchTopVideos()
-                            toast({ title: "Learning path refreshed" })
-                          } finally {
-                            setIsRefreshingPath(false)
-                          }
-                        }}
-                        disabled={isRefreshingPath}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 disabled:opacity-60"
-                      >
-                        <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshingPath ? 'animate-spin' : ''}`} />
-                        {isRefreshingPath ? 'Refreshing…' : 'Refresh'}
-                      </Button>
-                    </div>
-                    <p className="text-sm text-blue-600 mb-4">Shows your top 3 modules based on videos watched</p>
-                    <div className="space-y-3">
-                      {(() => {
-                        // Calculate module progress based on videos watched
-                        const moduleProgress: {[key: string]: {progress: number, videoCount: number, watchedCount: number, totalVideos: number}} = {}
-                        
-                        // Define compulsory modules to exclude
-                        const compulsoryModules = ["Company Introduction", "Additional Features", "AI tools", "AI Tools", "ai tools", "Artificial Intelligence", "artificial intelligence"]
-                        
-                        // Calculate progress for all videos across all modules
-                        allVideos.forEach(video => {
-                          if (!moduleProgress[video.category]) {
-                            moduleProgress[video.category] = {progress: 0, videoCount: 0, watchedCount: 0, totalVideos: 0}
-                          }
-                          moduleProgress[video.category].totalVideos++
-                          
-                          // Count as watched if explicitly completed in watch history or progress >= 90%
-                          if (completedVideoIdsRef.current.has(video.id) || (videoProgress[video.id] || 0) >= 90) {
-                            moduleProgress[video.category].watchedCount++
-                          }
-                        })
-                        
-                        // Calculate percentage based on videos watched vs total videos in module
-                        Object.keys(moduleProgress).forEach(category => {
-                          const module = moduleProgress[category]
-                          // Progress is based on how many videos from this module the user has watched
-                          module.progress = module.totalVideos > 0 ? (module.watchedCount / module.totalVideos) * 100 : 0
-                        })
-                        
-                        // Get top 3 modules by videos watched (most active modules), excluding compulsory modules
-                        const topModules = Object.entries(moduleProgress)
-                          .filter(([category]) => !compulsoryModules.includes(category)) // Exclude compulsory modules
-                          .sort(([,a], [,b]) => b.watchedCount - a.watchedCount) // Sort by videos watched
-                          .slice(0, 3)
-                        
-                        return topModules.length > 0 ? (
-                          topModules.map(([category, module], index) => (
-                    <motion.div
-                              key={category}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                              className="p-3 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
-                              onClick={() => startModuleFromCategory(category)}
-                    >
-                              <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                    {index + 1}
-                                  </div>
-                                  <div className="flex-1">
-                                    <h4 className="font-semibold text-base">{category}</h4>
-                                    <p className="text-sm text-blue-700">
-                                      {module.watchedCount} of {module.totalVideos} videos watched
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-sm font-bold text-blue-700">
-                                    {Math.round(module.progress)}%
-                                  </div>
-                                  <div className="text-xs text-blue-500">Videos Watched</div>
+                </div>
+              ) : (
+                // Chat conversation with input at bottom
+                <>
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {chatMessages.map((message) => (
+                      <div key={message.id} className={`flex items-start gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                        {message.role === "assistant" ? (
+                          <div className="max-w-[85%]">
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                <Bot className="h-4 w-4 text-white" />
+                              </div>
+                              <div className="bg-gray-100 rounded-lg p-3 flex-1">
+                                <div className="whitespace-pre-line leading-relaxed text-gray-800">{message.content}</div>
+                              </div>
+                            </div>
+                            {message.videoReferences && message.videoReferences.length > 0 && (
+                              <div className="mt-3 ml-11 pt-3 border-t border-gray-100">
+                                <div className="text-xs text-gray-500 mb-2">Referenced Videos:</div>
+                                <div className="space-y-2">
+                                  {message.videoReferences.map((v, i) => (
+                                    <div key={`${v.videoId}-${i}`} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors border border-gray-200" onClick={() => openVideo(v.videoId)}>
+                                      <div className="w-16 h-12 bg-gradient-to-br from-green-100 to-green-100 rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                        <span className="text-2xl">🎥</span>
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-medium text-gray-800 truncate">{v.title || "Video Content"}</div>
+                                        <div className="text-xs text-green-600 font-medium">Click to watch →</div>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
-                              <Progress 
-                                value={module.progress} 
-                                className="h-2 bg-blue-200"
-                              />
-                            </motion.div>
-                          ))
-                        ) : (
-                          <div className="text-center py-6 text-gray-500">
-                            <div className="text-4xl mb-2">📚</div>
-                            <p className="text-sm">No modules in progress yet</p>
-                            <p className="text-xs">Start watching videos to see module progress here</p>
+                            )}
                           </div>
-                        )
-                      })()}
+                        ) : (
+                          <div className="max-w-[85%] flex items-end gap-2">
+                            <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg p-3">
+                              <div className="whitespace-pre-line leading-relaxed">{message.content}</div>
+                            </div>
+                            <div className="w-8 h-8 bg-gray-700 text-white rounded-full flex items-center justify-center flex-shrink-0">
+                              <User className="h-4 w-4" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {chatLoading && (
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                          <Bot className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="bg-gray-100 rounded-lg p-3">
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Ryan is thinking...
+                          </div>
                         </div>
                       </div>
-
-
-
-
+                    )}
+                    <div ref={chatEndRef} />
+                  </div>
+                  
+                  {/* Chat Input - At bottom during conversation */}
+                  <div className="border-t bg-white p-4 flex-shrink-0">
+                    <div className="flex gap-2">
+                      <Input
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault()
+                            sendChatMessage()
+                          }
+                        }}
+                        placeholder="Type your message..."
+                        className="flex-1"
+                      />
+                <Button
+                        onClick={sendChatMessage} 
+                        disabled={!chatInput.trim() || chatLoading}
+                        size="icon"
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                      >
+                        <Send className="h-4 w-4" />
+                </Button>
+              </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* View My Progress - Collapsible Section */}
+          <ViewMyProgress userProgress={userProgress} />
+          
+          {/* Learning Path Section - HIDDEN */}
+          <Card data-learning-path className="hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Your Learning Path
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-semibold text-blue-600">📚 Most Active Modules</h3>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={async () => {
+                      try {
+                        setIsRefreshingPath(true)
+                        await fetchTopVideos()
+                        toast({ title: "Learning path refreshed" })
+                      } finally {
+                        setIsRefreshingPath(false)
+                      }
+                    }}
+                    disabled={isRefreshingPath}
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 disabled:opacity-60"
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshingPath ? 'animate-spin' : ''}`} />
+                    {isRefreshingPath ? 'Refreshing…' : 'Refresh'}
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-
-            
-
-            {/* Streak Motivation moved to left column */}
-          </div>
+                <p className="text-sm text-blue-600 mb-4">Shows your top 3 modules based on videos watched</p>
+                <div className="space-y-3">
+                  {(() => {
+                    // Calculate module progress based on videos watched
+                    const moduleProgress: {[key: string]: {progress: number, videoCount: number, watchedCount: number, totalVideos: number}} = {}
+                    
+                    // Define compulsory modules to exclude
+                    const compulsoryModules = ["Company Introduction", "Additional Features", "AI tools", "AI Tools", "ai tools", "Artificial Intelligence", "artificial intelligence"]
+                    
+                    // Calculate progress for all videos across all modules
+                    allVideos.forEach(video => {
+                      if (!moduleProgress[video.category]) {
+                        moduleProgress[video.category] = {progress: 0, videoCount: 0, watchedCount: 0, totalVideos: 0}
+                      }
+                      moduleProgress[video.category].totalVideos++
+                      
+                      // Count as watched if explicitly completed in watch history or progress >= 90%
+                      if (completedVideoIdsRef.current.has(video.id) || (videoProgress[video.id] || 0) >= 90) {
+                        moduleProgress[video.category].watchedCount++
+                      }
+                    })
+                    
+                    // Calculate percentage based on videos watched vs total videos in module
+                    Object.keys(moduleProgress).forEach(category => {
+                      const module = moduleProgress[category]
+                      // Progress is based on how many videos from this module the user has watched
+                      module.progress = module.totalVideos > 0 ? (module.watchedCount / module.totalVideos) * 100 : 0
+                    })
+                    
+                    // Get top 3 modules by videos watched (most active modules), excluding compulsory modules
+                    const topModules = Object.entries(moduleProgress)
+                      .filter(([category]) => !compulsoryModules.includes(category)) // Exclude compulsory modules
+                      .sort(([,a], [,b]) => b.watchedCount - a.watchedCount) // Sort by videos watched
+                      .slice(0, 3)
+                    
+                    return topModules.length > 0 ? (
+                      topModules.map(([category, module], index) => (
+                        <motion.div
+                          key={category}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          className="p-3 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+                          onClick={() => startModuleFromCategory(category)}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                {index + 1}
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-base">{category}</h4>
+                                <p className="text-sm text-blue-700">
+                                  {module.watchedCount} of {module.totalVideos} videos watched
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-bold text-blue-700">
+                                {Math.round(module.progress)}%
+                              </div>
+                              <div className="text-xs text-blue-500">Videos Watched</div>
+                            </div>
+                          </div>
+                          <Progress 
+                            value={module.progress} 
+                            className="h-2 bg-blue-200"
+                          />
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6 text-gray-500">
+                        <div className="text-4xl mb-2">📚</div>
+                        <p className="text-sm">No modules in progress yet</p>
+                        <p className="text-xs">Start watching videos to see module progress here</p>
+                      </div>
+                    )
+                  })()}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
 

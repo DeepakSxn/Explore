@@ -3,12 +3,12 @@
 import React, { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Bot, Loader2, Send, User, ChevronLeft, Menu, Plus } from "lucide-react"
+import { Bot, Loader2, Send, User, ChevronLeft, Menu, Plus, LogOut, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useAuth } from "../context/AuthContext"
-import { db } from "@/firebase"
+import { auth, db } from "@/firebase"
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore"
 
 export default function ChatPage() {
@@ -164,8 +164,13 @@ export default function ChatPage() {
       window.location.href = url
     }
   }
-
   
+  const handleLogout = () => {
+    auth.signOut()
+    router.push("/login")
+  }
+
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   return (
     <div className="min-h-screen bg-lightgreen-50 flex">
@@ -194,20 +199,57 @@ export default function ChatPage() {
       {/* Main column */}
       <div className="flex-1 flex flex-col">
         {/* Navbar */}
-        <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur">
-          <div className="container flex h-14 items-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto gap-3">
-            <Link href="/dashboard" className="flex items-center gap-2">
-              <img src="/Black logo.png" alt="EOXS Logo" className="h-10 w-auto" />
-            </Link>
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsSidebarOpen((v) => !v)}>
+        <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/60 z-50 shadow-sm">
+        {/* Animated top loading bar */}
+        {isRefreshing && (
+          <div className="absolute top-0 left-0 right-0 top-loading-bar">
+            <div className="progress"></div>
+          </div>
+        )}
+        <div className="flex items-center justify-between w-full max-w-screen-2xl pt-3 mx-auto px-6">
+          <div className="flex items-center gap-6">
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="md:hidden bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white border-slate-200 hover:border-slate-300 hover:shadow-xl transition-all duration-200"
+            >
               <Menu className="h-4 w-4" />
             </Button>
-            <div className="ml-auto" />
-            <Button variant="outline" size="sm" onClick={() => router.push('/dashboard')}>
-              Back to Dashboard
+            
+            <img 
+              src="/Black logo.png" 
+              alt="EOXS Logo" 
+              className="h-8 w-auto cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105" 
+              onClick={() => router.push("/dashboard")}
+            />
+            <div className="hidden md:block">
+             
+              
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+          <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => router.push("/dashboard")}
+              className="hover:bg-red-50 hover:text-red-600 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>          
+
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout}
+              className="hover:bg-red-50 hover:text-red-600 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
-        </header>
+        </div>
+      </header>
 
         {/* Messages */}
         <main className="flex-1">

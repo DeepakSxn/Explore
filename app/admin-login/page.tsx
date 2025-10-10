@@ -36,13 +36,19 @@ export default function AdminLogin() {
     setLoading(true)
 
     try {
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Admin login timeout after 15 seconds')), 15000)
+      })
+      
       // First authenticate with Firebase
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      const loginPromise = signInWithEmailAndPassword(auth, email, password)
+      const userCredential = await Promise.race([loginPromise, timeoutPromise]) as any
 
       // Then check if the user is an admin
       const adminQuery = query(collection(db, "admins"), where("userId", "==", userCredential.user.uid))
-
-      const adminSnapshot = await getDocs(adminQuery)
+      const adminQueryPromise = getDocs(adminQuery)
+      const adminSnapshot = await Promise.race([adminQueryPromise, timeoutPromise]) as any
 
       if (adminSnapshot.empty) {
         // Not an admin
@@ -56,15 +62,24 @@ export default function AdminLogin() {
       router.push("/admin-dashboard")
     } catch (err: any) {
       setLoading(false)
+      console.error("Admin login error:", err)
+      
       // Handle specific Firebase auth errors
-      if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
-        setError("Invalid email or password")
+      let errorMessage = "Failed to login. Please try again."
+      
+      if (err.message?.includes('timeout')) {
+        errorMessage = "Login is taking too long. Please check your internet connection and try again."
+      } else if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+        errorMessage = "Invalid email or password"
       } else if (err.code === "auth/too-many-requests") {
-        setError("Too many failed login attempts. Please try again later")
-      } else {
-        setError("Failed to login. Please try again.")
+        errorMessage = "Too many failed login attempts. Please try again later"
+      } else if (err.code === "auth/network-request-failed") {
+        errorMessage = "Network error. Please check your internet connection."
+      } else if (err.code === "auth/invalid-email") {
+        errorMessage = "Please enter a valid email address."
       }
-      console.error(err)
+      
+      setError(errorMessage)
     }
   }
   return (

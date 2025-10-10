@@ -49,13 +49,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user)
       if (user) {
-        try {
-          const data = await getUserData(user.uid)
-          setUserData(data as UserData)
-        } catch (error) {
-          console.error("AuthContext - Error fetching user data:", error)
-          setUserData(null)
+        let retryCount = 0
+        const maxRetries = 3
+        
+        const fetchUserDataWithRetry = async (): Promise<void> => {
+          try {
+            console.log(`AuthContext - Fetching user data (attempt ${retryCount + 1}/${maxRetries})`)
+            const data = await getUserData(user.uid)
+            setUserData(data as UserData)
+            console.log("AuthContext - User data fetched successfully")
+          } catch (error) {
+            console.error(`AuthContext - Error fetching user data (attempt ${retryCount + 1}):`, error)
+            retryCount++
+            
+            if (retryCount < maxRetries) {
+              console.log(`AuthContext - Retrying in ${retryCount * 1000}ms...`)
+              setTimeout(fetchUserDataWithRetry, retryCount * 1000)
+              return
+            } else {
+              console.error("AuthContext - Max retries reached, setting userData to null")
+              setUserData(null)
+            }
+          }
         }
+        
+        await fetchUserDataWithRetry()
       } else {
         setUserData(null)
       }
