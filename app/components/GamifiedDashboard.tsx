@@ -961,9 +961,9 @@ export default function GamifiedDashboard() {
         <div className="max-w-5xl mx-auto space-y-6">
           {/* Chat Section */}
           <Card className="w-full h-[500px] flex flex-col overflow-hidden">
-            <CardHeader className="pb-3  pl-3 border-b">
+            <CardHeader className="pb-3  pl-6 border-b">
               <CardTitle className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-l from-blue-800 to-pink-400 rounded-full flex items-center justify-center">
                   <Bot className="h-4 w-4 text-white" />
                 </div>
                 Chat with Ryan
@@ -978,7 +978,7 @@ export default function GamifiedDashboard() {
                   <div className="flex-1 flex items-center justify-center px-8 py-6">
                     <div className="text-center space-y-6 max-w-2xl w-full">
                       <div className="space-y-2">
-                        <p className="text-black-600">
+                        <p className="text-black-600 ">
                           Got a question about a video?
                         </p>
                       </div>
@@ -1011,7 +1011,7 @@ export default function GamifiedDashboard() {
                         {message.role === "assistant" ? (
                           <div className="max-w-[85%]">
                             <div className="flex items-start gap-3">
-                              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                              <div className="w-8 h-8 bg-gradient-to-l from-blue-800 to-pink-400 rounded-full flex items-center justify-center flex-shrink-0">
                                 <Bot className="h-4 w-4 text-white" />
                               </div>
                               <div className="bg-gray-100 rounded-lg p-3 flex-1">
@@ -1039,7 +1039,7 @@ export default function GamifiedDashboard() {
                           </div>
                         ) : (
                           <div className="max-w-[85%] flex items-end gap-2">
-                            <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg p-3">
+                            <div className="bg-gray-100 text-gray-900 rounded-lg p-3">
                               <div className="whitespace-pre-line leading-relaxed">{message.content}</div>
                             </div>
                             <div className="w-8 h-8 bg-gray-700 text-white rounded-full flex items-center justify-center flex-shrink-0">
@@ -1051,7 +1051,7 @@ export default function GamifiedDashboard() {
                     ))}
                     {chatLoading && (
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-800 to-pink-400 rounded-full flex items-center justify-center">
                           <Bot className="h-4 w-4 text-white" />
                         </div>
                         <div className="bg-gray-100 rounded-lg p-3">
