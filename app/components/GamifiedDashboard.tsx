@@ -963,7 +963,7 @@ export default function GamifiedDashboard() {
           <Card className="w-full h-[500px] flex flex-col overflow-hidden">
             <CardHeader className="pb-3  pl-6 border-b">
               <CardTitle className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-l from-blue-800 to-pink-400 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-[#ffb680] rounded-full flex items-center justify-center">
                   <Sparkles className="h-4 w-4 text-white" />
                 </div>
                 Chat with Ryan
@@ -1011,9 +1011,7 @@ export default function GamifiedDashboard() {
                         {message.role === "assistant" ? (
                           <div className="max-w-[85%]">
                             <div className="flex items-start gap-3">
-                              <div className="w-8 h-8 bg-gradient-to-l from-blue-800 to-pink-400 rounded-full flex items-center justify-center flex-shrink-0">
-                                <Sparkles className="h-4 w-4 text-white" />
-                              </div>
+                              
                               <div className="bg-gray-100 rounded-lg p-3 flex-1">
                                 <div className="whitespace-pre-line leading-relaxed text-gray-800">{message.content}</div>
                               </div>
@@ -1042,18 +1040,14 @@ export default function GamifiedDashboard() {
                             <div className="bg-gray-100 text-gray-900 rounded-lg p-3">
                               <div className="whitespace-pre-line leading-relaxed">{message.content}</div>
                             </div>
-                            <div className="w-8 h-8 bg-gray-700 text-white rounded-full flex items-center justify-center flex-shrink-0">
-                              <User className="h-4 w-4" />
-                            </div>
+                            
                           </div>
                         )}
                       </div>
                     ))}
                     {chatLoading && (
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-800 to-pink-400 rounded-full flex items-center justify-center">
-                          <Sparkles className="h-4 w-4 text-white" />
-                        </div>
+                        
                         <div className="bg-gray-100 rounded-lg p-3">
                           <div className="flex items-center gap-2 text-gray-600">
                             <Loader2 className="h-4 w-4 animate-spin" />
