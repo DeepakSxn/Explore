@@ -964,7 +964,7 @@ export default function GamifiedDashboard() {
             <CardHeader className="pb-3  pl-6 border-b">
               <CardTitle className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-gradient-to-l from-blue-800 to-pink-400 rounded-full flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-white" />
+                  <Sparkles className="h-4 w-4 text-white" />
                 </div>
                 Chat with Ryan
               </CardTitle>
@@ -1012,7 +1012,7 @@ export default function GamifiedDashboard() {
                           <div className="max-w-[85%]">
                             <div className="flex items-start gap-3">
                               <div className="w-8 h-8 bg-gradient-to-l from-blue-800 to-pink-400 rounded-full flex items-center justify-center flex-shrink-0">
-                                <Bot className="h-4 w-4 text-white" />
+                                <Sparkles className="h-4 w-4 text-white" />
                               </div>
                               <div className="bg-gray-100 rounded-lg p-3 flex-1">
                                 <div className="whitespace-pre-line leading-relaxed text-gray-800">{message.content}</div>
@@ -1052,7 +1052,7 @@ export default function GamifiedDashboard() {
                     {chatLoading && (
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 bg-gradient-to-r from-blue-800 to-pink-400 rounded-full flex items-center justify-center">
-                          <Bot className="h-4 w-4 text-white" />
+                          <Sparkles className="h-4 w-4 text-white" />
                         </div>
                         <div className="bg-gray-100 rounded-lg p-3">
                           <div className="flex items-center gap-2 text-gray-600">
