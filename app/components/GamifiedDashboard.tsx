@@ -978,7 +978,7 @@ export default function GamifiedDashboard() {
                   <div className="flex-1 flex items-center justify-center px-8 py-6">
                     <div className="text-center space-y-6 max-w-2xl w-full">
                       <div className="space-y-2">
-                        <p className="text-black-600 ">
+                        <p className="text-black-600 text-2xl font-medium ">
                           Got a question about a video?
                         </p>
                       </div>
