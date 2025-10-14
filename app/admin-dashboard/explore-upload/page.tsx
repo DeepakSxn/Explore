@@ -49,7 +49,9 @@ return () => unsubscribe()
         snap.forEach((d) => {
           const data = d.data() as any
           const titleVal = data?.title ?? "Untitled"
-          const computedId = (typeof data?.videoId === "string" && data.videoId.trim()) ? data.videoId.trim() : (typeof data?.publicId === "string" ? data.publicId.trim() : "")
+          // Support both publicId and legacy public_id; coerce to string and trim
+          const rawId = data?.publicId ?? data?.public_id
+          const computedId = rawId != null ? String(rawId).trim() : ""
           const transcriptUploaded = data?.["Transcript-upload"] === true
           if (computedId.length > 0) {
             rows.push({ docId: d.id, title: titleVal, videoId: computedId, transcriptUploaded })
@@ -158,11 +160,11 @@ Explore Upload
                           <CommandItem
                             key={v.docId}
                             value={v.title}
-                            onSelect={(val) => {
-                              setName(val)
-                              const selected = videos.find((x) => x.title === val && x.transcriptUploaded !== true)
-                              setVideoId(selected?.videoId || "")
-                              setSelectedDocId(selected?.docId || "")
+                            onSelect={() => {
+                              // Use the selected item's data directly to avoid case/dup/title issues
+                              setName(v.title)
+                              setVideoId(v.videoId)
+                              setSelectedDocId(v.docId)
                               setIsPickerOpen(false)
                             }}
                           >
