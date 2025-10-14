@@ -35,11 +35,14 @@ const nextConfig = {
     // optimizeCss: true, // Disabled due to critters module issue
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'], // Optimize large packages
     // Disable features that might cause chunk loading issues
-    serverComponentsExternalPackages: [],
+    // moved in Next 15 -> serverExternalPackages
+    // keeping experimental block for other flags
     serverActions: {
       bodySizeLimit: '2mb',
     },
   },
+  // New location for external packages in Next 15+
+  serverExternalPackages: [],
   // Mobile performance optimizations
   compress: true, // Enable gzip compression
   poweredByHeader: false, // Remove X-Powered-By header
