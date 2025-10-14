@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "../context/AuthContext"
+import { usePathname } from "next/navigation"
 
 interface ChatMessage {
   id: string
@@ -31,6 +32,9 @@ export default function IntegratedChat() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [threadId, setThreadId] = useState<string | null>(null)
   const [messageCount, setMessageCount] = useState(0)
+  const [session_Id, setSession_Id] = useState<string | null>(null)
+  const WEBHOOK_URL = "https://innovation.eoxs.com/webhook/Ai-chat"
+  const pathname = usePathname()
 
   // Initialize with welcome message and restore from localStorage
   useEffect(() => {
@@ -100,6 +104,12 @@ export default function IntegratedChat() {
     }
   }, [userData])
 
+  // Reset session_Id on route changes (dashboard navigation)
+  useEffect(() => {
+    setSession_Id(null)
+    try { sessionStorage.removeItem('ryan_session_Id') } catch {}
+  }, [pathname])
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return
 
@@ -119,22 +129,21 @@ export default function IntegratedChat() {
     setMessageCount(newMessageCount)
     sessionStorage.setItem("ryan_message_count", newMessageCount.toString())
     
-    let currentThreadId = threadId
     if (newMessageCount >= 20) {
-      // Reset thread and message count
-      currentThreadId = null
-      setThreadId(null)
+      // Reset session_Id and message count per requirement
+      setSession_Id(null)
       setMessageCount(0)
-      sessionStorage.removeItem("ryan_thread_id")
       sessionStorage.setItem("ryan_message_count", "0")
     }
 
     try {
-      // Call our serverless endpoint which talks to OpenAI Assistants
-      const res = await fetch("/api/ai-chat", {
+      // Send to webhook with session_Id + text
+      const payload = { session_Id: session_Id ?? null, text: userMessage.content }
+      try { console.log('[RYAN-CHAT] Sending', { url: WEBHOOK_URL, payload }) } catch {}
+      const res = await fetch(WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage.content, threadId: currentThreadId }),
+        body: JSON.stringify(payload),
       })
       
       if (!res.ok) {
@@ -142,11 +151,20 @@ export default function IntegratedChat() {
         throw new Error(`Request failed: ${res.status} ${errorText}`)
       }
       
-      const data = await res.json()
-      
-      if (data.threadId && data.threadId !== currentThreadId) {
-        setThreadId(data.threadId)
-        sessionStorage.setItem("ryan_thread_id", data.threadId)
+      const contentType = res.headers.get('content-type') || ''
+      const raw = await res.text()
+      let data: any = null
+      if (raw && contentType.toLowerCase().includes('application/json')) {
+        try { data = JSON.parse(raw) } catch { throw new Error('Invalid JSON in webhook response') }
+      } else if (raw) {
+        data = { session_Id, output: raw }
+      } else {
+        throw new Error('Empty response body from webhook')
+      }
+      const returnedSessionId: string | undefined = data?.session_Id
+      if (returnedSessionId && returnedSessionId !== session_Id) {
+        setSession_Id(returnedSessionId)
+        try { sessionStorage.setItem('ryan_session_Id', returnedSessionId) } catch {}
       }
 
       const sanitizeAiContent = (raw: string): string => {
@@ -223,7 +241,7 @@ export default function IntegratedChat() {
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: sanitizeAiContent(data.reply || "No response from AI"),
+        content: sanitizeAiContent(data.output || "No response from AI"),
         timestamp: new Date()
       }
 

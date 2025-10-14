@@ -289,6 +289,8 @@ export default function GamifiedDashboard() {
   const [messageCount, setMessageCount] = useState(0)
   const [chatStarted, setChatStarted] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const [session_Id, setSession_Id] = useState<string | null>(null)
+  const WEBHOOK_URL = "https://innovation.eoxs.com/webhook/Ai-chat"
 
   // Banner messages that rotate
   const bannerMessages = [
@@ -376,26 +378,37 @@ export default function GamifiedDashboard() {
       const newCount = messageCount + 1
       setMessageCount(newCount)
       sessionStorage.setItem("sparky_message_count", String(newCount))
-      let currentThread = threadId
       if (newCount >= 20) {
-        currentThread = null
-        setThreadId(null)
+        setSession_Id(null)
         setMessageCount(0)
-        sessionStorage.removeItem("sparky_thread_id")
         sessionStorage.setItem("sparky_message_count", "0")
       }
 
-      const res = await fetch("/api/ai-chat", {
+      const payload = { session_Id: session_Id ?? null, text }
+      try { console.log("[GAMIFIED-CHAT] Sending", { url: WEBHOOK_URL, payload }) } catch {}
+      const res = await fetch(WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, threadId: currentThread }),
+        body: JSON.stringify(payload),
       })
-      const data = await res.json()
-      if (data.threadId && data.threadId !== currentThread) {
-        setThreadId(data.threadId)
-        sessionStorage.setItem("sparky_thread_id", data.threadId)
+      const contentType = res.headers.get("content-type") || ""
+      const raw = await res.text()
+      if (!res.ok) {
+        throw new Error(raw || `Webhook error ${res.status}`)
       }
-      const replyText: string = data.reply || "I had trouble replying."
+      let data: any = null
+      if (raw && contentType.toLowerCase().includes("application/json")) {
+        try { data = JSON.parse(raw) } catch { throw new Error("Invalid JSON in webhook response") }
+      } else if (raw) {
+        data = { session_Id: session_Id, output: raw }
+      } else {
+        throw new Error("Empty response body from webhook")
+      }
+      const returnedSessionId: string | undefined = data?.session_Id
+      if (returnedSessionId && returnedSessionId !== session_Id) {
+        setSession_Id(returnedSessionId)
+      }
+      const replyText: string = data?.output || "I had trouble replying."
       const aiMessageId = (Date.now() + 1).toString()
       const refs = extractVideoReferences(replyText)
       setChatMessages((m) => [

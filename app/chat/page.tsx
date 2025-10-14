@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { Bot, Loader2, Send, User, ChevronLeft, Menu, Plus, LogOut, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,26 +17,32 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Array<ChatMessage>>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
-  const [threadId, setThreadId] = useState<string | null>(null)
   const [messageCount, setMessageCount] = useState(0)
-  
+
+  // Webhook session handling
+  const [session_Id, setSession_Id] = useState<string | null>(null)
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  
   const endRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  
+  const pathname = usePathname()
+
+  const WEBHOOK_URL = "https://innovation.eoxs.com/webhook/Ai-chat"
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
+  // Reset session on page load and route changes per requirement
   useEffect(() => {
-    // init from session
-    const saved = sessionStorage.getItem("sparky_thread_id")
-    const savedCount = sessionStorage.getItem("sparky_message_count")
-    if (saved) setThreadId(saved)
-    if (savedCount) setMessageCount(parseInt(savedCount))
+    setSession_Id(null)
+    // Optionally clear any persisted value to guarantee refresh per navigation
+    try {
+      sessionStorage.removeItem("webhook_session_Id")
+    } catch {}
+  }, [pathname])
 
+  useEffect(() => {
     // welcome (no initial video references)
     const initialRefs: Array<{ videoId: string; title?: string; thumbnail?: string; duration?: string }> = []
     setMessages([
@@ -47,8 +53,6 @@ export default function ChatPage() {
         videoReferences: initialRefs,
       },
     ])
-
-    // No initial video references to resolve
   }, [userData?.name])
 
   const send = async () => {
@@ -58,30 +62,70 @@ export default function ChatPage() {
     setMessages((m) => [...m, { id: Date.now().toString(), role: "user", content: text }])
     setLoading(true)
     try {
-      // rotate thread after 20 messages, like popup
+      // rotate session after 20 messages (keeps parity with previous UX)
       const newCount = messageCount + 1
       setMessageCount(newCount)
-      sessionStorage.setItem("sparky_message_count", String(newCount))
-      let currentThread = threadId
       if (newCount >= 20) {
-        currentThread = null
-        setThreadId(null)
+        setSession_Id(null)
         setMessageCount(0)
-        sessionStorage.removeItem("sparky_thread_id")
-        sessionStorage.setItem("sparky_message_count", "0")
       }
 
-      const res = await fetch("/api/ai-chat", {
+      const payload = {
+        session_Id: session_Id ?? null,
+        text,
+      }
+
+      if (!WEBHOOK_URL) {
+        throw new Error("Webhook URL not configured (NEXT_PUBLIC_CHAT_WEBHOOK_URL)")
+      }
+
+      // Logging request
+      try { console.log("[CHAT] Sending to webhook", { url: WEBHOOK_URL, payload }) } catch {}
+
+      const res = await fetch(WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, threadId: currentThread }),
+        body: JSON.stringify(payload),
       })
-      const data = await res.json()
-      if (data.threadId && data.threadId !== currentThread) {
-        setThreadId(data.threadId)
-        sessionStorage.setItem("sparky_thread_id", data.threadId)
+
+      // Log basic response info
+      try { console.log("[CHAT] Webhook response status", res.status, res.statusText) } catch {}
+      const contentType = res.headers.get("content-type") || ""
+      try { console.log("[CHAT] Webhook response content-type", contentType) } catch {}
+
+      // Read raw text once, then try parse JSON
+      const raw = await res.text()
+      try { console.log("[CHAT] Webhook raw response", raw) } catch {}
+
+      if (!res.ok) {
+        throw new Error(raw || `Webhook error ${res.status}`)
       }
-      const replyText: string = data.reply || "I had trouble replying."
+
+      let data: any = null
+      if (raw && contentType.toLowerCase().includes("application/json")) {
+        try {
+          data = JSON.parse(raw)
+        } catch (e) {
+          // JSON parse failed
+          throw new Error("Invalid JSON in webhook response")
+        }
+      } else if (raw) {
+        // Non-JSON but non-empty body; pass through as output
+        data = { session_Id: session_Id, output: raw }
+      } else {
+        // Empty body
+        throw new Error("Empty response body from webhook")
+      }
+
+      // Expected response: { session_Id: string, output: string }
+      const returnedSessionId: string | undefined = data?.session_Id
+      const replyText: string = data?.output || "I had trouble replying."
+
+      if (returnedSessionId && returnedSessionId !== session_Id) {
+        setSession_Id(returnedSessionId)
+        try { sessionStorage.setItem("webhook_session_Id", returnedSessionId) } catch {}
+      }
+
       const aiMessageId = (Date.now() + 1).toString()
       const refs = extractVideoReferences(replyText)
       setMessages((m) => [
@@ -92,8 +136,10 @@ export default function ChatPage() {
       if (refs.length > 0) {
         resolveVideoReferencesForMessage(aiMessageId, refs)
       }
-    } catch (e) {
-      setMessages((m) => [...m, { id: (Date.now() + 1).toString(), role: "assistant", content: "Network error. Please try again." }])
+    } catch (e: any) {
+      try { console.error("[CHAT] Webhook error", e) } catch {}
+      const msg = e?.message || "Network error. Please try again."
+      setMessages((m) => [...m, { id: (Date.now() + 1).toString(), role: "assistant", content: msg }])
     } finally {
       setLoading(false)
     }
@@ -184,10 +230,8 @@ export default function ChatPage() {
         </div>
         <div className="p-3">
           <Button className="w-full justify-start" variant="secondary" onClick={() => {
-            setThreadId(null)
+            setSession_Id(null)
             setMessageCount(0)
-            sessionStorage.removeItem("sparky_thread_id")
-            sessionStorage.setItem("sparky_message_count", "0")
             setMessages([{ id: "welcome", role: "assistant", content: `Hi ${userData?.name || 'there'}! I'm Ryan, How can I help you :` }])
           }}>
             <Plus className="h-4 w-4 mr-2" /> New chat
@@ -225,8 +269,6 @@ export default function ChatPage() {
               onClick={() => router.push("/dashboard")}
             />
             <div className="hidden md:block">
-             
-              
             </div>
           </div>
           <div className="flex items-center gap-3">
