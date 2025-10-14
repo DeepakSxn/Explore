@@ -124,7 +124,7 @@ return (
 <div className="flex flex-col min-h-screen bg-gradient-enhanced">
 <main className="flex-1 container py-8 px-4">
 <div className="max-w-3xl mx-auto">
-<Card className="bg-white dark:bg-gray-800 shadow-lg">
+<Card className="bg-white dark:bg-white-800 shadow-lg">
 <CardHeader>
 <CardTitle className="text-2xl flex items-center">
 <Video className="h-6 w-6 mr-2 text-primary" />
