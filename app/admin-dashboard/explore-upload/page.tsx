@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { AlertCircle, CheckCircle2, Send, Video, ChevronsUpDown, Check } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { collection, getDocs, query, orderBy, limit, doc, updateDoc } from "firebase/firestore"
+import { collection, getDocs, query, orderBy, limit, doc, updateDoc, writeBatch } from "firebase/firestore"
 
 export default function ExploreUploadPage() {
 const router = useRouter()
@@ -25,6 +25,9 @@ const [message, setMessage] = useState("")
   const [loadingVideos, setLoadingVideos] = useState(false)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   const [selectedDocId, setSelectedDocId] = useState("")
+  const [bulkUpdating, setBulkUpdating] = useState(false)
+  const [bulkUpdateStatus, setBulkUpdateStatus] = useState<"idle" | "success" | "error">("idle")
+  const [bulkUpdateMessage, setBulkUpdateMessage] = useState("")
 
 useEffect(() => {
 const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
@@ -120,6 +123,79 @@ setSubmitting(false)
 }
 }
 
+const handleBulkUpdateTranscriptFlag = async () => {
+try {
+setBulkUpdating(true)
+setBulkUpdateStatus("idle")
+setBulkUpdateMessage("")
+
+// Get all videos that don't have Transcript-upload set to true
+const videosToUpdate 
+= videos.filter(v => !v.transcriptUploaded)
+
+if (videosToUpdate.length === 0) {
+setBulkUpdateStatus("success")
+setBulkUpdateMessage("All videos already have Transcript-upload set to true.")
+return
+
+}
+
+// Use batch writes for better performance
+const batch = writeBatch(db)
+let updateCount = 0
+
+// Process in batches of 500 (Firestore limit)
+for (let i = 0; i < videosToUpdate.length; i += 500) {
+const batchSlice = videosToUpdate.slice(i, i + 500) 
+  
+for (const video of batchSlice) {
+  const docRef = doc(db, "videos", video.docId)
+  batch.update(docRef, { ["Transcript-upload"]: true })
+  updateCount++
+}
+
+// Commit this batch
+await batch.commit()
+  
+// Create a new batch for the next iteration
+if (i + 500 < videosToUpdate.length) {
+  // Small delay to avoid overwhelming Firestore
+  await new Promise(resolve => setTimeout(resolve, 100))
+}
+}
+
+setBulkUpdateStatus("success")
+setBulkUpdateMessage(`Successfully updated ${updateCount} videos with Transcript-upload flag.`)
+
+// Refresh the videos list to reflect the changes
+const q = query(
+  collection(db, "videos"),
+  orderBy("title"),
+  limit(500)
+)
+const snap = await getDocs(q)
+const rows: Array<{ docId: string; title: string; videoId: string; transcriptUploaded: boolean }> = []
+snap.forEach((d) => {
+  const data = d.data() as any
+  const titleVal = data?.title ?? "Untitled"
+  const rawId = data?.publicId ?? data?.public_id
+  const computedId = rawId != null ? String(rawId).trim() : ""
+  const transcriptUploaded = data?.["Transcript-upload"] === true
+  if (computedId.length > 0) {
+    rows.push({ docId: d.id, title: titleVal, videoId: computedId, transcriptUploaded })
+  }
+})
+rows.sort((a, b) => a.title.localeCompare(b.title))
+setVideos(rows)
+
+} catch (err: any) {
+setBulkUpdateStatus("error")
+setBulkUpdateMessage(err?.message || "Bulk update failed.")
+} finally {
+setBulkUpdating(false)
+}
+}
+
 return (
 <div className="flex flex-col min-h-screen bg-gradient-enhanced">
 <main className="flex-1 container py-8 px-4">
@@ -134,6 +210,34 @@ Explore Upload
 </CardHeader>
 
 <CardContent className="space-y-6">
+              {/* Bulk Update Section */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium text-blue-900 dark:text-blue-100">Bulk Update Transcript Flag</h3>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      Set Transcript-upload to true for all videos (since backend implementation is now complete)
+                    </p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      Videos to update: {videos.filter(v => !v.transcriptUploaded).length} of {videos.length}
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleBulkUpdateTranscriptFlag}
+                    disabled={bulkUpdating || videos.filter(v => !v.transcriptUploaded).length === 0}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {bulkUpdating ? "Updating..." : "Update All"}
+                  </Button>
+                </div>
+                {bulkUpdateStatus !== "idle" && (
+                  <div className={`text-sm mt-3 ${bulkUpdateStatus === "error" ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                    {bulkUpdateStatus === "error" ? <AlertCircle className="h-4 w-4 inline mr-1" /> : <CheckCircle2 className="h-4 w-4 inline mr-1" />}
+                    {bulkUpdateMessage}
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
                 <Popover open={isPickerOpen} onOpenChange={setIsPickerOpen}>

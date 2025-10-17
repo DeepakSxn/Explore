@@ -768,8 +768,18 @@ export default function Dashboard() {
       // Get the selected videos
       const selectedVideoObjects = videos.filter((video) => selectedVideos.includes(video.id))
       const generalVideos = videos.filter((video) => video.category === "Company Introduction")
-      const additionalFeaturesVideos = videos.filter((video) => video.category === "Additional Features")
-      const AiTool = videos.filter((video) => video.category === "AI tools")
+      const additionalFeaturesVideos = videos.filter((video) => 
+        video.category === "Additional Features" ||
+        video.category === "additional features" ||
+        video.category === "Additional features"
+      )
+      const AiTool = videos.filter((video) => 
+        video.category === "AI tools" ||
+        video.category === "AI Tools" ||
+        video.category === "ai tools" ||
+        video.category === "Artificial Intelligence" ||
+        video.category === "artificial intelligence"
+      )
 
       // Debug: Check if selectedVideoObjects is empty
       console.log("🔍 Dashboard - Debug selectedVideoObjects:")
@@ -794,11 +804,12 @@ export default function Dashboard() {
       const watchedVideoIds = new Set(watchHistorySnapshot.docs.map((doc) => doc.data().videoId))
 
              // Create a fresh playlist with only the current selection (no previous videos)
-       const combinedVideoIds = new Set<string>()
-       selectedVideoObjects.forEach((v) => combinedVideoIds.add(v.id))
-       generalVideos.forEach((v) => combinedVideoIds.add(v.id))
-       additionalFeaturesVideos.forEach((v) => combinedVideoIds.add(v.id))
-       AiTool.forEach((v) => combinedVideoIds.add(v.id))
+      const combinedVideoIds = new Set<string>()
+      // Include only user-selected videos and compulsory Company Introduction for initial ordering.
+      // Do NOT pre-add AI tools here; they are appended explicitly at the end to avoid jumping ahead of selected modules.
+      selectedVideoObjects.forEach((v) => combinedVideoIds.add(v.id))
+      generalVideos.forEach((v) => combinedVideoIds.add(v.id))
+      // Additional Features will also be appended explicitly later; avoid pre-adding to preserve intended order.
 
       // Helper to get canonical order of all videos
       const getOrderedVideos = () => {
@@ -843,13 +854,13 @@ export default function Dashboard() {
             console.log(`    ⚠️ Already in playlist: ${v.title}`)
           }
         })
-        // 4. Additional Features at the end
+        // 4. Additional Features at the end (always append, avoid duplicates)
         additionalFeaturesVideos.forEach((v) => {
-          if (combinedVideoIds.has(v.id) && !ordered.some((o) => o.id === v.id)) ordered.push(v)
+          if (!ordered.some((o) => o.id === v.id)) ordered.push(v)
         })
-        // 5. AI tools at the end
+        // 5. AI tools at the end (always append, avoid duplicates)
         AiTool.forEach((v) => {
-          if (combinedVideoIds.has(v.id) && !ordered.some((o) => o.id === v.id)) ordered.push(v)
+          if (!ordered.some((o) => o.id === v.id)) ordered.push(v)
         })
         return ordered
       }
