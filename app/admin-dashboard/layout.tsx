@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/firebase"
-import { LayoutDashboard, Video, Upload, MessageSquare, LogOut, Menu, X, LineChart, Users, AlertTriangle, UserCog, Trophy, BookOpen, Building } from "lucide-react"
+import { LayoutDashboard, Video, Upload, MessageSquare, LogOut, Menu, X, LineChart, Users, AlertTriangle, UserCog, Trophy, BookOpen, Building, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/app/theme-toggle"
 // Logo import removed
@@ -23,6 +23,7 @@ const navigation = [
   { name: "Company Admins", href: "/admin-dashboard/company-admins", icon: Users },
   { name: "User Management", href: "/admin-dashboard/user-management", icon: UserCog },
   { name: "Suspended Accounts", href: "/admin-dashboard/suspended-accounts", icon: AlertTriangle },
+  { name: "Shared-links", href: "/admin-dashboard/shared-links", icon: Share2 },
 ]
 
 export default function AdminDashboardLayout({
