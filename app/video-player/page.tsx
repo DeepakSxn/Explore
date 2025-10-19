@@ -77,6 +77,7 @@ interface Video {
   thumbnail?: string
   publicId?: string
   videoUrl?: string
+  cloudinaryAssetId?: string
   description?: string
   category?: string
   tags?: string[]
@@ -816,9 +817,9 @@ export default function VideoPlayerPage() {
           title: data.title || "Untitled",
           duration: data.duration || "0 minutes",
                       thumbnail: (() => {
-              let thumbnailUrl = data.thumbnailUrl || (data.publicId
-                ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${data.publicId}.jpg`
-                : "/placeholder.svg?height=180&width=320")
+            let thumbnailUrl = data.thumbnailUrl || (data.cloudinaryAssetId
+              ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${data.cloudinaryAssetId}.jpg`
+              : "/placeholder.svg?height=180&width=320")
               if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
                 const separator = thumbnailUrl.includes('?') ? '&' : '?'
                 const randomId = Math.random().toString(36).substring(7)
@@ -831,6 +832,7 @@ export default function VideoPlayerPage() {
           category: data.category || "Uncategorized",
           videoUrl: data.videoUrl || "",
           publicId: data.publicId || "",
+          cloudinaryAssetId: data.cloudinaryAssetId || "",
           tags: data.tags || []
         } as Video
       })
@@ -866,9 +868,9 @@ export default function VideoPlayerPage() {
             title: data.title || "Untitled",
             duration: data.duration || "0 minutes",
             thumbnail: (() => {
-              let thumbnailUrl = data.thumbnailUrl || (data.publicId
-                ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${data.publicId}.jpg`
-                : "/placeholder.svg?height=180&width=320")
+            let thumbnailUrl = data.thumbnailUrl || (data.cloudinaryAssetId
+              ? `https://res.cloudinary.com/dh3bnbq9t/video/upload/${data.cloudinaryAssetId}.jpg`
+              : "/placeholder.svg?height=180&width=320")
               if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
                 const separator = thumbnailUrl.includes('?') ? '&' : '?'
                 const randomId = Math.random().toString(36).substring(7)
@@ -1001,8 +1003,8 @@ export default function VideoPlayerPage() {
           title: data.title || "Untitled",
           duration: data.duration || "0 minutes",
           thumbnail: (() => {
-            let thumbnailUrl = data.thumbnailUrl || (data.publicId
-              ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.publicId}.jpg`
+            let thumbnailUrl = data.thumbnailUrl || (data.cloudinaryAssetId
+              ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.cloudinaryAssetId}.jpg`
               : "/placeholder.svg?height=180&width=320")
             if (thumbnailUrl && thumbnailUrl.includes('cloudinary.com')) {
               const separator = thumbnailUrl.includes('?') ? '&' : '?'
@@ -1016,6 +1018,7 @@ export default function VideoPlayerPage() {
           category: data.category || "",
           videoUrl: data.videoUrl || "",
           publicId: data.publicId || "",
+          cloudinaryAssetId: data.cloudinaryAssetId || "",
           tags: data.tags || []
         }
 
@@ -1034,13 +1037,13 @@ export default function VideoPlayerPage() {
       if (videoSnap.exists()) {
         initializeFromData(id, videoSnap.data())
       } else {
-        // 2) Fallback: treat the id as a Cloudinary publicId
+        // 2) Fallback: treat the id as a Cloudinary asset ID
         const videosCollectionRef = collection(db, "videos")
-        const q = query(videosCollectionRef, where("publicId", "==", id))
-        const querySnap = await getDocs(q)
+        const assetIdQuery = query(videosCollectionRef, where("cloudinaryAssetId", "==", id))
+        const assetIdSnap = await getDocs(assetIdQuery)
 
-        if (!querySnap.empty) {
-          const matchedDoc = querySnap.docs[0]
+        if (!assetIdSnap.empty) {
+          const matchedDoc = assetIdSnap.docs[0]
           initializeFromData(matchedDoc.id, matchedDoc.data())
         } else {
           setPlaylist(null)
@@ -1229,7 +1232,7 @@ export default function VideoPlayerPage() {
     if (!videos || !Array.isArray(videos) || videos.length === 0) return
 
     // IMPORTANT: This function ONLY shows:
-            // 1. Compulsory modules (Company Introduction, Additional Features, AI tools)
+            // 1. Compulsory modules (Company Introduction, AI tools)
     // 2. User-selected modules from the current playlist
     // 3. NO previous unfinished modules or other categories
 
@@ -1323,18 +1326,8 @@ export default function VideoPlayerPage() {
 
     // 5. ONLY add modules from playlist - NO other categories from previous selections
     // This ensures only the modules that are actually in the current playlist are shown
-            // along with the compulsory modules (Company Introduction, Additional Features, AI tools)
+            // along with the compulsory modules (Company Introduction, AI tools)
 
-    // 6. ALWAYS add Additional Features module before AI tools (COMPULSORY)
-    if (!addedCategories.has("Additional Features")) {
-      moduleArray.push({
-        name: "Additional Features",
-        category: "Additional Features",
-        videos: videosByCategory["Additional Features"] || [],
-      })
-      addedCategories.add("Additional Features")
-      console.log("Added compulsory Additional Features module")
-    }
 
     // 7. ALWAYS add AI tools module last (COMPULSORY)
     const aiToolsVideos = videosByCategory["AI tools"] || 
@@ -1370,12 +1363,10 @@ export default function VideoPlayerPage() {
 
     const isCompulsory = (m: { category: string }) => (
       m.category === "Company Introduction" ||
-      m.category === "Additional Features" ||
       m.category === "AI tools"
     )
 
     const compulsoryIntro = moduleArray.find(m => m.category === "Company Introduction")
-    const compulsoryAdditional = moduleArray.find(m => m.category === "Additional Features")
     const compulsoryAI = moduleArray.find(m => m.category === "AI tools")
     const others = moduleArray.filter(m => !isCompulsory(m))
 
@@ -1395,7 +1386,6 @@ export default function VideoPlayerPage() {
     const sortedModuleArray: Module[] = []
     if (compulsoryIntro) sortedModuleArray.push(compulsoryIntro)
     sortedModuleArray.push(...others)
-    if (compulsoryAdditional) sortedModuleArray.push(compulsoryAdditional)
     if (compulsoryAI) sortedModuleArray.push(compulsoryAI)
 
     setModules(sortedModuleArray)
@@ -1410,7 +1400,6 @@ export default function VideoPlayerPage() {
     console.log("🎯 All modules found in playlist:", allCategoriesInPlaylist);
     moduleArray.forEach((module, index) => {
       const isCompulsory = module.category === "Company Introduction" || 
-                           module.category === "Additional Features" || 
                            module.category === "AI tools"
       const moduleType = isCompulsory ? "COMPULSORY" : "FROM PLAYLIST"
       console.log(`${index + 1}. ${module.name} (${module.category}) - ${module.videos.length} videos [${moduleType}]`)

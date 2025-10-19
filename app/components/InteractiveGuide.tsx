@@ -343,13 +343,26 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
         return {
           videoId,
           title: data.title || undefined,
-          thumbnail: data.thumbnailUrl || (data.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
+          thumbnail: data.thumbnailUrl || (data.cloudinaryAssetId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.cloudinaryAssetId}.jpg` : data.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
           duration: data.duration || ""
         }
       }
 
-      // 2) Fallback: search by publicId
+      // 2) Fallback: search by asset ID
       const videosCol = collection(db, "videos")
+      const qByAssetId = query(videosCol, where("cloudinaryAssetId", "==", videoId))
+      const assetIdSnap = await getDocs(qByAssetId)
+      if (!assetIdSnap.empty) {
+        const d = assetIdSnap.docs[0].data() as any
+        return {
+          videoId,
+          title: d.title || undefined,
+          thumbnail: d.thumbnailUrl || (d.cloudinaryAssetId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.cloudinaryAssetId}.jpg` : d.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
+          duration: d.duration || ""
+        }
+      }
+
+      // 3) Final fallback: search by publicId
       const qByPublicId = query(videosCol, where("publicId", "==", videoId))
       const qSnap = await getDocs(qByPublicId)
       if (!qSnap.empty) {
@@ -357,7 +370,7 @@ export default function InteractiveGuide({ onAction }: InteractiveGuideProps) {
         return {
           videoId,
           title: d.title || undefined,
-          thumbnail: d.thumbnailUrl || (d.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
+          thumbnail: d.thumbnailUrl || (d.cloudinaryAssetId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.cloudinaryAssetId}.jpg` : d.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
           duration: d.duration || ""
         }
       }

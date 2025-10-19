@@ -166,7 +166,8 @@ export default function UploadPage() {
         tags,
         videoUrl: data.secure_url,
         publicId: data.public_id,
-        thumbnailUrl: `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.public_id}.jpg`,
+        cloudinaryAssetId: data.asset_id,
+        thumbnailUrl: `https://res.cloudinary.com/dnx1sl0nq/video/upload/${data.asset_id}.jpg`,
         createdAt: serverTimestamp(),
       })
 

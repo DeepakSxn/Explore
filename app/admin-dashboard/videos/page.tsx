@@ -42,6 +42,7 @@ interface Video {
   category?: string
   videoUrl?: string
   publicId?: string
+  cloudinaryAssetId?: string
   createdAt: any
   views?: number
   watchTime?: number
@@ -280,18 +281,19 @@ export default function VideosPage() {
   }
 
   const generateThumbnailFromVideo = async () => {
-    if (!selectedVideo?.publicId) {
+    if (!selectedVideo?.cloudinaryAssetId && !selectedVideo?.publicId) {
       toast({
         title: "Error",
-        description: "No video public ID found to generate thumbnail from",
+        description: "No video asset ID or public ID found to generate thumbnail from",
         variant: "destructive",
       })
       return
     }
 
     try {
-      // Generate thumbnail URL from Cloudinary video public ID
-      const thumbnailUrl = `https://res.cloudinary.com/dnx1sl0nq/video/upload/${selectedVideo.publicId}.jpg`
+      // Generate thumbnail URL from Cloudinary video asset ID or public ID
+      const id = selectedVideo.cloudinaryAssetId || selectedVideo.publicId
+      const thumbnailUrl = `https://res.cloudinary.com/dnx1sl0nq/video/upload/${id}.jpg`
       setEditedVideo({ ...editedVideo, thumbnailUrl })
       setThumbnailPreview(thumbnailUrl)
       toast({

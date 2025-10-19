@@ -451,11 +451,25 @@ export default function GamifiedDashboard() {
         return {
           videoId,
           title: d.title || undefined,
-          thumbnail: d.thumbnailUrl || (d.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
+          thumbnail: d.thumbnailUrl || (d.cloudinaryAssetId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.cloudinaryAssetId}.jpg` : d.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
           duration: d.duration || "",
         }
       }
       const videosCol = collection(db, "videos")
+      // Try asset ID first
+      const qByAssetId = query(videosCol, where("cloudinaryAssetId", "==", videoId))
+      const assetIdSnap = await getDocs(qByAssetId)
+      if (!assetIdSnap.empty) {
+        const d = assetIdSnap.docs[0].data() as any
+        return {
+          videoId,
+          title: d.title || undefined,
+          thumbnail: d.thumbnailUrl || (d.cloudinaryAssetId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.cloudinaryAssetId}.jpg` : d.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
+          duration: d.duration || "",
+        }
+      }
+      
+      // Fallback to public ID
       const qByPublicId = query(videosCol, where("publicId", "==", videoId))
       const qSnap = await getDocs(qByPublicId)
       if (!qSnap.empty) {
@@ -463,7 +477,7 @@ export default function GamifiedDashboard() {
         return {
           videoId,
           title: d.title || undefined,
-          thumbnail: d.thumbnailUrl || (d.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
+          thumbnail: d.thumbnailUrl || (d.cloudinaryAssetId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.cloudinaryAssetId}.jpg` : d.publicId ? `https://res.cloudinary.com/dnx1sl0nq/video/upload/${d.publicId}.jpg` : `/placeholder.svg?height=120&width=200`),
           duration: d.duration || "",
         }
       }
