@@ -553,7 +553,7 @@ export default function SyncCloudinaryPage() {
                   {syncing ? 'Syncing...' : 'Sync All Videos'}
                 </Button>
                 
-                <Button 
+                {/* <Button 
                   onClick={() => syncFilteredVideos('missing-data')}
                   disabled={syncing || videos.length === 0}
                   variant="outline"
@@ -561,7 +561,7 @@ export default function SyncCloudinaryPage() {
                 >
                   <AlertCircle className="h-4 w-4" />
                   Sync Missing Data
-                </Button>
+                </Button> */}
                 
                 <Button 
                   onClick={() => syncFilteredVideos('outdated')}
@@ -600,12 +600,12 @@ export default function SyncCloudinaryPage() {
                   <div className="text-2xl font-bold text-primary">{videos.length}</div>
                   <div className="text-sm text-muted-foreground">Total Videos</div>
                 </div>
-                <div className="text-center">
+                {/* <div className="text-center">
                   <div className="text-2xl font-bold text-orange-600">
                     {videos.filter(v => !v.format || !v.width || !v.height || !v.fileSize || !v.duration).length}
                   </div>
                   <div className="text-sm text-muted-foreground">Missing Data</div>
-                </div>
+                </div> */}
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">
                     {videos.filter(v => {
