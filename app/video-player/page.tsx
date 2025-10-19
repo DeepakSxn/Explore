@@ -1433,8 +1433,41 @@ export default function VideoPlayerPage() {
               throw new Error("Invalid playlist data: missing or empty videos array")
             }
 
+            // 🔄 REFRESH VIDEO DATA: Fetch fresh data from Firestore for all videos
+            console.log('🔄 Refreshing all video data from Firestore to get updated videoUrls...')
+            const refreshedVideos = await Promise.all(
+              playlistData.videos.map(async (video) => {
+                try {
+                  console.log('🔄 Refreshing video data from Firestore for:', video.id)
+                  const videoDocRef = doc(db, "videos", video.id)
+                  const videoSnap = await getDoc(videoDocRef)
+                  
+                  if (videoSnap.exists()) {
+                    const freshVideoData = videoSnap.data()
+                    console.log('✅ Fresh video data from Firestore:', {
+                      id: video.id,
+                      title: freshVideoData.title,
+                      videoUrl: freshVideoData.videoUrl,
+                      publicId: freshVideoData.publicId
+                    })
+                    // Merge fresh data with existing video data
+                    return {
+                      ...video,
+                      ...freshVideoData,
+                      // Ensure we use the fresh videoUrl
+                      videoUrl: freshVideoData.videoUrl || video.videoUrl
+                    }
+                  }
+                  return video
+                } catch (error) {
+                  console.error('❌ Error refreshing video data for', video.id, ':', error)
+                  return video
+                }
+              })
+            )
+
             // Reorder videos according to module sequence
-            const reorderedVideos = await reorderVideosByModuleSequence(playlistData.videos)
+            const reorderedVideos = await reorderVideosByModuleSequence(refreshedVideos)
             const updatedPlaylistData: Playlist = {
               ...playlistData,
               videos: reorderedVideos
@@ -1442,9 +1475,14 @@ export default function VideoPlayerPage() {
 
             setPlaylist(updatedPlaylistData)
 
-            // Debug: Log playlist data
-            console.log("Playlist data:", updatedPlaylistData)
-            console.log("Videos in playlist:", updatedPlaylistData.videos)
+            // Debug: Log refreshed playlist data
+            console.log("🔄 Refreshed playlist data:", updatedPlaylistData)
+            console.log("🔄 Refreshed videos in playlist:", updatedPlaylistData.videos.map(v => ({
+              id: v.id,
+              title: v.title,
+              videoUrl: v.videoUrl,
+              hasVideoUrl: !!v.videoUrl
+            })))
 
             // Organize videos into modules (now async)
             await organizeIntoModules(updatedPlaylistData.videos)
