@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Link2, Play, Users, Search } from "lucide-react"
+import { RefreshCw, Link2, Play, Users, Search, CheckCircle, Copy } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 
 interface SharedLink {
@@ -35,6 +35,7 @@ export default function SharedLinksAdminPage() {
   const [visits, setVisits] = useState<SharedVisit[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [copiedToken, setCopiedToken] = useState<string | null>(null)
 
   const load = async () => {
     try {
@@ -125,10 +126,24 @@ export default function SharedLinksAdminPage() {
                             variant="outline"
                             onClick={() => {
                               navigator.clipboard.writeText(`${window.location.origin}/shared/${l.token}`)
-                              toast({ title: "Link copied to clipboard" })
+                              setCopiedToken(l.token)
+                              toast({ 
+                                title: "Copied!", 
+                                description: "Link copied to clipboard successfully",
+                              })
+                              // Reset after 2 seconds
+                              setTimeout(() => setCopiedToken(null), 2000)
                             }}
                           >
-                            Copy Link
+                            {copiedToken === l.token ? (
+                              <>
+                                <CheckCircle className="h-4 w-4 mr-1" /> Copied
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-4 w-4 mr-1" /> Copy Link
+                              </>
+                            )}
                           </Button>
                         </TableCell>
                         <TableCell>{l.createdAt?.seconds ? new Date(l.createdAt.seconds * 1000).toLocaleString() : "-"}</TableCell>

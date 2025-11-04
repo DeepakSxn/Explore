@@ -30,10 +30,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MoreHorizontal, Trash2, PlayCircle, Edit, RefreshCw, SortAsc, Share2, Copy } from "lucide-react"
+import { MoreHorizontal, Trash2, PlayCircle, Edit, RefreshCw, SortAsc, Share2, Copy, Clock, CheckCircle } from "lucide-react"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { toast } from "@/components/ui/use-toast"
-import { saveModuleVideoOrder, getAllModuleVideoOrders } from "@/app/firestore-utils"
+import { saveModuleVideoOrder, getAllModuleVideoOrders, getAllModuleOrders, getAllModuleDisplayNames } from "@/app/firestore-utils"
 
 interface Video {
   id: string
@@ -49,6 +51,7 @@ interface Video {
   engagement?: number
   tags?: string[]
   thumbnailUrl?: string
+  duration?: number
 }
 
 export default function VideosPage() {
@@ -69,12 +72,18 @@ export default function VideosPage() {
   const [orderedIds, setOrderedIds] = useState<string[]>([])
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [categoryOrders, setCategoryOrders] = useState<Record<string, string[]>>({})
+  const [modules, setModules] = useState<Array<{name: string, category: string, videos: Video[], totalDuration: string}>>([])
+  const [selectedModule, setSelectedModule] = useState<string | null>(null)
+  const [expandedModules, setExpandedModules] = useState<string[]>([])
+  const [moduleOrders, setModuleOrders] = useState<Record<string, number>>({})
+  const [moduleDisplayNames, setModuleDisplayNames] = useState<Record<string, string>>({})
   
   // Share dialog state
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
   const [shareForVideo, setShareForVideo] = useState<Video | null>(null)
   const [existingShares, setExistingShares] = useState<Array<{ token: string; createdAt?: any }>>([])
   const [generatingShare, setGeneratingShare] = useState(false)
+  const [copiedToken, setCopiedToken] = useState<string | null>(null)
   
   // Confirmation dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -95,8 +104,35 @@ export default function VideosPage() {
     })
 
     loadVideos()
+    loadModuleOrders()
+    loadModuleDisplayNames()
     return () => unsubscribe()
   }, [router])
+
+  const loadModuleOrders = async () => {
+    try {
+      const orders = await getAllModuleOrders()
+      setModuleOrders(orders)
+    } catch (error) {
+      console.error("Error loading module orders:", error)
+    }
+  }
+
+  const loadModuleDisplayNames = async () => {
+    try {
+      const displayNames = await getAllModuleDisplayNames()
+      setModuleDisplayNames(displayNames)
+    } catch (error) {
+      console.error("Error loading module display names:", error)
+    }
+  }
+
+  // Display helper to remove "Overview" but preserve original names for ordering/keys (same as modules page)
+  const getDisplayModuleName = (name: string): string => {
+    // Replace trailing "Module Overview" with "Module", or plain trailing "Overview"
+    const withoutModuleOverview = name.replace(/\s*Module\s*Overview$/i, " Module")
+    return withoutModuleOverview.replace(/\s*Overview$/i, "")
+  }
 
   useEffect(() => {
     // Filter videos when category changes
@@ -117,6 +153,87 @@ export default function VideosPage() {
       setFilteredVideos(list)
     }
   }, [selectedCategory, videos, categoryOrders])
+
+  // Organize videos into modules (exact same logic as modules page)
+  const organizeVideosIntoModules = () => {
+    // Group videos by category (same as modules page)
+    const videosByCategory = videos.reduce(
+      (acc, video) => {
+        const category = video.category || "Uncategorized"
+        if (!acc[category]) {
+          acc[category] = []
+        }
+        acc[category].push(video)
+        return acc
+      },
+      {} as Record<string, Video[]>
+    )
+
+    // Create module objects (same logic as modules page)
+    const moduleArray: Array<{name: string, category: string, videos: Video[], totalDuration: string}> = []
+    Object.entries(videosByCategory).forEach(([category, videos]) => {
+      // Skip only Company Introduction category, include AI tools (same as modules page)
+      if (category === "Company Introduction") {
+        return
+      }
+
+      // Calculate total duration (same as modules page)
+      const totalMinutes = videos.reduce((sum, video) => {
+        const duration = video.duration || 0
+        return sum + duration
+      }, 0)
+
+      // Create module name (same as modules page)
+      const moduleName = category.includes("Module") ? `${category} Overview` : `${category} Module Overview`
+      
+      moduleArray.push({
+        name: moduleName,
+        category: category,
+        videos: videos,
+        totalDuration: `${Math.ceil(totalMinutes / 60)} mins`
+      })
+    })
+
+    // Sort modules by their order (same as modules page)
+    const sortedModules = moduleArray.sort((a, b) => {
+      const orderA = moduleOrders[a.name] ?? Number.MAX_SAFE_INTEGER
+      const orderB = moduleOrders[b.name] ?? Number.MAX_SAFE_INTEGER
+      return orderA - orderB
+    })
+
+    setModules(sortedModules)
+  }
+
+  // Call organizeVideosIntoModules when videos or moduleOrders change
+  useEffect(() => {
+    if (videos.length > 0) {
+      organizeVideosIntoModules()
+    }
+  }, [videos, moduleOrders])
+
+  // Handle module selection
+  const handleModuleClick = (moduleCategory: string) => {
+    if (selectedModule === moduleCategory) {
+      // If clicking the same module, show all videos
+      setSelectedModule(null)
+      setFilteredVideos(videos)
+    } else {
+      // Show videos for the selected module
+      setSelectedModule(moduleCategory)
+      const moduleVideos = videos.filter((video) => video.category === moduleCategory)
+      const order = categoryOrders[moduleCategory]
+      if (order && order.length > 0) {
+        moduleVideos.sort((a, b) => {
+          const ia = order.indexOf(a.id)
+          const ib = order.indexOf(b.id)
+          const aPos = ia === -1 ? Number.MAX_SAFE_INTEGER : ia
+          const bPos = ib === -1 ? Number.MAX_SAFE_INTEGER : ib
+          return aPos - bPos
+        })
+      }
+      setFilteredVideos(moduleVideos)
+    }
+  }
 
   const loadVideos = async () => {
     try {
@@ -170,9 +287,17 @@ export default function VideosPage() {
       setVideos(videoData)
       setFilteredVideos(videoData)
 
-      // Load any saved orders
+      // Load any saved orders and convert Record<string, number> to string[]
       const orders = await getAllModuleVideoOrders()
-      setCategoryOrders(orders)
+      const convertedOrders: Record<string, string[]> = {}
+      Object.entries(orders).forEach(([category, orderMap]) => {
+        // Convert Record<videoId, position> to sorted array of videoIds
+        const sortedIds = Object.entries(orderMap)
+          .sort(([, posA], [, posB]) => posA - posB)
+          .map(([videoId]) => videoId)
+        convertedOrders[category] = sortedIds
+      })
+      setCategoryOrders(convertedOrders)
     } catch (error) {
       console.error("Error fetching videos:", error)
       toast({
@@ -437,7 +562,14 @@ export default function VideosPage() {
     try {
       console.log("Saving order for category:", orderCategory)
       console.log("Ordered IDs:", orderedIds)
-      await saveModuleVideoOrder(orderCategory, orderedIds)
+      
+      // Convert array to Record<string, number> where key is videoId and value is order position
+      const orderRecord: Record<string, number> = {}
+      orderedIds.forEach((id, index) => {
+        orderRecord[id] = index
+      })
+      
+      await saveModuleVideoOrder(orderCategory, orderRecord)
       console.log("Order saved successfully")
       // Update local order state immediately so table reflects new order
       setCategoryOrders(prev => ({ ...prev, [orderCategory]: orderedIds }))
@@ -490,7 +622,10 @@ export default function VideosPage() {
       const link = `${window.location.origin}/shared/${token}`
       try {
         await navigator.clipboard.writeText(link)
-        toast({ title: "Link copied", description: link })
+        toast({ 
+          title: "Copied!", 
+          description: "Link copied to clipboard successfully",
+        })
       } catch {
         toast({ title: "Link created", description: link })
       }
@@ -511,7 +646,13 @@ export default function VideosPage() {
     const link = `${window.location.origin}/shared/${token}`
     try {
       await navigator.clipboard.writeText(link)
-      toast({ title: "Copied", description: link })
+      setCopiedToken(token)
+      toast({ 
+        title: "Copied!", 
+        description: "Link copied to clipboard successfully",
+      })
+      // Reset after 2 seconds
+      setTimeout(() => setCopiedToken(null), 2000)
     } catch {
       toast({ title: "Link", description: link })
     }
@@ -522,111 +663,119 @@ export default function VideosPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Videos</h1>
         <div className="flex gap-2">
-          {selectedCategory !== "all" && (
-            <Button variant="default" onClick={() => openOrderDialogForCategory(selectedCategory)}>
-              <SortAsc className="h-4 w-4 mr-2" /> Set Order
-            </Button>
-          )}
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border border-gray-200 shadow-lg">
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
           </Button>
         </div>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Thumbnail</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center">
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : filteredVideos.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center">
-                  No videos found
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredVideos.map((video) => (
-                <TableRow key={video.id}>
-                  <TableCell className="font-medium">{video.title}</TableCell>
-                  <TableCell>{video.category || "Uncategorized"}</TableCell>
-                  <TableCell>
-                    {video.thumbnailUrl ? (
-                      <img 
-                        src={video.thumbnailUrl} 
-                        alt={`${video.title} thumbnail`}
-                        className="w-16 h-12 object-cover rounded border"
-                      />
-                    ) : (
-                      <div className="w-16 h-12 bg-gray-200 rounded border flex items-center justify-center text-xs text-gray-500">
-                        No thumbnail
+      {/* Modules Accordion */}
+      {!isLoading && modules.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+          <div className="p-4 sm:p-6">
+            <Accordion type="multiple" value={expandedModules} onValueChange={setExpandedModules} className="w-full space-y-3">
+              {modules.map((module, moduleIndex) => (
+                <AccordionItem key={moduleIndex} value={module.category} className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-200">
+                  <AccordionTrigger className="px-4 sm:px-6 py-4 hover:no-underline bg-gradient-to-r from-slate-50 to-white hover:from-slate-100 hover:to-slate-50 flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3 sm:gap-0">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="flex items-center justify-center w-8 h-8 bg-slate-100 rounded-full text-sm font-semibold text-slate-700 flex-shrink-0">
+                        {moduleOrders[module.name] !== undefined ? moduleOrders[module.name] + 1 : moduleIndex + 1}
                       </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {video.createdAt && video.createdAt.seconds
-                      ? format(new Date(video.createdAt.seconds * 1000), "PPP")
-                      : "N/A"}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handlePreview(video)}>
-                          <PlayCircle className="mr-2 h-4 w-4" />
-                          Preview
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEdit(video)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Modify
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openShareDialog(video)}>
-                          <Share2 className="mr-2 h-4 w-4" />
-                          Share
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600" onClick={() => openDeleteDialog(video)}>
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                      <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">
+                        {moduleDisplayNames[module.category] || getDisplayModuleName(module.name)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-0.5">
+                        <span className="hidden sm:inline">{module.videos.length} videos</span>
+                        <span className="sm:hidden">{module.videos.length} videos</span>
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-slate-50 border-b border-slate-200">
+                          <tr>
+                            <th className="px-6 py-3 text-left font-semibold text-slate-700">Title</th>
+                            <th className="px-6 py-3 text-left font-semibold text-slate-700">Upload Date</th>
+                            <th className="px-6 py-3 text-center font-semibold text-slate-700">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {module.videos.map((video) => (
+                            <tr key={video.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  {video.thumbnailUrl ? (
+                                    <img 
+                                      src={video.thumbnailUrl} 
+                                      alt={`${video.title} thumbnail`}
+                                      className="w-12 h-8 object-cover rounded border border-slate-200 flex-shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-12 h-8 bg-slate-100 rounded border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                      <PlayCircle className="h-4 w-4 text-slate-400" />
+                                    </div>
+                                  )}
+                                  <span className="font-medium text-slate-900">{video.title}</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-slate-600">
+                                {video.createdAt && video.createdAt.seconds
+                                  ? format(new Date(video.createdAt.seconds * 1000), "MMM dd, yyyy")
+                                  : "N/A"}
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handlePreview(video)}>
+                                      <PlayCircle className="mr-2 h-4 w-4" />
+                                      Preview
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleEdit(video)}>
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Modify
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openShareDialog(video)}>
+                                      <Share2 className="mr-2 h-4 w-4" />
+                                      Share
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-red-600" onClick={() => openDeleteDialog(video)}>
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </div>
+      )}
+
+      {/* Show message when no modules */}
+      {!isLoading && modules.length === 0 && (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <PlayCircle className="h-8 w-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Videos Found</h3>
+          <p className="text-gray-500">There are no videos available in the system</p>
+        </div>
+      )}
 
       {/* Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
@@ -943,7 +1092,7 @@ export default function VideosPage() {
       </AlertDialog>
 
       {/* Share Dialog */}
-      <Dialog open={isShareDialogOpen} onOpenChange={(open) => { setIsShareDialogOpen(open); if (!open) { setShareForVideo(null); setExistingShares([]) } }}>
+      <Dialog open={isShareDialogOpen} onOpenChange={(open) => { setIsShareDialogOpen(open); if (!open) { setShareForVideo(null); setExistingShares([]); setCopiedToken(null) } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Share Video{shareForVideo ? ` - ${shareForVideo.title}` : ""}</DialogTitle>
@@ -972,7 +1121,15 @@ export default function VideosPage() {
                       <div className="text-xs text-muted-foreground">{s.createdAt?.seconds ? new Date(s.createdAt.seconds * 1000).toLocaleString() : ""}</div>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => copyShareLink(s.token)}>
-                      <Copy className="h-4 w-4 mr-1" /> Copy
+                      {copiedToken === s.token ? (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-1" /> Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4 mr-1" /> Copy
+                        </>
+                      )}
                     </Button>
                   </div>
                 ))}

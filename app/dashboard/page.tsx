@@ -25,7 +25,6 @@ import InteractiveGuide from "../components/InteractiveGuide"
 import XPRewardPopup from "../components/XPRewardPopup"
 
 
-import ChallengeMode from "../components/ChallengeMode"
 import { getAllModuleVideoOrders, getAllModuleOrders, getAllModuleDisplayNames } from "../firestore-utils"
 
 interface Video {
@@ -176,7 +175,6 @@ export default function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Start closed by default
   const [isMobile, setIsMobile] = useState(false)
 
-  const [showChallengeMode, setShowChallengeMode] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [categoryOrders, setCategoryOrders] = useState<Record<string, string[]>>({})
   const [moduleOrders, setModuleOrders] = useState<Record<string, number>>({})
@@ -1422,11 +1420,6 @@ export default function Dashboard() {
       
 
 
-      {/* Challenge Mode */}
-      <ChallengeMode 
-        isVisible={showChallengeMode} 
-        onClose={() => setShowChallengeMode(false)}
-      />
       
       {/* Enhanced Footer */}
       <footer className="border-t border-slate-200 bg-white/80 backdrop-blur-sm py-4 mt-12">

@@ -13,6 +13,7 @@ import { auth, db } from "@/firebase"
 import { addDoc, collection, serverTimestamp } from "firebase/firestore"
 import { ThemeToggle } from "../theme-toggle"
 import { Logo } from "../components/logo"
+import { sendFeedbackEmail, formatFeedbackForEmail } from "../feedback-email-service"
 
 export default function Feedback() {
   const router = useRouter()
@@ -42,12 +43,39 @@ export default function Feedback() {
     setSubmitting(true)
     try {
       // Save feedback to Firestore
-      await addDoc(collection(db, "feedback"), {
+      const feedbackData = {
         userId: user?.uid,
         userEmail: user?.email,
         feedback,
+        type: 'video_completion',
         createdAt: serverTimestamp(),
-      })
+      }
+      
+      const docRef = await addDoc(collection(db, "feedback"), feedbackData)
+
+      // Send email notification
+      try {
+        console.log('🔵 Preparing to send feedback email...')
+        const emailData = formatFeedbackForEmail({
+          ...feedbackData,
+          createdAt: { seconds: Math.floor(Date.now() / 1000) }, // Convert to proper timestamp
+          id: docRef.id,
+          companyName: 'Unknown Company' // You might want to get this from user data
+        })
+        console.log('📧 Email data formatted:', emailData)
+        
+        const result = await sendFeedbackEmail(emailData)
+        console.log('✅ Feedback email result:', result)
+        
+        if (result) {
+          console.log('✅ Feedback email sent successfully')
+        } else {
+          console.error('❌ Feedback email failed - returned false')
+        }
+      } catch (emailError) {
+        console.error('❌ Failed to send feedback email:', emailError)
+        // Don't fail the feedback submission if email fails
+      }
 
       setSubmitting(false)
       setFeedback("")

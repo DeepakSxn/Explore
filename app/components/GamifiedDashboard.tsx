@@ -40,7 +40,6 @@ import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from "
 import { getAllModuleVideoOrders } from "../firestore-utils"
 import { auth, db } from "@/firebase"
 
-import ChallengeMode from "./ChallengeMode"
 import { ChevronDown, ChevronRight } from "lucide-react"
 
 interface Video {
@@ -66,176 +65,6 @@ interface Module {
   videos: Video[]
 }
 
-// ViewMyProgress Component
-interface ViewMyProgressProps {
-  userProgress: any
-}
-
-function ViewMyProgress({ userProgress }: ViewMyProgressProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const { getCurrentLevel, getXPToNextLevel, getLevelProgress, loading } = useGamification()
-
-  const getLevelTitle = (level: number) => {
-    const titles = [
-      "Beginner",
-      "Apprentice",
-      "Learner",
-      "Student",
-      "Practitioner",
-      "Specialist",
-      "Expert",
-      "Master",
-      "Grandmaster",
-      "Legend"
-    ]
-    return titles[Math.min(level - 1, titles.length - 1)]
-  }
-
-  const getLevelIcon = (level: number) => {
-    if (level <= 3) return <BookOpen className="h-5 w-5" />
-    if (level <= 6) return <Target className="h-5 w-5" />
-    if (level <= 9) return <Trophy className="h-5 w-5" />
-    return <Crown className="h-5 w-5" />
-  }
-
-  // Show loading state instead of hiding completely
-  const isLoading = loading || !userProgress
-
-  return (
-    <Card className="w-full max-w-7xl mx-auto">
-      <CardContent className="p-0">
-        {/* Clickable Header */}
-        <div 
-          className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-          onClick={() => !isLoading && setIsExpanded(!isExpanded)}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <BarChart3 className="h-4 w-4 text-blue-600" />
-              )}
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">View my progress</h3>
-          </div>
-          <div className="flex items-center gap-2">
-            {isLoading ? (
-              <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">
-                Loading...
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                Level {userProgress.currentLevel}
-              </Badge>
-            )}
-            {!isLoading && (isExpanded ? (
-              <ChevronDown className="h-5 w-5 text-gray-500" />
-            ) : (
-              <ChevronRight className="h-5 w-5 text-gray-500" />
-            ))}
-          </div>
-        </div>
-
-        {/* Expandable Content */}
-        <AnimatePresence>
-          {isExpanded && !isLoading && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="overflow-hidden"
-            >
-              <div className="px-4 pb-4 border-t border-gray-100">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                  {/* Level Progress Card */}
-                  <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="bg-white/20 p-2 rounded-full">
-                          {getLevelIcon(userProgress.currentLevel)}
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-white">{getLevelTitle(userProgress.currentLevel)}</h3>
-                          <p className="text-sm text-white">Level {userProgress.currentLevel}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-white">Progress to Level {userProgress.currentLevel + 1}</span>
-                          <span className="text-white">{Math.round(getLevelProgress())}%</span>
-                        </div>
-                        <Progress 
-                          value={getLevelProgress()} 
-                          className="h-2 bg-white/20 [&>div]:bg-white"
-                        />
-                        <p className="text-xs text-white">
-                          {getXPToNextLevel()} XP needed for next level
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Stats Card */}
-                  <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
-                    <CardContent className="p-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center">
-                          <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
-                            <Play className="h-4 w-4" />
-                          </div>
-                          <p className="text-xl font-bold text-white">{userProgress.totalVideosWatched}</p>
-                          <p className="text-xs text-white">Videos</p>
-                        </div>
-                        <div className="text-center">
-                          <div className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-2">
-                            <span className="text-[10px] font-bold text-white">XP</span>
-                          </div>
-                          <p className="text-xl font-bold text-white">{userProgress.totalXP}</p>
-                          <p className="text-xs text-white">Total XP</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Streak Card */}
-                  {userProgress.currentStreak >= 0 && (
-                    <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-white/20 p-2 rounded-full">
-                            <Flame className="h-5 w-5" />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="text-sm font-bold text-white">Streak!</h3>
-                            <p className="text-xs text-white">
-                              {Math.max(1, userProgress.currentStreak)} day{Math.max(1, userProgress.currentStreak) !== 1 ? 's' : ''}
-                            </p>
-                            {userProgress.currentStreak >= 7 && (
-                              <p className="text-xs text-white">
-                                🎉 Week Warrior!
-                              </p>
-                            )}
-                          </div>
-                          <div className="text-center">
-                            <p className="text-xl font-bold text-white">{Math.max(1, userProgress.currentStreak)}</p>
-                            <p className="text-xs text-white">days</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </CardContent>
-    </Card>
-  )
-}
 
 export default function GamifiedDashboard() {
   console.log("🎮 GamifiedDashboard component rendered - BUTTON VERSION v3.0 - WIDER LAYOUT")
@@ -276,9 +105,9 @@ export default function GamifiedDashboard() {
   const [categoryOrders, setCategoryOrders] = useState<Record<string, string[]>>({})
   const completedVideoIdsRef = useRef<Set<string>>(new Set())
 
-  const [showChallengeMode, setShowChallengeMode] = useState(false)
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
   const [isRefreshingPath, setIsRefreshingPath] = useState(false)
+  const [showProgress, setShowProgress] = useState(false)
   
   // Chat state
   type ChatMessage = { id: string; role: "user" | "assistant"; content: string; videoReferences?: Array<{ videoId: string; title?: string; thumbnail?: string; duration?: string }> }
@@ -1117,7 +946,83 @@ export default function GamifiedDashboard() {
           </Card>
           
           {/* View My Progress - Collapsible Section */}
-          <ViewMyProgress userProgress={userProgress} />
+          <Card>
+            <CardHeader 
+              className="cursor-pointer hover:bg-slate-50 transition-colors py-3"
+              onClick={() => setShowProgress(!showProgress)}
+            >
+              <CardTitle className="flex items-center justify-between text-base">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium">View my progress</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-blue-600 text-xs">
+                    Level {userProgress?.currentLevel || 1}
+                  </Badge>
+                  {showProgress ? (
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-gray-500" />
+                  )}
+                </div>
+              </CardTitle>
+            </CardHeader>
+            
+            {showProgress && (
+              <CardContent className="pt-3 pb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Videos/XP Card */}
+                  <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0 shadow">
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <div className="bg-white/20 p-1.5 rounded-full w-fit">
+                            <Play className="h-4 w-4" />
+                          </div>
+                          <div className="text-2xl font-bold">
+                            {userProgress?.totalVideosWatched || 0}
+                          </div>
+                          <div className="text-xs opacity-90">Videos</div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="bg-white/20 p-1.5 rounded-full w-fit">
+                            <Sparkles className="h-4 w-4" />
+                          </div>
+                          <div className="text-2xl font-bold">
+                            {userProgress?.totalXP || 0}
+                          </div>
+                          <div className="text-xs opacity-90">Total XP</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Streak Card */}
+                  <Card className="bg-gradient-to-br from-orange-500 to-red-500 text-white border-0 shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="bg-white/20 p-1.5 rounded-full">
+                          <Flame className="h-4 w-4" />
+                        </div>
+                        <Badge className="bg-white/20 text-white border-0 text-xs">
+                          Streak!
+                        </Badge>
+                      </div>
+                      <div className="space-y-0">
+                        <div className="text-3xl font-bold">
+                          {userProgress?.currentStreak || 0}
+                        </div>
+                        <div className="text-sm opacity-90">
+                          {userProgress?.currentStreak === 1 ? 'day' : 'days'}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            )}
+          </Card>
           
           {/* Learning Path Section - HIDDEN */}
           <Card data-learning-path className="hidden">
@@ -1275,11 +1180,6 @@ export default function GamifiedDashboard() {
 
 
 
-      {/* Challenge Mode */}
-      <ChallengeMode 
-        isVisible={showChallengeMode} 
-        onClose={() => setShowChallengeMode(false)}
-      />
     </div>
   )
 } 

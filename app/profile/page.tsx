@@ -27,7 +27,6 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useGamification } from "../context/GamificationContext"
 import { useAuth } from "../context/AuthContext"
-import UserQuizStats from "../components/UserQuizStats"
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -120,12 +119,9 @@ export default function ProfilePage() {
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="achievements">Achievements</TabsTrigger>
-            <TabsTrigger value="badges">Badges</TabsTrigger>
             <TabsTrigger value="stats">Statistics</TabsTrigger>
-            <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -181,25 +177,6 @@ export default function ProfilePage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
-                <CardContent className="p-4 text-center">
-                  <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
-                    <Award className="h-4 w-4" />
-                    </div>
-                  <p className="text-2xl font-bold text-white">{userProgress.badges.length}</p>
-                  <p className="text-xs text-white">Badges Earned</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-pink-500 to-pink-600 text-white border-0">
-                <CardContent className="p-4 text-center">
-                  <div className="bg-white/20 p-2 rounded-full w-fit mx-auto mb-2">
-                    <Star className="h-4 w-4" />
-                  </div>
-                  <p className="text-2xl font-bold text-white">{userProgress.achievements.length}</p>
-                  <p className="text-xs text-white">Achievements</p>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Recent Activity */}
@@ -246,92 +223,6 @@ export default function ProfilePage() {
             </Card>
           </TabsContent>
 
-          {/* Achievements Tab */}
-          <TabsContent value="achievements" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5" />
-                  Achievements ({userProgress.achievements.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {userProgress.achievements.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Achievements Yet</h3>
-                    <p className="text-muted-foreground">Keep learning to unlock achievements!</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {userProgress.achievements.map((achievement, index) => (
-                      <motion.div
-                        key={achievement.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="p-4 border rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="text-2xl">{achievement.icon}</div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold">{achievement.name}</h3>
-                            <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="outline" className="bg-green-100 text-green-700">
-                                <Zap className="h-3 w-3 mr-1" />
-                                +{achievement.xpReward} XP
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Badges Tab */}
-          <TabsContent value="badges" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5" />
-                  Badges ({userProgress.badges.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {userProgress.badges.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Award className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Badges Yet</h3>
-                    <p className="text-muted-foreground">Complete activities to earn badges!</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {userProgress.badges.map((badge, index) => (
-                      <motion.div
-                        key={badge.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 text-center"
-                      >
-                        <div className="text-3xl mb-2">{badge.icon}</div>
-                        <h3 className="font-semibold mb-1">{badge.name}</h3>
-                        <p className="text-sm text-muted-foreground mb-3">{badge.description}</p>
-                        <Badge variant="outline" className="bg-blue-100 text-blue-700">
-                          {badge.category}
-                        </Badge>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* Statistics Tab */}
           <TabsContent value="stats" className="space-y-6">
@@ -372,35 +263,6 @@ export default function ProfilePage() {
                 </CardContent>
               </Card>
 
-              {/* Quiz Performance */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    Quiz Performance
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {Object.keys(userProgress.quizScores).length === 0 ? (
-                    <div className="text-center py-8">
-                      <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">No quizzes completed yet</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {Object.entries(userProgress.quizScores).map(([quizId, score]) => (
-                        <div key={quizId} className="flex justify-between items-center">
-                          <span className="text-sm">Quiz {quizId}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold">{score}%</span>
-                            {score === 100 && <CheckCircle className="h-4 w-4 text-green-500" />}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
             </div>
 
             {/* Progress Timeline */}
@@ -455,10 +317,6 @@ export default function ProfilePage() {
             </Card>
           </TabsContent>
 
-          {/* Quizzes Tab */}
-          <TabsContent value="quizzes" className="space-y-6">
-            <UserQuizStats />
-          </TabsContent>
         </Tabs>
       </main>
     </div>

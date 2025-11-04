@@ -58,6 +58,7 @@ import {
   RefreshCw,
 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
+import { sendFeedbackEmail, formatFeedbackForEmail } from "../feedback-email-service"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Check } from "lucide-react"
 import { Logo } from "../components/logo"
@@ -1137,10 +1138,22 @@ export default function VideoPlayerPage() {
     if (!videos || !Array.isArray(videos) || videos.length === 0) return videos
 
     // Fetch admin-defined per-category order
+    // Normalize to Record<string, string[]> for sorting
     let categoryOrders: Record<string, string[]> = {}
     try {
-      categoryOrders = await getAllModuleVideoOrders()
-      console.log("🎯 Player loaded admin orders:", categoryOrders)
+      const rawOrders = await getAllModuleVideoOrders() as unknown as Record<string, string[] | Record<string, number>>
+      const normalized: Record<string, string[]> = {}
+      Object.entries(rawOrders || {}).forEach(([category, orderMapOrArray]) => {
+        if (Array.isArray(orderMapOrArray)) {
+          normalized[category] = orderMapOrArray
+        } else if (orderMapOrArray && typeof orderMapOrArray === 'object') {
+          normalized[category] = Object.entries(orderMapOrArray)
+            .sort(([, a], [, b]) => (a as number) - (b as number))
+            .map(([videoId]) => videoId)
+        }
+      })
+      categoryOrders = normalized
+      console.log("🎯 Player loaded admin orders (normalized):", categoryOrders)
     } catch (e) {
       console.warn("Could not load moduleVideoOrders in player", e)
     }
@@ -2394,13 +2407,29 @@ export default function VideoPlayerPage() {
     setSubmittingFeedback(true)
     try {
       // Save feedback to Firestore
-      await addDoc(collection(db, "feedback"), {
+      const feedbackData = {
         userId: user.uid,
         userEmail: user.email || "Unknown User",
         feedback,
         playlistId: playlist.id,
         createdAt: serverTimestamp(),
-      })
+      }
+      const docRef = await addDoc(collection(db, "feedback"), feedbackData)
+
+      // Send email notification (overall completion feedback)
+      try {
+        const emailData = formatFeedbackForEmail({
+          ...feedbackData,
+          id: docRef.id,
+          type: 'video_completion',
+          videoTitle: currentVideo?.title,
+          companyName: user?.email?.split('@')[1] || 'Unknown Company',
+          createdAt: { seconds: Math.floor(Date.now() / 1000) },
+        })
+        await sendFeedbackEmail(emailData)
+      } catch (e) {
+        console.error('Feedback email failed (non-blocking):', e)
+      }
 
       setSubmittingFeedback(false)
       setFeedback("")
@@ -2428,7 +2457,7 @@ export default function VideoPlayerPage() {
     setSubmittingVideoFeedback(true)
     try {
       // Save video feedback to Firestore
-      await addDoc(collection(db, "videoFeedbacks"), {
+      const vf = {
         userId: user.uid,
         userEmail: user.email || "Unknown User",
         videoId: currentVideo.id,
@@ -2436,7 +2465,21 @@ export default function VideoPlayerPage() {
         rating: videoRating,
         feedback: videoFeedback,
         createdAt: serverTimestamp(),
-      })
+      }
+      const vDoc = await addDoc(collection(db, "videoFeedbacks"), vf)
+
+      // Email for per-video rating/feedback
+      try {
+        const emailData = formatFeedbackForEmail({
+          ...vf,
+          id: vDoc.id,
+          type: 'video_specific',
+          createdAt: { seconds: Math.floor(Date.now() / 1000) },
+        })
+        await sendFeedbackEmail(emailData)
+      } catch (e) {
+        console.error('Video review email failed (non-blocking):', e)
+      }
 
       setSubmittingVideoFeedback(false)
       setVideoFeedback("")

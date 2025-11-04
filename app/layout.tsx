@@ -7,6 +7,7 @@ import { ThemeProvider } from "./theme-provider"
 import { AuthProvider } from "./context/AuthContext"
 import { GamificationProvider } from "./context/GamificationContext"
 import SuspensionWrapper from "./components/SuspensionWrapper"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -42,6 +43,7 @@ export default function RootLayout({
               </SuspensionWrapper>
             </GamificationProvider>
           </AuthProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

@@ -13,51 +13,12 @@ export interface UserProgress {
   currentStreak: number
   longestStreak: number
   lastActivityDate: string
-  badges: Badge[]
   completedModules: string[]
   unlockedModules: string[]
-  quizScores: Record<string, number>
-  quizzesCompleted: number
   totalVideosWatched: number
   totalWatchTime: number // in minutes
-  achievements: Achievement[]
   createdAt: any
   updatedAt: any
-}
-
-export interface Badge {
-  id: string
-  name: string
-  description: string
-  icon: string
-  earnedAt: any
-  category: 'video' | 'streak' | 'quiz' | 'module' | 'special'
-}
-
-export interface Achievement {
-  id: string
-  name: string
-  description: string
-  icon: string
-  earnedAt: any
-  xpReward: number
-  category: 'milestone' | 'streak' | 'completion' | 'perfect' | 'special'
-}
-
-export interface Quiz {
-  id: string
-  videoId: string
-  questions: QuizQuestion[]
-  xpReward: number
-  requiredScore: number
-}
-
-export interface QuizQuestion {
-  id: string
-  question: string
-  options: string[]
-  correctAnswer: number
-  explanation?: string
 }
 
 export interface LearningPath {
@@ -84,8 +45,6 @@ export interface LearningModule {
 // XP and Level Configuration
 export const XP_CONFIG = {
   VIDEO_COMPLETION: 50,
-  QUIZ_PERFECT: 100,
-  QUIZ_PASS: 50,
   DAILY_STREAK: 25,
   MODULE_COMPLETION: 500, // Increased from 200 to 500 as requested
   FEEDBACK_SUBMISSION: 10,
@@ -97,169 +56,79 @@ export const XP_CONFIG = {
   ]
 }
 
-// Badge Definitions
-export const BADGES = {
-  FIRST_VIDEO: {
-    id: 'first_video',
-    name: 'First Steps',
-    description: 'Watched your first video',
-    icon: '🎬',
-    category: 'video' as const
-  },
-  STREAK_3: {
-    id: 'streak_3',
-    name: 'Getting Started',
-    description: '3-day learning streak',
-    icon: '🔥',
-    category: 'streak' as const
-  },
-  STREAK_7: {
-    id: 'streak_7',
-    name: 'Week Warrior',
-    description: '7-day learning streak',
-    icon: '🔥🔥',
-    category: 'streak' as const
-  },
-  STREAK_30: {
-    id: 'streak_30',
-    name: 'Monthly Master',
-    description: '30-day learning streak',
-    icon: '🔥🔥🔥',
-    category: 'streak' as const
-  },
-  QUIZ_MASTER: {
-    id: 'quiz_master',
-    name: 'Quiz Master',
-    description: 'Perfect score on 5 quizzes',
-    icon: '🧠',
-    category: 'quiz' as const
-  },
-  MODULE_COMPLETER: {
-    id: 'module_completer',
-    name: 'Module Master',
-    description: 'Completed your first module',
-    icon: '📚',
-    category: 'module' as const
-  },
-  FEEDBACK_GIVER: {
-    id: 'feedback_giver',
-    name: 'Helpful Hero',
-    description: 'Submitted your first feedback',
-    icon: '💬',
-    category: 'special' as const
-  }
-}
-
-// Achievement Definitions
-export const ACHIEVEMENTS = {
-  FIRST_LEVEL: {
-    id: 'first_level',
-    name: 'Level Up!',
-    description: 'Reached your first level',
-    icon: '⭐',
-    xpReward: 50,
-    category: 'milestone' as const
-  },
-  VIDEO_WATCHER: {
-    id: 'video_watcher',
-    name: 'Video Enthusiast',
-    description: 'Watched 10 videos',
-    icon: '📺',
-    xpReward: 100,
-    category: 'milestone' as const
-  },
-  PERFECT_QUIZ: {
-    id: 'perfect_quiz',
-    name: 'Perfect Score',
-    description: 'Got 100% on a quiz',
-    icon: '🎯',
-    xpReward: 75,
-    category: 'perfect' as const
-  },
-  STREAK_CHAMPION: {
-    id: 'streak_champion',
-    name: 'Streak Champion',
-    description: 'Maintained a 7-day streak',
-    icon: '🏆',
-    xpReward: 200,
-    category: 'streak' as const
-  }
-}
 
 interface GamificationContextType {
   userProgress: UserProgress | null
   loading: boolean
   addXP: (amount: number, reason: string) => Promise<{ levelUp: boolean; newLevel: number } | undefined>
   completeVideo: (videoId: string, watchTime: number) => Promise<void>
-  completeQuiz: (quizId: string, score: number, totalQuestions: number) => Promise<void>
   submitFeedback: () => Promise<void>
-  checkAndAwardBadges: () => Promise<void>
-  checkAndAwardAchievements: () => Promise<void>
   checkModuleCompletion: (videoId: string, videoCategory: string) => Promise<{ completed: boolean; moduleName?: string }>
   getCurrentLevel: () => number
   getXPToNextLevel: () => number
   getLevelProgress: () => number
-  refreshProgress: () => Promise<void>
+  getTotalXP: () => number
+  getTotalVideosWatched: () => number
+  getCurrentStreak: () => number
+  getLongestStreak: () => number
+  getCompletedModules: () => string[]
+  getUnlockedModules: () => string[]
 }
 
 const GamificationContext = createContext<GamificationContextType | undefined>(undefined)
 
-export function GamificationProvider({ children }: { children: React.ReactNode }) {
-  const { user, userData } = useAuth()
+export const useGamification = () => {
+  const context = useContext(GamificationContext)
+  if (context === undefined) {
+    throw new Error('useGamification must be used within a GamificationProvider')
+  }
+  return context
+}
+
+export const GamificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null)
   const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
 
   // Initialize user progress
   useEffect(() => {
-    if (user && userData) {
+    if (user) {
       initializeUserProgress()
     } else {
+      setUserProgress(null)
       setLoading(false)
     }
-  }, [user, userData])
-
-  // Ensure streak updates on daily login/app open
-  useEffect(() => {
-    if (!user || !userProgress) return
-    const today = new Date().toISOString().split('T')[0]
-    if (userProgress.lastActivityDate !== today) {
-      // Fire and forget; internal function updates state + Firestore
-      ;(async () => { try { await updateStreak() } catch (e) { /* noop */ } })()
-    }
-  }, [user, userProgress?.lastActivityDate])
+  }, [user])
 
   const initializeUserProgress = async () => {
     if (!user) return
 
     try {
       setLoading(true)
-      const progressDoc = doc(db, "userProgress", user.uid)
-      const progressSnap = await getDoc(progressDoc)
+      const progressRef = doc(db, "userProgress", user.uid)
+      const progressDoc = await getDoc(progressRef)
 
-      if (progressSnap.exists()) {
-        setUserProgress(progressSnap.data() as UserProgress)
+      if (progressDoc.exists()) {
+        const progressData = progressDoc.data() as UserProgress
+        setUserProgress(progressData)
       } else {
         // Create new user progress
         const newProgress: UserProgress = {
           userId: user.uid,
           currentLevel: 1,
           totalXP: 0,
-          currentStreak: 1,
-          longestStreak: 1,
+          currentStreak: 0,
+          longestStreak: 0,
           lastActivityDate: new Date().toISOString().split('T')[0],
-          badges: [],
           completedModules: [],
-          unlockedModules: ['Sales'], // Start with Sales module unlocked
-          quizScores: {},
-          quizzesCompleted: 0,
+          unlockedModules: [],
           totalVideosWatched: 0,
           totalWatchTime: 0,
-          achievements: [],
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         }
 
-        await setDoc(progressDoc, newProgress)
+        await setDoc(progressRef, newProgress)
         setUserProgress(newProgress)
       }
     } catch (error) {
@@ -269,12 +138,12 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
     }
   }
 
-  const addXP = async (amount: number, reason: string) => {
-    if (!user || !userProgress) return
+  const addXP = async (amount: number, reason: string): Promise<{ levelUp: boolean; newLevel: number } | undefined> => {
+    if (!userProgress) return
 
     try {
       const newTotalXP = userProgress.totalXP + amount
-      const newLevel = calculateLevel(newTotalXP)
+      const newLevel = getLevelFromXP(newTotalXP)
       const levelUp = newLevel > userProgress.currentLevel
 
       const updatedProgress = {
@@ -284,18 +153,15 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
         updatedAt: serverTimestamp()
       }
 
-      // Update Firestore
-      const progressDoc = doc(db, "userProgress", user.uid)
-      await updateDoc(progressDoc, {
+      // Update in database
+      const progressRef = doc(db, "userProgress", user.uid)
+      await updateDoc(progressRef, {
         totalXP: newTotalXP,
         currentLevel: newLevel,
         updatedAt: serverTimestamp()
       })
 
       setUserProgress(updatedProgress)
-
-      // Check for achievements after XP gain
-      await checkAndAwardAchievements()
 
       // Log XP gain
       await addDoc(collection(db, "xpLogs"), {
@@ -313,46 +179,25 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
     }
   }
 
-  const calculateLevel = (totalXP: number): number => {
-    for (let i = XP_CONFIG.LEVEL_XP_REQUIREMENTS.length - 1; i >= 0; i--) {
-      if (totalXP >= XP_CONFIG.LEVEL_XP_REQUIREMENTS[i]) {
-        return i + 1
-      }
-    }
-    return 1
-  }
-
   const completeVideo = async (videoId: string, watchTime: number) => {
-    if (!user || !userProgress) return
+    if (!userProgress) return
 
     try {
-      // Award XP for video completion only once per video per user
-      const existingCompletionQuery = query(
-        collection(db, "videoWatchEvents"),
-        where("userId", "==", user.uid),
-        where("videoId", "==", videoId),
-        where("completed", "==", true)
-      )
-      const existingCompletionSnapshot = await getDocs(existingCompletionQuery)
-      const hasCompletedBefore = !existingCompletionSnapshot.empty
+      const isFirstVideo = userProgress.totalVideosWatched === 0
+      const xpReward = isFirstVideo ? XP_CONFIG.FIRST_VIDEO : XP_CONFIG.VIDEO_COMPLETION
 
-      if (!hasCompletedBefore) {
-        await addXP(XP_CONFIG.VIDEO_COMPLETION, `Video completion: ${videoId}`)
-      }
+      await addXP(xpReward, `Video completion: ${videoId}`)
 
-      // Update streak
-      await updateStreak()
-
-      // Update video stats
+      // Update video count and watch time
       const updatedProgress = {
         ...userProgress,
         totalVideosWatched: userProgress.totalVideosWatched + 1,
-        totalWatchTime: userProgress.totalWatchTime + Math.round(watchTime / 60), // Convert to minutes
+        totalWatchTime: userProgress.totalWatchTime + watchTime,
         updatedAt: serverTimestamp()
       }
 
-      const progressDoc = doc(db, "userProgress", user.uid)
-      await updateDoc(progressDoc, {
+      const progressRef = doc(db, "userProgress", user.uid)
+      await updateDoc(progressRef, {
         totalVideosWatched: updatedProgress.totalVideosWatched,
         totalWatchTime: updatedProgress.totalWatchTime,
         updatedAt: serverTimestamp()
@@ -360,336 +205,63 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
 
       setUserProgress(updatedProgress)
 
-      // Check for badges
-      await checkAndAwardBadges()
     } catch (error) {
       console.error("Error completing video:", error)
     }
   }
 
-  const updateStreak = async () => {
-    if (!user || !userProgress) return
-
-    const today = new Date().toISOString().split('T')[0]
-    const lastActivity = userProgress.lastActivityDate
-    const yesterday = new Date()
-    yesterday.setDate(yesterday.getDate() - 1)
-    const yesterdayStr = yesterday.toISOString().split('T')[0]
-
-    let newStreak = userProgress.currentStreak
-
-    if (lastActivity === today) {
-      // Already logged activity today
-      return
-    } else if (lastActivity === yesterdayStr) {
-      // Consecutive day
-      newStreak += 1
-    } else {
-      // Streak broken
-      newStreak = 1
-    }
-
-    const updatedProgress = {
-      ...userProgress,
-      currentStreak: newStreak,
-      longestStreak: Math.max(newStreak, userProgress.longestStreak),
-      lastActivityDate: today,
-      updatedAt: serverTimestamp()
-    }
-
-    const progressDoc = doc(db, "userProgress", user.uid)
-    await updateDoc(progressDoc, {
-      currentStreak: newStreak,
-      longestStreak: updatedProgress.longestStreak,
-      lastActivityDate: today,
-      updatedAt: serverTimestamp()
-    })
-
-    setUserProgress(updatedProgress)
-
-    // Check for streak-based badges
-    await checkAndAwardBadges()
-  }
-
-  const completeQuiz = async (quizId: string, score: number, totalQuestions: number, isRewatched: boolean = false) => {
-    if (!user || !userProgress) return
-
-    try {
-      const percentage = (score / totalQuestions) * 100
-      
-      // Calculate XP reward based on rewatch status
-      let xpReward = 0
-      if (isRewatched) {
-        // Reduced XP for rewatched videos
-        xpReward = percentage === 100 ? Math.floor(XP_CONFIG.QUIZ_PERFECT * 0.5) : Math.floor(XP_CONFIG.QUIZ_PASS * 0.5)
-      } else {
-        // Full XP for first-time attempts
-        xpReward = percentage === 100 ? XP_CONFIG.QUIZ_PERFECT : XP_CONFIG.QUIZ_PASS
-      }
-
-      // Add XP
-      await addXP(xpReward, `Quiz completion: ${quizId}${isRewatched ? ' (rewatched)' : ''}`)
-
-      // Update quiz scores and count
-      const updatedQuizScores = {
-        ...userProgress.quizScores,
-        [quizId]: percentage
-      }
-
-      const updatedProgress = {
-        ...userProgress,
-        quizScores: updatedQuizScores,
-        quizzesCompleted: userProgress.quizzesCompleted + 1,
-        updatedAt: serverTimestamp()
-      }
-
-      const progressDoc = doc(db, "userProgress", user.uid)
-      await updateDoc(progressDoc, {
-        quizScores: updatedQuizScores,
-        quizzesCompleted: updatedProgress.quizzesCompleted,
-        updatedAt: serverTimestamp()
-      })
-
-      setUserProgress(updatedProgress)
-
-      // Check for quiz-related badges
-      await checkAndAwardBadges()
-    } catch (error) {
-      console.error("Error completing quiz:", error)
-    }
-  }
-
   const submitFeedback = async () => {
-    if (!user || !userProgress) return
+    if (!userProgress) return
 
     try {
       await addXP(XP_CONFIG.FEEDBACK_SUBMISSION, "Feedback submission")
-      await checkAndAwardBadges()
     } catch (error) {
       console.error("Error submitting feedback:", error)
     }
   }
 
-  const checkAndAwardBadges = async () => {
-    if (!user || !userProgress) return
 
-    const newBadges: Badge[] = []
 
-    // Check for first video badge
-    if (userProgress.totalVideosWatched === 1 && !userProgress.badges.find(b => b.id === BADGES.FIRST_VIDEO.id)) {
-      newBadges.push({
-        ...BADGES.FIRST_VIDEO,
-        earnedAt: serverTimestamp()
-      })
-    }
-
-    // Check for streak badges
-    if (userProgress.currentStreak >= 3 && !userProgress.badges.find(b => b.id === BADGES.STREAK_3.id)) {
-      newBadges.push({
-        ...BADGES.STREAK_3,
-        earnedAt: serverTimestamp()
-      })
-    }
-
-    if (userProgress.currentStreak >= 7 && !userProgress.badges.find(b => b.id === BADGES.STREAK_7.id)) {
-      newBadges.push({
-        ...BADGES.STREAK_7,
-        earnedAt: serverTimestamp()
-      })
-    }
-
-    if (userProgress.currentStreak >= 30 && !userProgress.badges.find(b => b.id === BADGES.STREAK_30.id)) {
-      newBadges.push({
-        ...BADGES.STREAK_30,
-        earnedAt: serverTimestamp()
-      })
-    }
-
-    // Check for quiz master badge
-    const perfectQuizzes = Object.values(userProgress.quizScores).filter(score => score === 100).length
-    if (perfectQuizzes >= 5 && !userProgress.badges.find(b => b.id === BADGES.QUIZ_MASTER.id)) {
-      newBadges.push({
-        ...BADGES.QUIZ_MASTER,
-        earnedAt: serverTimestamp()
-      })
-    }
-
-    // Check for feedback badge
-    if (!userProgress.badges.find(b => b.id === BADGES.FEEDBACK_GIVER.id)) {
-      newBadges.push({
-        ...BADGES.FEEDBACK_GIVER,
-        earnedAt: serverTimestamp()
-      })
-    }
-
-    if (newBadges.length > 0) {
-      const updatedBadges = [...userProgress.badges, ...newBadges]
-      const updatedProgress = {
-        ...userProgress,
-        badges: updatedBadges,
-        updatedAt: serverTimestamp()
-      }
-
-      const progressDoc = doc(db, "userProgress", user.uid)
-      await updateDoc(progressDoc, {
-        badges: updatedBadges,
-        updatedAt: serverTimestamp()
-      })
-
-      setUserProgress(updatedProgress)
-
-      // Log badge awards
-      for (const badge of newBadges) {
-        await addDoc(collection(db, "badgeLogs"), {
-          userId: user.uid,
-          badgeId: badge.id,
-          badgeName: badge.name,
-          timestamp: serverTimestamp()
-        })
-      }
-    }
-  }
-
-  const checkAndAwardAchievements = async () => {
-    if (!user || !userProgress) return
-
-    const newAchievements: Achievement[] = []
-
-    // Check for first level achievement
-    if (userProgress.currentLevel >= 2 && !userProgress.achievements.find(a => a.id === ACHIEVEMENTS.FIRST_LEVEL.id)) {
-      newAchievements.push({
-        ...ACHIEVEMENTS.FIRST_LEVEL,
-        earnedAt: serverTimestamp()
-      })
-    }
-
-    // Check for video watcher achievement
-    if (userProgress.totalVideosWatched >= 10 && !userProgress.achievements.find(a => a.id === ACHIEVEMENTS.VIDEO_WATCHER.id)) {
-      newAchievements.push({
-        ...ACHIEVEMENTS.VIDEO_WATCHER,
-        earnedAt: serverTimestamp()
-      })
-    }
-
-    // Check for perfect quiz achievement
-    const hasPerfectQuiz = Object.values(userProgress.quizScores).some(score => score === 100)
-    if (hasPerfectQuiz && !userProgress.achievements.find(a => a.id === ACHIEVEMENTS.PERFECT_QUIZ.id)) {
-      newAchievements.push({
-        ...ACHIEVEMENTS.PERFECT_QUIZ,
-        earnedAt: serverTimestamp()
-      })
-    }
-
-    // Check for streak champion achievement
-    if (userProgress.currentStreak >= 7 && !userProgress.achievements.find(a => a.id === ACHIEVEMENTS.STREAK_CHAMPION.id)) {
-      newAchievements.push({
-        ...ACHIEVEMENTS.STREAK_CHAMPION,
-        earnedAt: serverTimestamp()
-      })
-    }
-
-    if (newAchievements.length > 0) {
-      const updatedAchievements = [...userProgress.achievements, ...newAchievements]
-      const updatedProgress = {
-        ...userProgress,
-        achievements: updatedAchievements,
-        updatedAt: serverTimestamp()
-      }
-
-      const progressDoc = doc(db, "userProgress", user.uid)
-      await updateDoc(progressDoc, {
-        achievements: updatedAchievements,
-        updatedAt: serverTimestamp()
-      })
-
-      setUserProgress(updatedProgress)
-
-      // Award XP for achievements
-      for (const achievement of newAchievements) {
-        await addXP(achievement.xpReward, `Achievement: ${achievement.name}`)
-      }
-
-      // Log achievement awards
-      for (const achievement of newAchievements) {
-        await addDoc(collection(db, "achievementLogs"), {
-          userId: user.uid,
-          achievementId: achievement.id,
-          achievementName: achievement.name,
-          xpReward: achievement.xpReward,
-          timestamp: serverTimestamp()
-        })
-      }
-    }
-  }
-
-  const getCurrentLevel = (): number => {
-    return userProgress?.currentLevel || 1
-  }
-
-  const getXPToNextLevel = (): number => {
-    if (!userProgress) return XP_CONFIG.LEVEL_XP_REQUIREMENTS[1]
-    const currentLevel = userProgress.currentLevel
-    const nextLevelXP = XP_CONFIG.LEVEL_XP_REQUIREMENTS[currentLevel] || XP_CONFIG.LEVEL_XP_REQUIREMENTS[currentLevel - 1]
-    return nextLevelXP - userProgress.totalXP
-  }
-
-  const getLevelProgress = (): number => {
-    if (!userProgress) return 0
-    const currentLevel = userProgress.currentLevel
-    const currentLevelXP = XP_CONFIG.LEVEL_XP_REQUIREMENTS[currentLevel - 1] || 0
-    const nextLevelXP = XP_CONFIG.LEVEL_XP_REQUIREMENTS[currentLevel] || currentLevelXP + 100
-    const xpInCurrentLevel = userProgress.totalXP - currentLevelXP
-    const xpNeededForLevel = nextLevelXP - currentLevelXP
-    return Math.min(100, (xpInCurrentLevel / xpNeededForLevel) * 100)
-  }
-
-  const checkModuleCompletion = async (videoId: string, videoCategory: string) => {
-    if (!user || !userProgress) return { completed: false }
+  const checkModuleCompletion = async (videoId: string, videoCategory: string): Promise<{ completed: boolean; moduleName?: string }> => {
+    if (!userProgress) return { completed: false }
 
     try {
-      // Get all videos in the same category that the user has watched
-      const watchHistoryQuery = query(
-        collection(db, "videoWatchEvents"),
-        where("userId", "==", user.uid),
-        where("completed", "==", true)
-      )
+      // Check if all videos in this category have been watched
+      const videosRef = collection(db, "videos")
+      const categoryQuery = query(videosRef, where("category", "==", videoCategory))
+      const categoryVideos = await getDocs(categoryQuery)
       
-      const watchHistorySnapshot = await getDocs(watchHistoryQuery)
-      const watchedVideoIds = new Set(watchHistorySnapshot.docs.map(doc => doc.data().videoId))
+      if (categoryVideos.empty) return { completed: false }
+
+      // Get all video watch events for this user
+      const watchEventsRef = collection(db, "videoWatchEvents")
+      const userWatchQuery = query(watchEventsRef, where("userId", "==", user.uid), where("completed", "==", true))
+      const userWatchEvents = await getDocs(userWatchQuery)
       
-      // Get all videos from the same category
-      const videosQuery = query(
-        collection(db, "videos"),
-        where("category", "==", videoCategory)
-      )
+      const watchedVideoIds = new Set(userWatchEvents.docs.map(doc => doc.data().videoId))
+      const categoryVideoIds = categoryVideos.docs.map(doc => doc.id)
       
-      const videosSnapshot = await getDocs(videosQuery)
-      const categoryVideoIds = videosSnapshot.docs.map(doc => doc.id)
-      
-      // Check if all videos in the category have been watched
       const allVideosWatched = categoryVideoIds.every(id => watchedVideoIds.has(id))
       
       if (allVideosWatched && !userProgress.completedModules.includes(videoCategory)) {
-        // Add module to completed modules
-        const updatedCompletedModules = [...userProgress.completedModules, videoCategory]
+        // Award module completion XP
+        await addXP(XP_CONFIG.MODULE_COMPLETION, `Module completion: ${videoCategory}`)
         
+        // Update completed modules
+        const updatedModules = [...userProgress.completedModules, videoCategory]
         const updatedProgress = {
           ...userProgress,
-          completedModules: updatedCompletedModules,
+          completedModules: updatedModules,
           updatedAt: serverTimestamp()
         }
-        
-        // Update Firestore
-        const progressDoc = doc(db, "userProgress", user.uid)
-        await updateDoc(progressDoc, {
-          completedModules: updatedCompletedModules,
+
+        const progressRef = doc(db, "userProgress", user.uid)
+        await updateDoc(progressRef, {
+          completedModules: updatedModules,
           updatedAt: serverTimestamp()
         })
-        
+
         setUserProgress(updatedProgress)
-        
-        // Award XP for module completion
-        await addXP(XP_CONFIG.MODULE_COMPLETION, `Module completion: ${videoCategory}`)
         
         return { completed: true, moduleName: videoCategory }
       }
@@ -701,26 +273,78 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
     }
   }
 
-  const refreshProgress = async () => {
-    if (user) {
-      await initializeUserProgress()
+  const getLevelFromXP = (xp: number): number => {
+    const levels = XP_CONFIG.LEVEL_XP_REQUIREMENTS
+    for (let i = levels.length - 1; i >= 0; i--) {
+      if (xp >= levels[i]) {
+        return i + 1
+      }
     }
+    return 1
   }
 
-  const value = {
+  const getCurrentLevel = (): number => {
+    return userProgress?.currentLevel || 1
+  }
+
+  const getXPToNextLevel = (): number => {
+    if (!userProgress) return 0
+    const currentLevel = userProgress.currentLevel
+    const nextLevelXP = XP_CONFIG.LEVEL_XP_REQUIREMENTS[currentLevel] || 0
+    return nextLevelXP - userProgress.totalXP
+  }
+
+  const getLevelProgress = (): number => {
+    if (!userProgress) return 0
+    const currentLevel = userProgress.currentLevel
+    const currentLevelXP = XP_CONFIG.LEVEL_XP_REQUIREMENTS[currentLevel - 1] || 0
+    const nextLevelXP = XP_CONFIG.LEVEL_XP_REQUIREMENTS[currentLevel] || 0
+    const progressXP = userProgress.totalXP - currentLevelXP
+    const totalXPNeeded = nextLevelXP - currentLevelXP
+    return totalXPNeeded > 0 ? (progressXP / totalXPNeeded) * 100 : 100
+  }
+
+  const getTotalXP = (): number => {
+    return userProgress?.totalXP || 0
+  }
+
+  const getTotalVideosWatched = (): number => {
+    return userProgress?.totalVideosWatched || 0
+  }
+
+  const getCurrentStreak = (): number => {
+    return userProgress?.currentStreak || 0
+  }
+
+  const getLongestStreak = (): number => {
+    return userProgress?.longestStreak || 0
+  }
+
+
+  const getCompletedModules = (): string[] => {
+    return userProgress?.completedModules || []
+  }
+
+  const getUnlockedModules = (): string[] => {
+    return userProgress?.unlockedModules || []
+  }
+
+  const value: GamificationContextType = {
     userProgress,
     loading,
     addXP,
     completeVideo,
-    completeQuiz,
     submitFeedback,
-    checkAndAwardBadges,
-    checkAndAwardAchievements,
     checkModuleCompletion,
     getCurrentLevel,
     getXPToNextLevel,
     getLevelProgress,
-    refreshProgress
+    getTotalXP,
+    getTotalVideosWatched,
+    getCurrentStreak,
+    getLongestStreak,
+    getCompletedModules,
+    getUnlockedModules
   }
 
   return (
@@ -729,11 +353,3 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
     </GamificationContext.Provider>
   )
 }
-
-export function useGamification() {
-  const context = useContext(GamificationContext)
-  if (context === undefined) {
-    throw new Error("useGamification must be used within a GamificationProvider")
-  }
-  return context
-} 

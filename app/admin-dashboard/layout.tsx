@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/firebase"
-import { LayoutDashboard, Video, Upload, MessageSquare, LogOut, Menu, X, LineChart, Users, AlertTriangle, UserCog, Trophy, BookOpen, Building, Share2, Cloud } from "lucide-react"
+import { LayoutDashboard, Video, Upload, MessageSquare, LogOut, Menu, X, LineChart, Users, AlertTriangle, UserCog, BookOpen, Building, Share2, Cloud } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/app/theme-toggle"
 // Logo import removed
@@ -19,7 +19,6 @@ const navigation = [
   { name: "Cloudinary Sync", href: "/admin-dashboard/sync-cloudinary", icon: Cloud },
   { name: "Feedback", href: "/admin-dashboard/feedback", icon: MessageSquare },
   { name: "Individual", href: "/admin-dashboard/individual", icon: LineChart },
-  { name: "Challenges", href: "/admin-dashboard/challenges", icon: Trophy },
   { name: "Companies", href: "/admin-dashboard/companies", icon: Building },
   { name: "Company Admins", href: "/admin-dashboard/company-admins", icon: Users },
   { name: "User Management", href: "/admin-dashboard/user-management", icon: UserCog },

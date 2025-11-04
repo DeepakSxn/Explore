@@ -227,29 +227,8 @@ export default function AnalyticsPage() {
                   <div className="text-2xl font-bold text-orange-600">{userProgress.achievements.length}</div>
                   <div className="text-sm text-muted-foreground">Achievements</div>
                               </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">{Object.keys(userProgress.quizScores).length}</div>
-                  <div className="text-sm text-muted-foreground">Quizzes Taken</div>
-                                </div>
                               </div>
 
-              {/* Quiz Performance */}
-              {Object.keys(userProgress.quizScores).length > 0 && (
-                <div className="mt-6">
-                  <h4 className="font-medium mb-3">Quiz Performance</h4>
-                  <div className="space-y-2">
-                    {Object.entries(userProgress.quizScores).map(([quizId, score]) => (
-                      <div key={quizId} className="flex justify-between items-center">
-                        <span className="text-sm">Quiz {quizId}</span>
-                        <div className="flex items-center gap-2">
-                          <Progress value={score} className="w-20 h-2" />
-                          <span className="text-sm font-medium">{score}%</span>
-                            </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
                     </CardContent>
                   </Card>
         </div>
@@ -340,12 +319,6 @@ export default function AnalyticsPage() {
                             </div>
                 )}
                 
-                {Object.keys(userProgress.quizScores).length === 0 && (
-                  <div className="p-3 bg-green-50 rounded-lg">
-                    <p className="text-sm font-medium text-green-800">Take Quizzes</p>
-                    <p className="text-xs text-green-600">Complete quizzes to test your knowledge and earn XP.</p>
-                              </div>
-                )}
                 
                 {userProgress.currentLevel < 3 && (
                   <div className="p-3 bg-purple-50 rounded-lg">

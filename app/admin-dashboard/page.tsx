@@ -46,7 +46,6 @@ import { Bar, Doughnut, Line } from "react-chartjs-2"
 import { motion } from "framer-motion"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { getChallenges, type Challenge } from "../firestore-utils"
 
 // Register ChartJS components
 ChartJS.register(
@@ -96,7 +95,6 @@ export default function AdminDashboard() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [challenges, setChallenges] = useState<Challenge[]>([])
   const [userStats, setUserStats] = useState<UserStats>({
     totalUsers: 0,
     usersWithPlaylists: 0,
@@ -172,9 +170,6 @@ export default function AdminDashboard() {
         return total + (data.watchDuration || 0)
       }, 0)
 
-      // Fetch challenges
-      const challengesData = await getChallenges()
-      setChallenges(challengesData)
 
       setUserStats({
         totalUsers,
@@ -774,55 +769,6 @@ export default function AdminDashboard() {
               </Tabs>
             </motion.div>
 
-            {/* Challenges Section */}
-            <motion.div variants={itemVariants}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5" />
-                    Active Challenges
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {challenges.length > 0 ? (
-                      challenges.map((challenge) => (
-                        <div
-                          key={challenge.id}
-                          className="flex items-center justify-between p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg hover:bg-white/80 dark:hover:bg-gray-800/80 transition-colors"
-                        >
-                          <div className="flex-grow">
-                            <h3 className="font-medium">{challenge.title}</h3>
-                            <p className="text-sm text-muted-foreground mt-1">{challenge.description}</p>
-                            <div className="flex flex-wrap text-xs text-muted-foreground mt-2 gap-x-4 gap-y-1">
-                              <span>Type: {challenge.type}</span>
-                              <span>Category: {challenge.category}</span>
-                              <span>Target: {challenge.target}</span>
-                              <span>Participants: {challenge.participants.length}</span>
-                              <span>Reward: {challenge.reward.xp} XP</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={challenge.isActive ? "default" : "secondary"}>
-                              {challenge.isActive ? "Active" : "Inactive"}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-center py-4 text-muted-foreground">No challenges available</p>
-                    )}
-                  </div>
-                  <div className="flex justify-end mt-4">
-                    <Button asChild variant="outline" className="flex items-center gap-2">
-                      <Link href="/admin-dashboard/challenges">
-                        Manage Challenges <Trophy className="h-4 w-4 ml-1" />
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
           </motion.div>
         )}
       </main>
