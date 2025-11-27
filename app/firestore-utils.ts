@@ -528,7 +528,7 @@ export const getAllModuleVideoOrders = async (): Promise<Record<string, Record<s
     return mapping
   } catch (error) {
     console.error("Error getting module video order:", error)
-    return null
+    return {}
   }
 }
 

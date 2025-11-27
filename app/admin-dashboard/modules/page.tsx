@@ -37,6 +37,7 @@ interface FirestoreVideoDoc {
 
 interface ModuleOrder {
   moduleName: string
+  category: string
   order: number
 }
 
@@ -153,7 +154,8 @@ export default function ModulesPage() {
     // Initialize ordered modules with current order or default order
     const initialOrder = modules.map((module, index) => ({
       moduleName: module.name,
-      order: moduleOrders[module.name] || index
+      category: module.category,
+      order: moduleOrders[module.category] || index
     }))
     
     // Sort by current order
@@ -181,33 +183,34 @@ export default function ModulesPage() {
   const saveOrder = async () => {
     try {
       console.log("Saving module order:", orderedModules)
-      await saveModuleOrder(orderedModules)
+      await Promise.all(
+        orderedModules.map((item) => saveModuleOrder(item.category, item.order))
+      )
       
-      // Update local state
       const newOrders: Record<string, number> = {}
-      orderedModules.forEach(item => {
-        newOrders[item.moduleName] = item.order
+      orderedModules.forEach((item) => {
+        newOrders[item.category] = item.order
       })
       setModuleOrders(newOrders)
       
-      toast({ 
-        title: "Order saved", 
-        description: "Module order updated successfully" 
+      toast({
+        title: "Order saved",
+        description: "Module order updated successfully"
       })
       setIsOrderDialogOpen(false)
     } catch (e) {
       console.error("Error saving module order:", e)
-      toast({ 
-        title: "Failed to save order", 
-        variant: "destructive" 
+      toast({
+        title: "Failed to save order",
+        variant: "destructive"
       })
     }
   }
 
   // Sort modules by their order
   const sortedModules = [...modules].sort((a, b) => {
-    const orderA = moduleOrders[a.name] ?? Number.MAX_SAFE_INTEGER
-    const orderB = moduleOrders[b.name] ?? Number.MAX_SAFE_INTEGER
+    const orderA = moduleOrders[a.category] ?? Number.MAX_SAFE_INTEGER
+    const orderB = moduleOrders[b.category] ?? Number.MAX_SAFE_INTEGER
     return orderA - orderB
   })
 
@@ -254,7 +257,7 @@ export default function ModulesPage() {
               sortedModules.map((module, index) => (
                 <TableRow key={module.name}>
                   <TableCell className="font-medium">
-                    {moduleOrders[module.name] !== undefined ? moduleOrders[module.name] + 1 : index + 1}
+                    {moduleOrders[module.category] !== undefined ? moduleOrders[module.category] + 1 : index + 1}
                   </TableCell>
                   <TableCell className="font-medium">{displayNames[module.category] || getDisplayModuleName(module.name)}</TableCell>
                   <TableCell>{module.category}</TableCell>

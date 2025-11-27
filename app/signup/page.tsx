@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, User, Mail, Lock, Eye, EyeOff, Sparkles, Shield, ArrowRight, CheckCircle, Building, Phone, UserPlus } from "lucide-react"
 import { db, auth } from "../../firebase"
@@ -24,7 +23,6 @@ export default function SignUp() {
   const [companyName, setCompanyName] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const [termsAccepted, setTermsAccepted] = useState(false)
   const [phoneCountryCode, setPhoneCountryCode] = useState("+1")
   const [phoneNumber, setPhoneNumber] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -128,11 +126,6 @@ export default function SignUp() {
       errors.push("Phone number must be digits only (6-15 digits)")
     }
     
-    if (!termsAccepted) {
-      errors.push("You must accept the terms and conditions")
-    }
-
-
     if (!phoneCountryCode) {
       errors.push("Country code is required")
     } else if (!/^\+\d{1,4}$/.test(phoneCountryCode)) {
@@ -472,18 +465,6 @@ export default function SignUp() {
                     {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
-              </div>
-
-              <div className="flex items-center space-x-2 py-2">
-                <Checkbox 
-                  id="terms" 
-                  checked={termsAccepted} 
-                  onCheckedChange={() => setTermsAccepted(!termsAccepted)}
-                  className="border-gray-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                />
-                <label htmlFor="terms" className="text-sm text-gray-600 cursor-pointer">
-                  I accept the <Link href="/terms" className="text-green-600 hover:underline">Terms and Conditions</Link>
-                </label>
               </div>
 
               <Button

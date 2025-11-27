@@ -125,8 +125,7 @@ export default function Home() {
                   Explore Software Features
                 </h1>
                 <p className="text-xl md:text-2xl text-gray-600 max-w-4xl leading-relaxed">
-                  Discover our powerful software solutions at your own pace.<br/>
-                  <span className="text-green-600 font-semibold">No scheduling required.</span>
+                  Discover our powerful metals-focused ERP solutions at your own pace.
                 </p>
               </div>
 
