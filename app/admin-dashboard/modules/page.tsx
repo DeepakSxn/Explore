@@ -193,16 +193,16 @@ export default function ModulesPage() {
       })
       setModuleOrders(newOrders)
       
-      toast({
-        title: "Order saved",
-        description: "Module order updated successfully"
+      toast({ 
+        title: "Order saved", 
+        description: "Module order updated successfully" 
       })
       setIsOrderDialogOpen(false)
     } catch (e) {
       console.error("Error saving module order:", e)
-      toast({
-        title: "Failed to save order",
-        variant: "destructive"
+      toast({ 
+        title: "Failed to save order", 
+        variant: "destructive" 
       })
     }
   }

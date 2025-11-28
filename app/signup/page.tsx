@@ -125,7 +125,7 @@ export default function SignUp() {
     } else if (!/^\d{6,15}$/.test(phoneNumber)) {
       errors.push("Phone number must be digits only (6-15 digits)")
     }
-    
+
     if (!phoneCountryCode) {
       errors.push("Country code is required")
     } else if (!/^\+\d{1,4}$/.test(phoneCountryCode)) {
